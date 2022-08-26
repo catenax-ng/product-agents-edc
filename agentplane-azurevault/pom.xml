@@ -20,7 +20,7 @@
     <artifactId>agentplane-azure-vault</artifactId>
     <packaging>jar</packaging>
 
-    <name>Catena-X Knowledge Agents EDC Agentplane (Azure Vault)</name>
+    <name>Catena-X Knowledge Agents EDC Dataplane (Az-Vault)</name>
     <description>Builds a Containerized Agent Dataplane with Agent/Triple Extensions And Accessing the Azure Vault to Store Intermediate Secrets.</description>
     <url>http://catena-x.net/</url>
 

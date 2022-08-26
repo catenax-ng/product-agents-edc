@@ -60,6 +60,6 @@ public class AgentController {
      */
     protected Response executeQuery(String query, String asset, MultivaluedMap<String,String> parameters) {
         monitor.debug(String.format("Executing query %s on asset %s with params %s",query,asset,parameters));
-        return Response.ok("<?xml version="1.0"?> <result/>",MediaType.APPLICATION_XML);
+        return Response.ok("<?xml version=\"1.0\"?> <result/>",MediaType.APPLICATION_XML).build();
     }
 }
