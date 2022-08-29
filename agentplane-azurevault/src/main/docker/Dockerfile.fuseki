@@ -13,9 +13,15 @@ ENV JAVA_TOOL_OPTIONS ""
 ENV FUSEKI_CONFIG agent.ttl
 ENV FUSEKI_PORT 8082
 
-WORKDIR /app
-COPY jena/jena-fuseki2/jena-fuseki-server/target/jena-fuseki-server-4.4.0.jar fuseki.jar
+COPY jena/jena-fuseki2/jena-fuseki-server/target/jena-fuseki-server-4.4.0.jar /app/fuseki.jar
 
+# Security issue A1SLDT-828
+RUN groupadd -g 30000 fuseki && \
+    useradd -u 10000 -g fuseki -ms /bin/sh fuseki && \
+    chown -R fuseki:fuseki /app
+
+USER fuseki
+WORKDIR /app
 EXPOSE 8082
 
 ENTRYPOINT java \
