@@ -61,8 +61,8 @@ public class AgentController {
 
     // some state to set when interacting with Fuseki
     private boolean verbose=true;
-    private long count;
-
+    private long count=-1;
+    
     // the actual Fuseki engine components
     private final SPARQLQueryProcessor processor;
     private OperationRegistry operationRegistry= OperationRegistry.createEmpty();
@@ -78,11 +78,10 @@ public class AgentController {
      * do some skill manipulation to the action
      */
     protected class OverridableHttpAction extends HttpAction {
-
         final String skill;
-    
+        
         protected OverridableHttpAction(HttpServletRequest request, HttpServletResponse response, String skill) {
-            super(count++,monitorWrapper,ActionCategory.ACTION,getJavaxRequest(request),getJavaxResponse(response));
+            super(++count,monitorWrapper,ActionCategory.ACTION,getJavaxRequest(request),getJavaxResponse(response));
             this.skill=skill;
         }
         
@@ -94,7 +93,7 @@ public class AgentController {
     /**
      * do some skill manipulation to the processor
      */
-    protected class OverridableSparqlQueryProcessor extends SPARQL_QueryGeneral.SPARQL_QueryProc {
+    protected static class OverridableSparqlQueryProcessor extends SPARQL_QueryGeneral.SPARQL_QueryProc {
         
         @Override
         protected void executeWithParameter(HttpAction action) {
@@ -135,6 +134,11 @@ public class AgentController {
         service.goActive();
     }
 
+    @Override
+    public String toString() {
+        return super.toString()+"/agent";
+    }
+
     /**
      * wraps a response to a previous servlet API
      * @param jakartaResponse
@@ -156,27 +160,27 @@ public class AgentController {
     /**
      * endpoint for posting a query
      * @param request context
-     * @param query optional query
+     * @param response context
      * @param asset can be a a named graph for executing a query or a skill asset
      * @return response
      */
     @POST
     @Consumes({"application/sparql-query"})
     public Response postQuery(@Context HttpServletRequest request,@Context HttpServletResponse response, @QueryParam("asset") String asset) {
-        monitor.debug(String.format("Received a POST request %s for asset %s",request,response,asset));
+        monitor.debug(String.format("Received a POST request %s for asset %s",request,asset));
         return executeQuery(request,response,asset);
     }
 
     /**
      * endpoint for getting a query
      * @param request context
-     * @param query optional query
+     * @param response context
      * @param asset can be a a named graph for executing a query or a skill asset
      * @return response
      */
     @GET
     public Response getQuery(@Context HttpServletRequest request,@Context HttpServletResponse response, @QueryParam("asset") String asset) {
-        monitor.debug(String.format("Received a GET request %s for asset %s",request,response,asset));
+        monitor.debug(String.format("Received a GET request %s for asset %s",request,asset));
         return executeQuery(request,response,asset);
     }
 
@@ -231,8 +235,6 @@ public class AgentController {
 
     /**
      * endpoint for getting a skill
-     * @param request context
-     * @param query optional query
      * @param asset can be a a named graph for executing a query or a skill asset
      * @return response
      */

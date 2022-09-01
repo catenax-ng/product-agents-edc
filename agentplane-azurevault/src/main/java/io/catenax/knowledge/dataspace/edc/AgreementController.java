@@ -30,10 +30,17 @@ public class AgreementController {
 
     private final Monitor monitor;
     private final Map<String, EndpointDataReference> store = new HashMap<>();
+    private final String controlPlaneUrl;
 
     /** creates a new agreement controller */
     public AgreementController(Monitor monitor, AgentConfig config) {
         this.monitor = monitor;
+        this.controlPlaneUrl=config.getDefaultAsset();
+    }
+
+    @Override
+    public String toString() {
+        return super.toString()+"/endpoint-data-reference";
     }
 
     /**

@@ -24,14 +24,17 @@ public class JakartaWrapper implements InvocationHandler, IJakartaWrapper<Object
         this.monitor=monitor;
     }
 
+    @Override
     public Object getDelegate() {
         return jakartaDelegate;
     }
 
+    @Override
     public Monitor getMonitor() {
         return monitor;
     }
 
+    @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         Class[] types=method.getParameterTypes();
         args=IJakartaWrapper.unwrap(types,args);
