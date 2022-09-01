@@ -1,14 +1,19 @@
+//
+// EDC Data Plane Agent Extension 
+// See copyright notice in the top folder
+// See authors file in the top folder
+// See license file in the top folder
+//
 package io.catenax.knowledge.dataspace.edc;
 
 import java.io.IOException;
-import java.lang.reflect.*;
 
 import javax.servlet.ReadListener;
 
 import org.eclipse.dataspaceconnector.spi.monitor.Monitor;
 
 /**
- * An invocation handler which maps all jakarta objects
+ * An invocation handler which maps all jakarta input stream
  * to a javax.servlet level
  */
 public class JakartaServletInputStreamWrapper extends javax.servlet.ServletInputStream implements IJakartaWrapper<jakarta.servlet.ServletInputStream> {

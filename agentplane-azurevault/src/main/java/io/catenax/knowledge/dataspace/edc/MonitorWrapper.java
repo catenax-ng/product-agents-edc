@@ -1,3 +1,9 @@
+//
+// EDC Data Plane Agent Extension 
+// See copyright notice in the top folder
+// See authors file in the top folder
+// See license file in the top folder
+//
 package io.catenax.knowledge.dataspace.edc;
 
 import org.eclipse.dataspaceconnector.spi.monitor.Monitor;
@@ -5,6 +11,9 @@ import org.slf4j.Marker;
 import org.slf4j.event.Level;
 import org.slf4j.helpers.AbstractLogger;
 
+/**
+ * A (better) adapter to bridge slf4j to EDC logging
+ */
 public class MonitorWrapper extends AbstractLogger {
     
     final Monitor instance;
