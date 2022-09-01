@@ -77,11 +77,11 @@ public class AgentController {
     /**
      * do some skill manipulation to the action
      */
-    protected class OverridableHttpAction extends HttpAction {
+    protected static class OverridableHttpAction extends HttpAction {
         final String skill;
         
-        protected OverridableHttpAction(HttpServletRequest request, HttpServletResponse response, String skill) {
-            super(++count,monitorWrapper,ActionCategory.ACTION,getJavaxRequest(request),getJavaxResponse(response));
+        protected OverridableHttpAction(long id, org.slf4j.Logger logger, javax.servlet.http.HttpServletRequest request, javax.servlet.http.HttpServletResponse response, String skill) {
+            super(id, logger, ActionCategory.ACTION, request, response);
             this.skill=skill;
         }
         
@@ -205,7 +205,7 @@ public class AgentController {
         request.getServletContext().setAttribute(Fuseki.attrOperationRegistry, operationRegistry);
         request.getServletContext().setAttribute(Fuseki.attrNameRegistry, dataAccessPointRegistry);
 
-        OverridableHttpAction action=new OverridableHttpAction(request, response, skill);
+        OverridableHttpAction action=new OverridableHttpAction(++count, monitorWrapper, getJavaxRequest(request), getJavaxResponse(response), skill);
         action.setRequest(api, api.getDataService());
         processor.execute(action); 
 
