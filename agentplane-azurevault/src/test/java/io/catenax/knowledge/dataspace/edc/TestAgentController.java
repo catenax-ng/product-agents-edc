@@ -94,7 +94,7 @@ public class TestAgentController {
         ByteArrayOutputStream responseStream=new ByteArrayOutputStream();
         MockServletOutputStream mos=new MockServletOutputStream(responseStream);
         when(response.getOutputStream()).thenReturn(mos);
-        agentController.getQuery(request, response, null);
+        agentController.getQuery(request, response, asset);
         return new String(responseStream.toByteArray());
     }
 
@@ -121,6 +121,23 @@ public class TestAgentController {
         Map<String,String[]> params=new HashMap<>();
         params.put("input",new String[] { "84"} );
         String result=testExecute("GET",query,null,"*/*",params);
+        JsonNode root=mapper.readTree(result);
+        JsonNode whatBinding0=((ArrayNode) root.get("results").get("bindings")).get(0).get("what");
+        assertEquals("84",whatBinding0.get("value").asText(),"Correct binding");
+    }
+
+     /**
+     * test canonical call with simple replacement binding
+     * @throws IOException
+     */
+    @Test
+    public void testParameterizedSkill() throws IOException {
+        String query="PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> SELECT ?what WHERE { VALUES (?what) { (\":input\"^^xsd:int)} }";
+        String asset="urn:skill:cx:Test";
+        agentController.postSkill(query,asset);
+        Map<String,String[]> params=new HashMap<>();
+        params.put("input",new String[] { "84"} );
+        String result=testExecute("GET",null,asset,"*/*",params);
         JsonNode root=mapper.readTree(result);
         JsonNode whatBinding0=((ArrayNode) root.get("results").get("bindings")).get(0).get("what");
         assertEquals("84",whatBinding0.get("value").asText(),"Correct binding");
