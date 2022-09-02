@@ -41,7 +41,7 @@ public class JakartaWrapper implements InvocationHandler, IJakartaWrapper<Object
         args=IJakartaWrapper.unwrap(types,args);
         Method targetMethod=jakartaDelegate.getClass().getMethod(method.getName(),types);
         Object result=targetMethod.invoke(jakartaDelegate,args);
-        monitor.debug(String.format("Jakarta wrapper mapped method %s to target method %s on args %s with result %s",method,targetMethod,Arrays.toString(args),result));
+        //monitor.debug(String.format("Jakarta wrapper mapped method %s to target method %s on args %s with result %s",method,targetMethod,Arrays.toString(args),result));
         if((!method.getReturnType().isAssignableFrom(targetMethod.getReturnType())) && result!=null) {
             result=IJakartaWrapper.javaxify(result,method.getReturnType(),monitor);
         }
