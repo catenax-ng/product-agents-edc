@@ -63,8 +63,8 @@ public class AgentController {
     
     // the actual Fuseki engine components
     private final SparqlQueryProcessor processor;
-    private OperationRegistry operationRegistry= OperationRegistry.createEmpty();
-    private DataAccessPointRegistry dataAccessPointRegistry=new DataAccessPointRegistry(MetricsProviderRegistry.get().getMeterRegistry());
+    OperationRegistry operationRegistry= OperationRegistry.createEmpty();
+    DataAccessPointRegistry dataAccessPointRegistry=new DataAccessPointRegistry(MetricsProviderRegistry.get().getMeterRegistry());
 
     // we need a single data access point (with its default graph)
     private DataAccessPoint api;
