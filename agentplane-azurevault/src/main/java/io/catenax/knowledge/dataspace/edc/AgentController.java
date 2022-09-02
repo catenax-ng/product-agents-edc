@@ -30,8 +30,6 @@ import org.apache.jena.fuseki.server.DataAccessPointRegistry;
 import org.apache.jena.fuseki.server.DataService;
 import org.apache.jena.fuseki.server.OperationRegistry;
 import org.apache.jena.fuseki.servlets.HttpAction;
-import org.apache.jena.fuseki.servlets.SPARQLQueryProcessor;
-import org.apache.jena.fuseki.servlets.SPARQL_QueryGeneral;
 import org.apache.jena.fuseki.system.ActionCategory;
 import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.sparql.core.DatasetGraphFactory;
@@ -64,7 +62,7 @@ public class AgentController {
     private long count=-1;
     
     // the actual Fuseki engine components
-    private final SPARQLQueryProcessor processor;
+    private final SparqlQueryProcessor processor;
     private OperationRegistry operationRegistry= OperationRegistry.createEmpty();
     private DataAccessPointRegistry dataAccessPointRegistry=new DataAccessPointRegistry(MetricsProviderRegistry.get().getMeterRegistry());
 
@@ -73,49 +71,7 @@ public class AgentController {
     
     // temporary local skill store
     private Map<String,String> skills=new HashMap<String,String>();
-    
-    /**
-     * do some skill manipulation to the action
-     */
-    protected static class OverridableHttpAction extends HttpAction {
-        final String skill;
-        
-        protected OverridableHttpAction(long id, org.slf4j.Logger logger, javax.servlet.http.HttpServletRequest request, javax.servlet.http.HttpServletResponse response, String skill) {
-            super(id, logger, ActionCategory.ACTION, request, response);
-            this.skill=skill;
-        }
-        
-        public String getSkill() {
-            return skill;
-        }
-    };
-        
-    /**
-     * do some skill manipulation to the processor
-     */
-    protected static class OverridableSparqlQueryProcessor extends SPARQL_QueryGeneral.SPARQL_QueryProc {
-        
-        @Override
-        protected void executeWithParameter(HttpAction action) {
-            String queryString = ((OverridableHttpAction) action).getSkill();
-            if(queryString==null) {
-                super.executeWithParameter(action);
-            } else {
-                execute(queryString, action);
-            }
-        }
-
-        @Override
-        protected void executeBody(HttpAction action) {
-            String queryString = ((OverridableHttpAction) action).getSkill();
-            if(queryString==null) {
-                super.executeBody(action);
-            } else {
-                execute(queryString, action);
-            }
-        }
-    }
-
+            
     /** 
      * creates a new agent controller 
      */
@@ -123,7 +79,7 @@ public class AgentController {
         this.monitor = monitor;
         this.monitorWrapper=new MonitorWrapper(getClass().getName(),monitor);
         this.agreementController = agreementController;
-        this.processor=new OverridableSparqlQueryProcessor();
+        this.processor=new SparqlQueryProcessor();
         final DatasetGraph dataset = DatasetGraphFactory.createTxnMem();
         // read file with ontology, share this dataset with the catalogue sync procedure
         DataService.Builder dataService = DataService.newBuilder(dataset);
@@ -193,19 +149,13 @@ public class AgentController {
      */
     public Response executeQuery(HttpServletRequest request,HttpServletResponse response, String asset) {
         String skill=skills.get(asset);
-        if(skill!=null) {
-            for(Map.Entry<String,String[]> param : request.getParameterMap().entrySet()) {
-                skill=skill.replace(":"+param.getKey(),param.getValue()[0]);
-            }
-            monitor.debug(String.format("Instantiated skill to %s",skill));
-        }
-        
+
         // Should we check whether this already has been done? the context should be quite static
         request.getServletContext().setAttribute(Fuseki.attrVerbose, Boolean.valueOf(verbose));
         request.getServletContext().setAttribute(Fuseki.attrOperationRegistry, operationRegistry);
         request.getServletContext().setAttribute(Fuseki.attrNameRegistry, dataAccessPointRegistry);
 
-        OverridableHttpAction action=new OverridableHttpAction(++count, monitorWrapper, getJavaxRequest(request), getJavaxResponse(response), skill);
+        AgentHttpAction action=new AgentHttpAction(++count, monitorWrapper, getJavaxRequest(request), getJavaxResponse(response), skill);
         action.setRequest(api, api.getDataService());
         processor.execute(action); 
 
