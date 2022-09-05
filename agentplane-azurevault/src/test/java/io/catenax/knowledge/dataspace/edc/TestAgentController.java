@@ -99,9 +99,9 @@ public class TestAgentController {
             } else {
                 queryString.append("&");
             }
-            queryString.append(URLEncoder.encode(param.getKey()));
+            queryString.append(URLEncoder.encode(param.getKey(),"UTF-8"));
             queryString.append("=");
-            queryString.append(URLEncoder.encode(param.getValue()));
+            queryString.append(URLEncoder.encode(param.getValue(),"UTF-8"));
             if(fparams.containsKey(param.getKey())) {
                 String[] oarray=fparams.get(param.getKey());
                 String[] narray=new String[oarray.length+1];
