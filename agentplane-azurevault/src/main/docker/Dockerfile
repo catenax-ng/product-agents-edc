@@ -20,6 +20,8 @@ COPY --from=otel /tmp/opentelemetry-javaagent.jar .
 COPY ${JAR} edc-dataplane.jar
 COPY ${LIB} ./lib/
 
+USER nonroot
+
 CMD ["-javaagent:/app/opentelemetry-javaagent.jar", \
      "-Dedc.fs.config=/app/configuration.properties", \
      "-Djava.util.logging.config.file=/app/logging.properties", \
