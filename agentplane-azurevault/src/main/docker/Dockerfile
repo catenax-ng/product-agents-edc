@@ -22,6 +22,9 @@ COPY ${LIB} ./lib/
 
 USER nonroot
 
+# TODO Should have a healthcheck
+HEALTHCHECK NONE
+
 CMD ["-javaagent:/app/opentelemetry-javaagent.jar", \
      "-Dedc.fs.config=/app/configuration.properties", \
      "-Djava.util.logging.config.file=/app/logging.properties", \
