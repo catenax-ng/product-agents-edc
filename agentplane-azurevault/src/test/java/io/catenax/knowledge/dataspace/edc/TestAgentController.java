@@ -6,6 +6,7 @@
 //
 package io.catenax.knowledge.dataspace.edc;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,9 +54,19 @@ public class TestAgentController {
     TestConfig config=new TestConfig();
     AgentController agentController=new AgentController(monitor,null,new AgentConfig(monitor,config));
 
+    AutoCloseable mocks=null;
+
     @BeforeEach
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        mocks=MockitoAnnotations.openMocks(this);
+    }
+
+    @AfterEach
+    public void tearDown() throws Exception {
+        if(mocks!=null) {
+            mocks.close();
+            mocks=null;
+        }
     }
     
     @Mock
@@ -295,8 +306,6 @@ public class TestAgentController {
         String query="PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> SELECT ?what WHERE { VALUES (?what) { (\"@input\"^^xsd:int)} }";
         String asset="urn:skill:cx:Test";
         agentController.postSkill(query,asset);
-        Map<String,String[]> params=new HashMap<>();
-        params.put("input",new String[] { "84"} );
         String result=testExecute("GET",null,asset,"*/*",List.of(new AbstractMap.SimpleEntry<>("input","84")));
         JsonNode root=mapper.readTree(result);
         JsonNode whatBinding0=((ArrayNode) root.get("results").get("bindings")).get(0).get("what");
