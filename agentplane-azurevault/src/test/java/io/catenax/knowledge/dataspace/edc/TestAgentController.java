@@ -20,6 +20,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.URLEncoder;
+import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -75,17 +78,41 @@ public class TestAgentController {
      * @param params additional parameters
      * @return response body as string
      */
-    protected String testExecute(String method, String query, String asset, String accepts, Map<String,String[]> params) throws IOException {
+    protected String testExecute(String method, String query, String asset, String accepts, List<Map.Entry<String,String>> params) throws IOException {
+        Map<String,String[]> fparams=new HashMap<>();
+        StringBuffer queryString=new StringBuffer();
+        boolean isFirst=true;
+        for(Map.Entry<String,String> param : params) {
+            if(isFirst) {
+                isFirst=false;
+            } else {
+                queryString.append("&");
+            }
+            queryString.append(URLEncoder.encode(param.getKey()));
+            queryString.append("=");
+            queryString.append(URLEncoder.encode(param.getValue()));
+            if(fparams.containsKey(param.getKey())) {
+                String[] oarray=fparams.get(param.getKey());
+                String[] narray=new String[oarray.length+1];
+                System.arraycopy(oarray,0,narray,0,oarray.length);
+                narray[oarray.length]=param.getValue();
+                fparams.put(param.getKey(),narray);
+            } else {
+                String[] narray=new String[] { param.getValue() };
+                fparams.put(param.getKey(),narray);
+            }
+        }
+        when(request.getQueryString()).thenReturn(queryString.toString());
         when(request.getMethod()).thenReturn(method);
         if(query!=null) {
-            params.put("query",new String[] { query });
+            fparams.put("query",new String[] { query });
             when(request.getParameter("query")).thenReturn(query);
         }
         if(asset!=null) {
-            params.put("asset",new String[] { asset });
+            fparams.put("asset",new String[] { asset });
             when(request.getParameter("asset")).thenReturn(asset);
         }
-        when(request.getParameterMap()).thenReturn(params);
+        when(request.getParameterMap()).thenReturn(fparams);
         when(request.getServletContext()).thenReturn(context);
         when(request.getHeaders("Accept")).thenReturn(Collections.enumeration(List.of(accepts)));
         when(context.getAttribute(Fuseki.attrVerbose)).thenReturn(false);
@@ -105,9 +132,11 @@ public class TestAgentController {
     @Test
     public void testFixedQuery() throws IOException {
         String query="PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> SELECT ?what WHERE { VALUES (?what) { (\"42\"^^xsd:int)} }";
-        String result=testExecute("GET",query,null,"*/*",new HashMap<>());
+        String result=testExecute("GET",query,null,"*/*",new ArrayList<>());
         JsonNode root=mapper.readTree(result);
-        JsonNode whatBinding0=((ArrayNode) root.get("results").get("bindings")).get(0).get("what");
+        ArrayNode bindings=(ArrayNode) root.get("results").get("bindings");
+        assertEquals(1,bindings.size(),"Correct number of result bindings.");
+        JsonNode whatBinding0=bindings.get(0).get("what");
         assertEquals("42",whatBinding0.get("value").asText(),"Correct binding");
     }
 
@@ -117,27 +146,158 @@ public class TestAgentController {
      */
     @Test
     public void testParameterizedQuerySingle() throws IOException {
-        String query="PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> SELECT ?what WHERE { VALUES (?what) { (\":input\"^^xsd:int)} }";
-        Map<String,String[]> params=new HashMap<>();
-        params.put("input",new String[] { "84"} );
-        String result=testExecute("GET",query,null,"*/*",params);
+        String query="PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> SELECT ?what WHERE { VALUES (?what) { (\"@input\"^^xsd:int)} }";
+        String result=testExecute("GET",query,null,"*/*",List.of(new AbstractMap.SimpleEntry<>("input","84")));
         JsonNode root=mapper.readTree(result);
-        JsonNode whatBinding0=((ArrayNode) root.get("results").get("bindings")).get(0).get("what");
+        ArrayNode bindings=(ArrayNode) root.get("results").get("bindings");
+        assertEquals(1,bindings.size(),"Correct number of result bindings.");
+        JsonNode whatBinding0=bindings.get(0).get("what");
         assertEquals("84",whatBinding0.get("value").asText(),"Correct binding");
     }
 
-     /**
+    /**
+     * test canonical call with simple replacement binding
+     * @throws IOException
+     */
+    @Test
+    public void testParameterizedQueryMultiSingleResult() throws IOException {
+        String query="PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> SELECT ?what WHERE { VALUES ?what { \"@input\"^^xsd:int } }";
+        String result=testExecute("GET",query,null,"*/*",List.of(new AbstractMap.SimpleEntry<>("input","42"),new AbstractMap.SimpleEntry<>("input","84")));
+        JsonNode root=mapper.readTree(result);
+        ArrayNode bindings=(ArrayNode) root.get("results").get("bindings");
+        assertEquals(1,bindings.size(),"Correct number of result bindings.");
+        JsonNode whatBinding0=bindings.get(0).get("what");
+        assertEquals("42",whatBinding0.get("value").asText(),"Correct binding");
+    }
+
+    /**
+     * test canonical call with simple replacement binding
+     * @throws IOException
+     */
+    @Test
+    public void testParameterizedQueryMultiMultiResult() throws IOException {
+        String query="PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> SELECT ?what WHERE { VALUES (?what) { (\"@input\"^^xsd:int)} }";
+        String result=testExecute("GET",query,null,"*/*",List.of(new AbstractMap.SimpleEntry<>("input","42"),new AbstractMap.SimpleEntry<>("input","84")));
+        JsonNode root=mapper.readTree(result);
+        ArrayNode bindings=(ArrayNode) root.get("results").get("bindings");
+        assertEquals(2,bindings.size(),"Correct number of result bindings.");
+        JsonNode whatBinding0=bindings.get(0).get("what");
+        assertEquals("42",whatBinding0.get("value").asText(),"Correct binding");
+        JsonNode whatBinding1=bindings.get(1).get("what");
+        assertEquals("84",whatBinding1.get("value").asText(),"Correct binding");
+    }
+
+    /**
+     * test canonical call with simple replacement binding
+     * @throws IOException
+     */
+    @Test
+    public void testParameterizedQueryTupleResult() throws IOException {
+        String query="PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> SELECT ?so ?what WHERE { VALUES (?so ?what) { (\"@input1\"^^xsd:int \"@input2\"^^xsd:int)} }";
+        String result=testExecute("GET",query,null,"*/*",
+            List.of(new AbstractMap.SimpleEntry<>("input1","42"),
+                    new AbstractMap.SimpleEntry<>("input2","84"),
+                    new AbstractMap.SimpleEntry<>("input1","43"),
+                    new AbstractMap.SimpleEntry<>("input2","85")
+                    ));
+        JsonNode root=mapper.readTree(result);
+        ArrayNode bindings=(ArrayNode) root.get("results").get("bindings");
+        assertEquals(4,bindings.size(),"Correct number of result bindings.");
+        JsonNode soBinding0=bindings.get(0).get("so");
+        assertEquals("42",soBinding0.get("value").asText(),"Correct binding 0");
+        JsonNode whatBinding0=bindings.get(0).get("what");
+        assertEquals("84",whatBinding0.get("value").asText(),"Correct binding 0");
+        JsonNode soBinding1=bindings.get(1).get("so");
+        assertEquals("43",soBinding1.get("value").asText(),"Correct binding 1");
+        JsonNode whatBinding1=bindings.get(1).get("what");
+        assertEquals("84",whatBinding1.get("value").asText(),"Correct binding 1");
+        JsonNode soBinding2=bindings.get(2).get("so");
+        assertEquals("42",soBinding2.get("value").asText(),"Correct binding 2");
+        JsonNode whatBinding2=bindings.get(2).get("what");
+        assertEquals("85",whatBinding2.get("value").asText(),"Correct binding 2");
+        JsonNode soBinding3=bindings.get(3).get("so");
+        assertEquals("43",soBinding3.get("value").asText(),"Correct binding 3");
+        JsonNode whatBinding3=bindings.get(3).get("what");
+        assertEquals("85",whatBinding3.get("value").asText(),"Correct binding 3");
+    }
+
+    /**
+     * test canonical call with simple replacement binding
+     * @throws IOException
+     */
+    @Test
+    public void testParameterizedQueryTupleResultOrderIrrelevant() throws IOException {
+        String query="PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> SELECT ?so ?what WHERE { VALUES (?so ?what) { (\"@input1\"^^xsd:int \"@input2\"^^xsd:int)} }";
+        String result=testExecute("GET",query,null,"*/*",
+            List.of(new AbstractMap.SimpleEntry<>("input2","84"),
+                    new AbstractMap.SimpleEntry<>("input2","85"),
+                    new AbstractMap.SimpleEntry<>("input1","42"),
+                    new AbstractMap.SimpleEntry<>("input1","43")
+                    ));
+        JsonNode root=mapper.readTree(result);
+        ArrayNode bindings=(ArrayNode) root.get("results").get("bindings");
+        assertEquals(4,bindings.size(),"Correct number of result bindings.");
+        JsonNode soBinding0=bindings.get(0).get("so");
+        assertEquals("42",soBinding0.get("value").asText(),"Correct binding 0");
+        JsonNode whatBinding0=bindings.get(0).get("what");
+        assertEquals("84",whatBinding0.get("value").asText(),"Correct binding 0");
+        JsonNode soBinding1=bindings.get(1).get("so");
+        assertEquals("43",soBinding1.get("value").asText(),"Correct binding 1");
+        JsonNode whatBinding1=bindings.get(1).get("what");
+        assertEquals("84",whatBinding1.get("value").asText(),"Correct binding 1");
+        JsonNode soBinding2=bindings.get(2).get("so");
+        assertEquals("42",soBinding2.get("value").asText(),"Correct binding 2");
+        JsonNode whatBinding2=bindings.get(2).get("what");
+        assertEquals("85",whatBinding2.get("value").asText(),"Correct binding 2");
+        JsonNode soBinding3=bindings.get(3).get("so");
+        assertEquals("43",soBinding3.get("value").asText(),"Correct binding 3");
+        JsonNode whatBinding3=bindings.get(3).get("what");
+        assertEquals("85",whatBinding3.get("value").asText(),"Correct binding 3");
+    }
+
+    /**
+     * test canonical call with simple replacement binding
+     * @throws IOException
+     */
+    @Test
+    public void testParameterizedQueryTupleResultSpecial() throws IOException {
+        String query="PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> SELECT ?so ?what ?now WHERE { VALUES (?so ?what) { (\"@input1\"^^xsd:int \"@input2\"^^xsd:int)} VALUES (?now) { (\"@input3\"^^xsd:int)} }";
+        String result=testExecute("GET",query,null,"*/*",
+            List.of(new AbstractMap.SimpleEntry<>("(input2","84"),
+                    new AbstractMap.SimpleEntry<>("input1","42)"),
+                    new AbstractMap.SimpleEntry<>("(input2","85"),
+                    new AbstractMap.SimpleEntry<>("input1","43)"),
+                    new AbstractMap.SimpleEntry<>("input3","21")
+                    ));
+        JsonNode root=mapper.readTree(result);
+        ArrayNode bindings=(ArrayNode) root.get("results").get("bindings");
+        assertEquals(2,bindings.size(),"Correct number of result bindings.");
+        JsonNode soBinding0=bindings.get(0).get("so");
+        assertEquals("42",soBinding0.get("value").asText(),"Correct binding 0");
+        JsonNode whatBinding0=bindings.get(0).get("what");
+        assertEquals("84",whatBinding0.get("value").asText(),"Correct binding 0");
+        JsonNode nowBinding0=bindings.get(0).get("now");
+        assertEquals("21",nowBinding0.get("value").asText(),"Correct binding 0");
+        JsonNode soBinding1=bindings.get(1).get("so");
+        assertEquals("43",soBinding1.get("value").asText(),"Correct binding 1");
+        JsonNode whatBinding1=bindings.get(1).get("what");
+        assertEquals("85",whatBinding1.get("value").asText(),"Correct binding 1");
+        JsonNode nowBinding1=bindings.get(1).get("now");
+        assertEquals("21",nowBinding1.get("value").asText(),"Correct binding 1");
+    }
+
+    /**
      * test canonical call with simple replacement binding
      * @throws IOException
      */
     @Test
     public void testParameterizedSkill() throws IOException {
-        String query="PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> SELECT ?what WHERE { VALUES (?what) { (\":input\"^^xsd:int)} }";
+        String query="PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> SELECT ?what WHERE { VALUES (?what) { (\"@input\"^^xsd:int)} }";
         String asset="urn:skill:cx:Test";
         agentController.postSkill(query,asset);
         Map<String,String[]> params=new HashMap<>();
         params.put("input",new String[] { "84"} );
-        String result=testExecute("GET",null,asset,"*/*",params);
+        String result=testExecute("GET",null,asset,"*/*",List.of(new AbstractMap.SimpleEntry<>("input","84")));
         JsonNode root=mapper.readTree(result);
         JsonNode whatBinding0=((ArrayNode) root.get("results").get("bindings")).get(0).get("what");
         assertEquals("84",whatBinding0.get("value").asText(),"Correct binding");
