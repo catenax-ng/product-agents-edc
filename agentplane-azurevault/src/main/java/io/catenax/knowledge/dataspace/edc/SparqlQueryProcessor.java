@@ -112,8 +112,6 @@ public class SparqlQueryProcessor extends SPARQL_QueryGeneral.SPARQL_QueryProc {
                 value=value.substring(0,value.length()-1);
             }
         }
-
-        System.out.println(String.format("Got tupleset %s",ts));
         
         Pattern tuplePattern = Pattern.compile("\\([^\\(\\)]*\\)");
         Pattern variablePattern = Pattern.compile("@(?<name>[a-zA-Z0-9]+)");
@@ -123,7 +121,6 @@ public class SparqlQueryProcessor extends SPARQL_QueryGeneral.SPARQL_QueryProc {
         while(tupleMatcher.find()) {
             replaceQuery.append(queryString.substring(lastStart,tupleMatcher.start()-1));
             String otuple=tupleMatcher.group(0);
-            System.out.println(String.format("Replace tuple %s",otuple));
             Matcher variableMatcher=variablePattern.matcher(otuple);
             List<String> variables=new java.util.ArrayList<>();
             while(variableMatcher.find()) {
@@ -155,17 +152,14 @@ public class SparqlQueryProcessor extends SPARQL_QueryGeneral.SPARQL_QueryProc {
             }   
             lastStart=tupleMatcher.end();
         }
-        System.out.println("Appending rest "+lastStart+" "+queryString.substring(lastStart));
         replaceQuery.append(queryString.substring(lastStart));
 
         queryString=replaceQuery.toString();
-        System.out.println(queryString);
         Matcher variableMatcher=variablePattern.matcher(queryString);
         List<String> variables=new java.util.ArrayList<>();
         while(variableMatcher.find()) {
             variables.add(variableMatcher.group("name"));
         }
-        System.out.println(String.format("Replace variables %s",Arrays.toString(variables.toArray())));
         try {
             Collection<Tuple> tuples=ts.peek().getTuples(variables.toArray(new String[0]));
             if(tuples.size()<=0 && variables.size()>0) {
@@ -186,7 +180,6 @@ public class SparqlQueryProcessor extends SPARQL_QueryGeneral.SPARQL_QueryProc {
             action.getResponse().setStatus(HttpStatus.SC_BAD_REQUEST);
             return;
         } 
-        System.out.println(queryString);
         super.execute(queryString,action);
     }
 }
