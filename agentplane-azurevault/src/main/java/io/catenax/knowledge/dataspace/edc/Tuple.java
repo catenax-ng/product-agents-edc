@@ -59,6 +59,7 @@ public class Tuple {
      * clone this tuple
      * @return a detached tuple with the same bindings
      */
+    @Override
     public Tuple clone() {
         return new Tuple(new HashMap<>(bindings));
     }
