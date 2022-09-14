@@ -4,13 +4,18 @@
 // See authors file in the top folder
 // See license file in the top folder
 //
-package io.catenax.knowledge.dataspace.edc;
+package io.catenax.knowledge.dataspace.edc.http;
 
+import io.catenax.knowledge.dataspace.edc.AgentConfig;
+import io.catenax.knowledge.dataspace.edc.TestConfig;
+import io.catenax.knowledge.dataspace.edc.sparql.DataspaceServiceExecutor;
+import io.catenax.knowledge.dataspace.edc.sparql.SparqlQueryProcessor;
+import okhttp3.OkHttpClient;
+import org.apache.jena.sparql.service.ServiceExecutorRegistry;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -19,9 +24,8 @@ import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,7 +33,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.jena.fuseki.Fuseki;
-import org.apache.jena.reasoner.rulesys.impl.BindingVectorMultiSet;
 import org.eclipse.dataspaceconnector.spi.monitor.ConsoleMonitor;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -52,13 +55,19 @@ public class TestAgentController {
     
     ConsoleMonitor monitor=new ConsoleMonitor();
     TestConfig config=new TestConfig();
-    AgentController agentController=new AgentController(monitor,null,new AgentConfig(monitor,config));
+    AgentConfig agentConfig=new AgentConfig(monitor,config);
+    ServiceExecutorRegistry reg=new ServiceExecutorRegistry();
+    OkHttpClient client=new OkHttpClient();
+    DataspaceServiceExecutor exec=new DataspaceServiceExecutor(monitor,null,agentConfig,client);
+    SparqlQueryProcessor processor=new SparqlQueryProcessor(reg,monitor,agentConfig);
+    AgentController agentController=new AgentController(monitor,null,agentConfig,null,processor);
 
     AutoCloseable mocks=null;
 
     @BeforeEach
-    public void setUp() throws Exception {
+    public void setUp()  {
         mocks=MockitoAnnotations.openMocks(this);
+        reg.add(exec);
     }
 
     @AfterEach
@@ -66,6 +75,7 @@ public class TestAgentController {
         if(mocks!=null) {
             mocks.close();
             mocks=null;
+            reg.remove(exec);
         }
     }
     
@@ -82,7 +92,7 @@ public class TestAgentController {
 
     /**
      * execution helper
-     * @param method http methos
+     * @param method http method
      * @param query optional query
      * @param asset optional asset name
      * @param accepts determines return representation
@@ -91,7 +101,7 @@ public class TestAgentController {
      */
     protected String testExecute(String method, String query, String asset, String accepts, List<Map.Entry<String,String>> params) throws IOException {
         Map<String,String[]> fparams=new HashMap<>();
-        StringBuffer queryString=new StringBuffer();
+        StringBuilder queryString=new StringBuilder();
         boolean isFirst=true;
         for(Map.Entry<String,String> param : params) {
             if(isFirst) {
@@ -99,9 +109,9 @@ public class TestAgentController {
             } else {
                 queryString.append("&");
             }
-            queryString.append(URLEncoder.encode(param.getKey(),"UTF-8"));
+            queryString.append(URLEncoder.encode(param.getKey(), StandardCharsets.UTF_8));
             queryString.append("=");
-            queryString.append(URLEncoder.encode(param.getValue(),"UTF-8"));
+            queryString.append(URLEncoder.encode(param.getValue(), StandardCharsets.UTF_8));
             if(fparams.containsKey(param.getKey())) {
                 String[] oarray=fparams.get(param.getKey());
                 String[] narray=new String[oarray.length+1];
@@ -127,18 +137,19 @@ public class TestAgentController {
         when(request.getServletContext()).thenReturn(context);
         when(request.getHeaders("Accept")).thenReturn(Collections.enumeration(List.of(accepts)));
         when(context.getAttribute(Fuseki.attrVerbose)).thenReturn(false);
-        when(context.getAttribute(Fuseki.attrOperationRegistry)).thenReturn(agentController.operationRegistry);
-        when(context.getAttribute(Fuseki.attrNameRegistry)).thenReturn(agentController.dataAccessPointRegistry);
+        when(context.getAttribute(Fuseki.attrOperationRegistry)).thenReturn(processor.getOperationRegistry());
+        when(context.getAttribute(Fuseki.attrNameRegistry)).thenReturn(processor.getDataAccessPointRegistry());
+        when(context.getAttribute(Fuseki.attrNameRegistry)).thenReturn(processor.getDataAccessPointRegistry());
         ByteArrayOutputStream responseStream=new ByteArrayOutputStream();
         MockServletOutputStream mos=new MockServletOutputStream(responseStream);
         when(response.getOutputStream()).thenReturn(mos);
         agentController.getQuery(request, response, asset);
-        return new String(responseStream.toByteArray());
+        return responseStream.toString();
     }
 
     /**
      * test canonical call with fixed binding
-     * @throws IOException
+     * @throws IOException in case of an error
      */
     @Test
     public void testFixedQuery() throws IOException {
@@ -153,7 +164,7 @@ public class TestAgentController {
 
     /**
      * test canonical call with simple replacement binding
-     * @throws IOException
+     * @throws IOException in case of an error
      */
     @Test
     public void testParameterizedQuerySingle() throws IOException {
@@ -168,7 +179,7 @@ public class TestAgentController {
 
     /**
      * test canonical call with simple replacement binding
-     * @throws IOException
+     * @throws IOException in case of an error
      */
     @Test
     public void testParameterizedQueryMultiSingleResult() throws IOException {
@@ -183,7 +194,7 @@ public class TestAgentController {
 
     /**
      * test canonical call with simple replacement binding
-     * @throws IOException
+     * @throws IOException in case of an error
      */
     @Test
     public void testParameterizedQueryMultiMultiResult() throws IOException {
@@ -200,7 +211,7 @@ public class TestAgentController {
 
     /**
      * test canonical call with simple replacement binding
-     * @throws IOException
+     * @throws IOException in case of an error
      */
     @Test
     public void testParameterizedQueryTupleResult() throws IOException {
@@ -234,7 +245,7 @@ public class TestAgentController {
 
     /**
      * test canonical call with simple replacement binding
-     * @throws IOException
+     * @throws IOException in case of an error
      */
     @Test
     public void testParameterizedQueryTupleResultOrderIrrelevant() throws IOException {
@@ -268,7 +279,7 @@ public class TestAgentController {
 
     /**
      * test canonical call with simple replacement binding
-     * @throws IOException
+     * @throws IOException in case of an error
      */
     @Test
     public void testParameterizedQueryTupleResultSpecial() throws IOException {
@@ -299,16 +310,33 @@ public class TestAgentController {
 
     /**
      * test canonical call with simple replacement binding
-     * @throws IOException
+     * @throws IOException in case of an error
      */
     @Test
+    @Tag("online")
     public void testParameterizedSkill() throws IOException {
         String query="PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> SELECT ?what WHERE { VALUES (?what) { (\"@input\"^^xsd:int)} }";
-        String asset="urn:skill:cx:Test";
+        String asset="urn:cx:Skill:cx:Test";
         agentController.postSkill(query,asset);
         String result=testExecute("GET",null,asset,"*/*",List.of(new AbstractMap.SimpleEntry<>("input","84")));
         JsonNode root=mapper.readTree(result);
-        JsonNode whatBinding0=((ArrayNode) root.get("results").get("bindings")).get(0).get("what");
+        JsonNode whatBinding0=root.get("results").get("bindings").get(0).get("what");
+        assertEquals("84",whatBinding0.get("value").asText(),"Correct binding");
+    }
+
+    /**
+     * test federation call - will only work with a local oem provider running
+     * @throws IOException in case of an error
+     */
+    @Test
+    @Tag("online")
+    public void testFederatedSkill() throws IOException {
+        String query="PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> SELECT ?what WHERE { SERVICE<http://localhost:8080/sparql> { VALUES (?what) { (\"@input\"^^xsd:int)} } }";
+        String asset="urn:cx:Skill:cx:Test";
+        agentController.postSkill(query,asset);
+        String result=testExecute("GET",null,asset,"*/*",List.of(new AbstractMap.SimpleEntry<>("input","84")));
+        JsonNode root=mapper.readTree(result);
+        JsonNode whatBinding0=root.get("results").get("bindings").get(0).get("what");
         assertEquals("84",whatBinding0.get("value").asText(),"Correct binding");
     }
 
