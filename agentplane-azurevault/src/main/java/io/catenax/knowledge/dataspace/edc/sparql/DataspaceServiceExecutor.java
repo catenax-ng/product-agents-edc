@@ -67,7 +67,7 @@ public class DataspaceServiceExecutor extends ServiceExecutorHttp {
      * some constants
      */
     public final static Symbol authKey = Symbol.create("cx:authKey");
-    public final static Symbol authSecret = Symbol.create("cx:authSecret");
+    public final static Symbol authCode = Symbol.create("cx:authCode");
     public final static Pattern EDC_TARGET_ADDRESS = Pattern.compile("(?<protocol>edc|edcs)://(?<connector>[^#?]*)(#(?<asset>[^/?]*))?(\\?(?<params>.*))?");
     public final static Symbol targetUrl = Symbol.create("cx:targetUrl");
     public final static Symbol asset = Symbol.create("cx:asset");
@@ -189,7 +189,7 @@ public class DataspaceServiceExecutor extends ServiceExecutorHttp {
             serviceParams.put("cx_accept",List.of("application/json"));
             realOpExecute = new OpService(newServiceNode, opExecute.getSubOp(), opExecute.getServiceElement(), silent);
             execCxt.getContext().put(authKey, endpoint.getAuthKey());
-            execCxt.getContext().put(authSecret, endpoint.getAuthCode());
+            execCxt.getContext().put(authCode, endpoint.getAuthCode());
         } else {
             monitor.info(String.format("About to execute http target %s without dataspace", target));
         }
@@ -263,7 +263,10 @@ public class DataspaceServiceExecutor extends ServiceExecutorHttp {
                     .sendMode(querySendMode);
 
             if (context.isDefined(authKey)) {
-                qExecBuilder.httpHeader(context.get(authKey), context.get(authSecret));
+                String authKeyProp=context.get(authKey);
+                monitor.debug(String.format("About to use authentication header %s on http target %s", authKeyProp,serviceURL));
+                String authCodeProp=context.get(authCode);
+                qExecBuilder=qExecBuilder.httpHeader(authKeyProp,authCodeProp);
             }
 
             try(QueryExecHTTP qExec = qExecBuilder.build()) {

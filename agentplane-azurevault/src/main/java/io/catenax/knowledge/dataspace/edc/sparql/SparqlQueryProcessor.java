@@ -170,9 +170,11 @@ public class SparqlQueryProcessor extends SPARQL_QueryGeneral.SPARQL_QueryProc {
      * @param request ok request
      * @param skill skill ref
      * @param graph graph ref
+     * @param authKey optional auth key, such as X-Api-Key or Authorization
+     * @param authCode optional auth value, such as 4711 or Basic xxxx
      * @return simulated ok response
      */
-    public Response execute(Request request, String skill, String graph) {
+    public Response execute(Request request, String skill, String graph, String authKey, String authCode) {
         HttpServletContextAdapter contextAdapter=new HttpServletContextAdapter(request);
         HttpServletRequestAdapter requestAdapter=new HttpServletRequestAdapter(request,contextAdapter);
         HttpServletResponseAdapter responseAdapter=new HttpServletResponseAdapter(request);
@@ -184,6 +186,8 @@ public class SparqlQueryProcessor extends SPARQL_QueryGeneral.SPARQL_QueryProc {
         action.setRequest(api, api.getDataService());
         ServiceExecutorRegistry.set(action.getContext(),registry);
         action.getContext().set(DataspaceServiceExecutor.targetUrl,request);
+        action.getContext().set(DataspaceServiceExecutor.authKey,authKey);
+        action.getContext().set(DataspaceServiceExecutor.authCode,authCode);
         if(skill!=null) {
             action.getContext().set(DataspaceServiceExecutor.asset,skill);
         } else if(graph!=null) {
