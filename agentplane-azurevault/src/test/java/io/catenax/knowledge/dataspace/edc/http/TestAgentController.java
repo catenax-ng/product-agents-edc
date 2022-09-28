@@ -352,7 +352,7 @@ public class TestAgentController {
         Request.Builder builder=new Request.Builder();
         builder.url("http://localhost:8080");
         builder.put(RequestBody.create(query, MediaType.parse("application/sparql-query")));
-        Response response=processor.execute(builder.build(),null,null);
+        Response response=processor.execute(builder.build(),null,null,null,null);
         JsonNode root=mapper.readTree(response.body().string());
         JsonNode whatBinding0=root.get("results").get("bindings").get(0).get("what");
         assertEquals("84",whatBinding0.get("value").asText(),"Correct binding");
@@ -370,7 +370,7 @@ public class TestAgentController {
         Request.Builder builder=new Request.Builder();
         builder.url("http://localhost:8080");
         builder.put(RequestBody.create(query, MediaType.parse("application/sparql-query")));
-        Response response=processor.execute(builder.build(),null,null);
+        Response response=processor.execute(builder.build(),null,null,null,null);
         JsonNode root=mapper.readTree(response.body().string());
         JsonNode whatBinding0=root.get("results").get("bindings").get(0).get("what");
         assertEquals("84",whatBinding0.get("value").asText(),"Correct binding");
