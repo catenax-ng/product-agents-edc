@@ -309,6 +309,28 @@ public class TestAgentController {
     }
 
     /**
+     * test canonical call with replacement binding which should not confuse the filtering
+     * @throws IOException in case of an error
+     */
+    @Test
+    public void testParameterizedQueryFilterContains() throws IOException {
+        String query="PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> SELECT ?so ?what WHERE { VALUES(?so ?what) {(\"@input1\"^^xsd:string \"@input2\"^^xsd:string)} FILTER CONTAINS(?so,?what) }";
+        String result=testExecute("GET",query,null,"*/*",
+                List.of(new AbstractMap.SimpleEntry<>("(input2","BAR"),
+                        new AbstractMap.SimpleEntry<>("input1","FOOBAR)"),
+                        new AbstractMap.SimpleEntry<>("(input2","BLUB"),
+                        new AbstractMap.SimpleEntry<>("input1","NOOB)")
+                ));
+        JsonNode root=mapper.readTree(result);
+        ArrayNode bindings=(ArrayNode) root.get("results").get("bindings");
+        assertEquals(1,bindings.size(),"Correct number of result bindings.");
+        JsonNode soBinding0=bindings.get(0).get("so");
+        assertEquals("FOOBAR",soBinding0.get("value").asText(),"Correct binding 0");
+        JsonNode whatBinding0=bindings.get(0).get("what");
+        assertEquals("BAR",whatBinding0.get("value").asText(),"Correct binding 0");
+    }
+
+    /**
      * test canonical call with simple replacement binding
      * @throws IOException in case of an error
      */
