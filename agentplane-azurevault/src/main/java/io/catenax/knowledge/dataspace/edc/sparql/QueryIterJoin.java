@@ -57,7 +57,11 @@ public class QueryIterJoin extends QueryIter1 {
             if(resultBindings!=null) {
                 leftBindings=resultBindings.stream().map( resultBinding -> {
                     BindingBuilder bb=BindingBuilder.create(resultBinding);
-                    nextBinding.forEach(bb::add);
+                    nextBinding.forEach( (v,n) -> {
+                        if(!resultBinding.contains(v)) {
+                            bb.set(v,n);
+                        }
+                    });
                     return bb.build();
                 }).iterator();
             } else {

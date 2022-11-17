@@ -18,6 +18,7 @@ import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecException;
 import org.apache.jena.sparql.algebra.Op;
 import org.apache.jena.sparql.algebra.OpAsQuery;
+import org.apache.jena.sparql.algebra.Transformer;
 import org.apache.jena.sparql.algebra.op.*;
 import org.apache.jena.sparql.algebra.table.TableData;
 import org.apache.jena.sparql.core.Var;
@@ -274,10 +275,15 @@ public class DataspaceServiceExecutor implements ServiceExecutor, ChainingServic
             }
             String asset = edcMatcher.group("asset");
             if (asset == null || asset.length() == 0) {
-                asset=getUniqueGraph(opOriginal.getSubOp(),bindings);
-                if(asset==null) {
+                GraphRewrite gr=new GraphRewrite(monitor,bindings);
+                opOriginal= (OpService) Transformer.transform(gr,opOriginal);
+                if(gr.getGraphNames().isEmpty()) {
                     throw new QueryExecException("There is no graph asset under EDC-based service: " + serviceURL);
                 }
+                if(gr.getGraphNames().size()>1) {
+                    throw new QueryExecException("There are several graph assets (currently not supported due to negotiation strategy, please rewrite your query) under EDC-based service: " + serviceURL);
+                }
+                asset=gr.getGraphNames().stream().findFirst().get();
             }
             EndpointDataReference endpoint = agreementController.get(asset);
             if (endpoint == null) {
@@ -336,7 +342,6 @@ public class DataspaceServiceExecutor implements ServiceExecutor, ChainingServic
                 if(resultingBindings.containsKey(key)) {
                     Binding existingBinding=resultingBindings.get(key);
                     keyNode=existingBinding.get(idVar);
-                    bb.add(idVar,keyNode);
                 } else {
                     keyNode=NodeFactory.createLiteral(String.valueOf(resultingBindings.size()));
                     bb.add(idVar,keyNode);
@@ -345,14 +350,14 @@ public class DataspaceServiceExecutor implements ServiceExecutor, ChainingServic
                     bb=BindingBuilder.create(newBinding);
                     resultingBindings.put(key,newBinding);
                 }
-                final BindingBuilder bb2=bb;
-                originalBinding.forEach(bb2::add);
-                newBindings.get(keyNode).add(bb.build());
+                final BindingBuilder bb2=BindingBuilder.create(originalBinding);
+                bb2.set(idVar,keyNode);
+                newBindings.get(keyNode).add(bb2.build());
             }
             neededVars.add(idVar);
             TableData table = new TableData(neededVars,new ArrayList<>(resultingBindings.values()));
             OpTable opTable = OpTable.create(table);
-            Op join = OpJoin.create(opTable,opRemote);
+            Op join = OpSequence.create(opTable,opRemote);
             Query query = OpAsQuery.asQuery(join);
             //query.addProjectVars(List.of(idVar));
 

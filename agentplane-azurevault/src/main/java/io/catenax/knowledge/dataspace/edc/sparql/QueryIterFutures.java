@@ -80,7 +80,10 @@ public class QueryIterFutures extends QueryIteratorBase {
     @Override
     protected void closeIterator() {
         requestCancel();
-        current.close();
+        if(current!=null) {
+            current.close();
+            current = null;
+        }
     }
     @Override
     protected void requestCancel() {
