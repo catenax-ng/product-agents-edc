@@ -9,12 +9,10 @@ package io.catenax.knowledge.dataspace.edc.sparql;
 
 import org.apache.jena.graph.Node;
 import org.apache.jena.sparql.algebra.Op;
-import org.apache.jena.sparql.algebra.TransformSingle;
+import org.apache.jena.sparql.algebra.TransformCopy;
 import org.apache.jena.sparql.algebra.op.OpGraph;
-import org.apache.jena.sparql.algebra.optimize.Rewrite;
 import org.apache.jena.sparql.core.Var;
 import org.apache.jena.sparql.engine.binding.Binding;
-import org.apache.jena.sparql.graph.NodeTransform;
 import org.eclipse.dataspaceconnector.spi.monitor.Monitor;
 
 import java.util.HashSet;
@@ -29,7 +27,7 @@ import java.util.Set;
  * and replace variables for later exchange with the
  * backend service.
  */
-public class GraphRewrite extends TransformSingle {
+public class GraphRewrite extends TransformCopy {
 
     protected final List<Binding> bindings;
     protected final Set<String> graphNames=new HashSet<>();
@@ -37,6 +35,7 @@ public class GraphRewrite extends TransformSingle {
     protected final Monitor monitor;
 
     public GraphRewrite(Monitor monitor, List<Binding> bindings) {
+        super(false);
         this.bindings=bindings;
         this.monitor=monitor;
     }
@@ -59,7 +58,7 @@ public class GraphRewrite extends TransformSingle {
                         bound = binding.get(graphVar);
                     }
                 }
-                if (bound.isURI()) {
+                if (bound!=null && bound.isURI()) {
                     graphNames.add(bound.getURI());
                     return new OpGraph(bound, subOp);
                 } else {
@@ -72,6 +71,9 @@ public class GraphRewrite extends TransformSingle {
         return op;
     }
 
+    /**
+     * @return set of graph names/assets found
+     */
     public Set<String> getGraphNames() {
         return graphNames;
     }
