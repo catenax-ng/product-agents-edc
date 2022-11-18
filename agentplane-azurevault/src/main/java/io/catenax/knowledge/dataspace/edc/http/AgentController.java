@@ -82,16 +82,16 @@ public class AgentController {
     }
 
     /**
-     * endpoint for posting a query
+     * endpoint for posting a sparql query (maybe as a stored skill with a bindingset)
      * @param request context
      * @param response context
      * @param asset can be a named graph for executing a query or a skill asset
      * @return response
      */
     @POST
-    @Consumes({"application/sparql-query"})
-    public Response postQuery(@Context HttpServletRequest request,@Context HttpServletResponse response, @QueryParam("asset") String asset) {
-        monitor.debug(String.format("Received a POST request %s for asset %s",request,asset));
+    @Consumes({"application/sparql-query","application/sparql-results+json"})
+    public Response postSparqlQuery(@Context HttpServletRequest request,@Context HttpServletResponse response, @QueryParam("asset") String asset) {
+        monitor.debug(String.format("Received a SparQL POST request %s for asset %s",request,asset));
         return executeQuery(request,response,asset);
     }
 
