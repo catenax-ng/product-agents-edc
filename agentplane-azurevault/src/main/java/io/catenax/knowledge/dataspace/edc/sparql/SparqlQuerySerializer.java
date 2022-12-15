@@ -51,12 +51,15 @@ public class SparqlQuerySerializer implements QueryVisitor {
         this.fmtExpr = formatterExpr;
     }
 
+    @Override
     public void startVisit(Query query) {
     }
 
+    @Override
     public void visitResultForm(Query query) {
     }
 
+    @Override
     public void visitPrologue(Prologue prologue) {
         this.prologue = prologue;
         int row1 = this.out.getRow();
@@ -67,6 +70,7 @@ public class SparqlQuerySerializer implements QueryVisitor {
         }
     }
 
+    @Override
     public void visitSelectResultForm(Query query) {
         this.out.print("SELECT ");
         if (query.isDistinct()) {
@@ -87,6 +91,7 @@ public class SparqlQuerySerializer implements QueryVisitor {
         this.out.newline();
     }
 
+    @Override
     public void visitConstructResultForm(Query query) {
         this.out.print("CONSTRUCT ");
         this.out.incIndent(2);
@@ -112,11 +117,13 @@ public class SparqlQuerySerializer implements QueryVisitor {
         this.out.newline();
     }
 
+    @Override
     public void visitAskResultForm(Query query) {
         this.out.print("ASK");
         this.out.newline();
     }
 
+    @Override
     public void visitJsonResultForm(Query query) {
         this.out.println("JSON {");
         this.out.incIndent(2);
@@ -145,6 +152,7 @@ public class SparqlQuerySerializer implements QueryVisitor {
         this.out.newline();
     }
 
+    @Override
     public void visitDatasetDecl(Query query) {
         Iterator<String> var2;
         String uri;
@@ -172,6 +180,7 @@ public class SparqlQuerySerializer implements QueryVisitor {
 
     }
 
+    @Override
     public void visitQueryPattern(Query query) {
         if (query.getQueryPattern() != null) {
             this.out.print("WHERE");
@@ -185,6 +194,7 @@ public class SparqlQuerySerializer implements QueryVisitor {
 
     }
 
+    @Override
     public void visitGroupBy(Query query) {
         if (query.hasGroupBy() && !query.getGroupBy().isEmpty()) {
             this.out.print("GROUP BY ");
@@ -194,6 +204,7 @@ public class SparqlQuerySerializer implements QueryVisitor {
 
     }
 
+    @Override
     public void visitHaving(Query query) {
         if (query.hasHaving()) {
             this.out.print("HAVING");
@@ -208,6 +219,7 @@ public class SparqlQuerySerializer implements QueryVisitor {
 
     }
 
+    @Override
     public void visitOrderBy(Query query) {
         if (query.hasOrderBy()) {
             this.out.print("ORDER BY ");
@@ -227,6 +239,7 @@ public class SparqlQuerySerializer implements QueryVisitor {
 
     }
 
+    @Override
     public void visitLimit(Query query) {
         if (query.hasLimit()) {
             this.out.print("LIMIT   " + query.getLimit());
@@ -235,6 +248,7 @@ public class SparqlQuerySerializer implements QueryVisitor {
 
     }
 
+    @Override
     public void visitOffset(Query query) {
         if (query.hasOffset()) {
             this.out.print("OFFSET  " + query.getOffset());
@@ -243,9 +257,10 @@ public class SparqlQuerySerializer implements QueryVisitor {
 
     }
 
+    @Override
     public void visitValues(Query query) {
         if (query.hasValues()) {
-            outputDataBlock(this.out, query.getValuesVariables(), query.getValuesData(), this.fmtElement.context);
+            outputDataBlock(this.out, query.getValuesVariables(), query.getValuesData(), this.fmtElement.sc);
             this.out.newline();
         }
 
@@ -307,6 +322,7 @@ public class SparqlQuerySerializer implements QueryVisitor {
 
     }
 
+    @Override
     public void finishVisit(Query query) {
         this.out.flush();
     }

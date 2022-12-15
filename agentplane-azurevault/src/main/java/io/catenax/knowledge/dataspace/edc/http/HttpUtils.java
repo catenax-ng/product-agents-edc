@@ -8,7 +8,6 @@ package io.catenax.knowledge.dataspace.edc.http;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Response;
-import org.apache.http.entity.StringEntity;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -21,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 public class HttpUtils {
 
     public static String DEFAULT_CHARSET= StandardCharsets.US_ASCII.name();
+    public static String DEFAULT_ENCODING = System.getProperty("fis.encoding","UTF-8");
 
     /**
      * ensure that the given parameter string is correctly
@@ -31,7 +31,7 @@ public class HttpUtils {
      */
     public static String urlEncodeParameter(String parameter) throws UnsupportedEncodingException {
         if(parameter==null || parameter.length()==0) return parameter;
-        return encodeParameter(URLEncoder.encode(URLDecoder.decode(parameter)));
+        return encodeParameter(URLEncoder.encode(URLDecoder.decode(parameter,DEFAULT_ENCODING),DEFAULT_ENCODING));
     }
 
     /**

@@ -24,7 +24,7 @@ public class StratifiedFormatterElement extends FormatterElement {
     /**
      * access the context by the serializer
      */
-    SerializationContext context;
+    SerializationContext sc;
     /**
      * keep some state about the depth of the tree
      */
@@ -32,7 +32,7 @@ public class StratifiedFormatterElement extends FormatterElement {
 
     public StratifiedFormatterElement(IndentedWriter out, SerializationContext context) {
         super(out, context);
-        this.context = context;
+        this.sc = context;
     }
 
     /**
