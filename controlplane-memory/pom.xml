@@ -76,38 +76,10 @@
                         </goals>
                         <configuration>
                             <outputDirectory>${project.build.directory}/lib</outputDirectory>
-                            <excludeArtifactIds>data-plane-transfer-sync</excludeArtifactIds>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <executions>
-                 <execution>
-                    <phase>package</phase>
-                    <goals>
-                        <goal>shade</goal>
-                    </goals>
-                    <configuration>
-                        <artifactSet>
-                            <includes>
-                                <include>org.eclipse.dataspaceconnector:data-plane-transfer-sync</include>
-                            </includes>
-                        </artifactSet>
-                        <filters>
-                         <filter>
-                            <artifact>org.eclipse.dataspaceconnector:data-plane-transfer-sync</artifact>
-                            <excludes>
-                                <exclude>META-INF/services/*</exclude>
-                            </excludes>
-                         </filter>
-                        </filters>
-                    </configuration>
-                  </execution>
-                </executions>
-             </plugin>
              <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>

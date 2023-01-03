@@ -35,6 +35,11 @@ import org.eclipse.dataspaceconnector.spi.types.domain.transfer.TransferType;
 public class AgreementController implements IAgreementController {
 
     /**
+     * which transfer to use
+     */
+    public static String TRANSFER_TYPE="HttpProtocol";
+
+    /**
      * EDC service references
      */
     protected final Monitor monitor;
@@ -299,7 +304,7 @@ public class AgreementController implements IAgreementController {
         registerAgreement(asset,agreement);
 
         DataAddress dataDestination = DataAddress.Builder.newInstance()
-                .type("HttpProxy")
+                .type(TRANSFER_TYPE)
                 .build();
 
         TransferType transferType = TransferType.Builder.

@@ -10,4 +10,8 @@ public interface HttpProtocolsConstants {
      */
     String PROTOCOL_ID = "protocol"; 
     
+    /**
+     * the transfer protocol that performs the synchronous Http transfer
+     */
+     String TRANSFER_TYPE = "HttpProtocol";
 }
