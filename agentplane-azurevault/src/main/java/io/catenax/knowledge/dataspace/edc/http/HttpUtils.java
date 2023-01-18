@@ -63,45 +63,42 @@ public class HttpUtils {
         if(accept==null || accept.length()==0 ) {
             accept="*/*";
         }
-        if("*/*".equals(accept)) {
+        if(accept.contains("*/*")) {
             accept="application/json";
         }
-        builder.type(accept);
-        switch(accept) {
-            case "text/html":
-                builder.entity("<!DOCTYPE html>\n" +
-                        "<html>\n" +
-                        "<head>\n" +
-                        "  <title>Agent Subsystem Error</title>\n" +
-                        "</head>\n"+
-                        "<body>\n" +
-                        "\n" +
-                        "<h1>An Problem has occured in the Catena-X Agent subsystem.</h1>\n" +
-                        "<p> Status: "+String.valueOf(status)+"</p>\n" +
-                        "<p>"+message+"</p>\n" +
-                        (cause!=null ? "<p>"+cause.getMessage()+"</p>\n" : "") +
-                        "\n" +
-                        "</body>\n" +
-                        "</html>");
-                break;
-            case "application/json":
-                builder.entity("{ " +
-                        "\"status\":"+String.valueOf(status)+","+
-                        "\"message\":\""+message+"\""+
-                        (cause!=null ? ",\"cause\":\""+cause.getMessage()+"\"" : "")+
-                        "}");
-                break;
-            case "text/xml":
-            case "application/xml":
-                builder.entity("<failure> " +
-                        "<status>"+String.valueOf(status)+"</status>"+
-                        "<message>"+message+"</message>"+
-                        (cause!=null ? "<cause>"+cause.getMessage()+"</cause>" : "")+
-                        "</failure>");
-                break;
-            default:
-                builder.type("text/plain");
-                builder.entity(message+(cause!=null ? ":"+cause.getMessage() : ""));
+        if(accept.contains("application/json")) {
+            builder.type("application/json");
+            builder.entity("{ " +
+                    "\"status\":" + String.valueOf(status) + "," +
+                    "\"message\":\"" + message + "\"" +
+                    (cause != null ? ",\"cause\":\"" + cause.getMessage() + "\"" : "") +
+                    "}");
+        } else if(accept.contains("text/xml") || accept.contains("application/xml")) {
+            builder.type(accept.contains("text/xml") ? "text/xml" : "application/xml");
+            builder.entity("<failure> " +
+                    "<status>" + String.valueOf(status) + "</status>" +
+                    "<message>" + message + "</message>" +
+                    (cause != null ? "<cause>" + cause.getMessage() + "</cause>" : "") +
+                    "</failure>");
+        } else if(accept.contains("text/html")) {
+            builder.type("text/html");
+            builder.entity("<!DOCTYPE html>\n" +
+                    "<html>\n" +
+                    "<head>\n" +
+                    "  <title>Agent Subsystem Error</title>\n" +
+                    "</head>\n" +
+                    "<body>\n" +
+                    "\n" +
+                    "<h1>An Problem has occured in the Catena-X Agent subsystem.</h1>\n" +
+                    "<p> Status: " + String.valueOf(status) + "</p>\n" +
+                    "<p>" + message + "</p>\n" +
+                    (cause != null ? "<p>" + cause.getMessage() + "</p>\n" : "") +
+                    "\n" +
+                    "</body>\n" +
+                    "</html>");
+        } else {
+            builder.type("text/plain");
+            builder.entity(message+(cause!=null ? ":"+cause.getMessage() : ""));
         }
         return builder.build();
      }

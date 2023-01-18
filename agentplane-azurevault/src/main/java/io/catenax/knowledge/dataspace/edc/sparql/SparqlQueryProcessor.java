@@ -26,12 +26,11 @@ import org.apache.jena.fuseki.server.DataAccessPointRegistry;
 import org.apache.jena.fuseki.server.OperationRegistry;
 import org.apache.jena.fuseki.servlets.*;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.util.*;
 
 import java.net.URLDecoder;
-import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -224,6 +223,16 @@ public class SparqlQueryProcessor extends SPARQL_QueryGeneral.SPARQL_QueryProc {
      */
     @Override
     protected void execute(String queryString, HttpAction action) {
+        if(action.getRequestContentType() != null && action.getRequestContentType().contains("application/x-www-form-urlencoded")) {
+            Map<String,String> parts=AgentSourceRequestParamsSupplier.parseFormBody(queryString);
+            try {
+                queryString=URLDecoder.decode(parts.get("query"), "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                System.err.println(e.getMessage());
+                action.getResponse().setStatus(HttpStatus.SC_BAD_REQUEST);
+                return;
+            }
+        }
         TupleSet ts = ((AgentHttpAction) action).getInputBindings();
         Pattern tuplePattern = Pattern.compile("\\([^()]*\\)");
         Pattern variablePattern = Pattern.compile("@(?<name>[a-zA-Z0-9]+)");
