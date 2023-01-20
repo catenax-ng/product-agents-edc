@@ -36,7 +36,29 @@ mvn -s ../../../settings.xml install
 
 ### Step 1: Dependency
 
+Add the following dependency to your control-plane artifact pom:
+
+```xml
+        <dependency>
+            <groupId>io.catenax.knowledge.dataspace.edc.control-plane</groupId>
+            <artifactId>agent-plane-protocol</artifactId>
+            <version>0.7.3-SNAPSHOT</version>
+        </dependency>
+```
+
+and the following repo to your repositories section
+
+```xml
+    <repository>
+      <id>github</id>
+      <name>Catena-X Maven Repository on Github</name>
+      <url>https://maven.pkg.github.com/catenax-ng/product-knowledge</url>
+    </repository> 
+```
+
 ### Step 1 (Alternative): Adding Jar
+
+see the upcoming io.catenax.knowledge.dataspace.edc.agent-plane.agent-plane-protocol-complete module
 
 ### Step 2: Configuration  
 

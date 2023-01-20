@@ -36,6 +36,16 @@ Add the following dependency to your control-plane artifact pom:
         </dependency>
 ```
 
+and the following repo to your repositories section
+
+```xml
+    <repository>
+      <id>github</id>
+      <name>Catena-X Maven Repository on Github</name>
+      <url>https://maven.pkg.github.com/catenax-ng/product-knowledge</url>
+    </repository> 
+```
+
 ### Step 1 (Alternative): Adding Jar
 
 You may simply drop the jar which you can download from 'io.catenax.knowledge.dataspace.edc.control-plane.control-plane-transfer' into the [package registry](https://github.com/orgs/catenax-ng/packages?repo_name=product-knowledge) into
