@@ -1,3 +1,8 @@
+//
+// EDC Control Plane Agent Extension
+// See copyright notice in the top folder
+// See authors file in the top folder
+// See license file in the top folder
 package io.catenax.knowledge.dataspace.edc;
 
 import org.eclipse.dataspaceconnector.core.jwt.TokenGenerationServiceImpl;
@@ -121,7 +126,7 @@ public class HttpProtocolsExtension implements ServiceExtension {
 
         var proxyReferenceService = createProxyReferenceService(context, keyPair.getPrivate(), dataEncrypter);
         var flowController = new HttpProviderProxyDataFlowController(context.getConnectorId(), proxyResolver, dispatcherRegistry, proxyReferenceService);
-        dataFlowManager.register(flowController);
+        DataFlowControllerRegistry.registerWithPriority(dataFlowManager,flowController);
 
         var consumerProxyTransformer = new HttpTransferConsumerProxyTransformer(context.getMonitor(),proxyResolver, proxyReferenceService);
         transformerRegistry.registerTransformer(consumerProxyTransformer);

@@ -8,20 +8,20 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <groupId>io.catenax.knowledge.dataspace</groupId>
-        <artifactId>edc</artifactId>
+        <groupId>io.catenax.knowledge.dataspace.edc</groupId>
+        <artifactId>agent-plane</artifactId>
         <version>0.7.3-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.catenax.knowledge.dataspace.edc</groupId>
-    <artifactId>agentplane-azure-vault</artifactId>
+    <groupId>io.catenax.knowledge.dataspace.edc.agent-plane</groupId>
+    <artifactId>agent-plane-protocol</artifactId>
     <packaging>jar</packaging>
 
-    <name>Catena-X Knowledge Agents EDC Dataplane (Az-Vault)</name>
-    <description>Builds a Containerized Agent Dataplane with Agent/Triple Extensions And Accessing the Azure Vault to Store Intermediate Secrets.</description>
+    <name>Catena-X Knowledge Agents Data Protocols</name>
+    <description>Builds a Dataplane Extension with SparQL-Over-Http Endpoint, Delegation Capabilities and a Federated Graph-Based Data Catalogue.</description>
     <url>http://catena-x.net/</url>
 
     <properties>
@@ -65,21 +65,6 @@
                     </archive>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>copy-dependencies</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
              <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -88,21 +73,19 @@
     </build>
 
     <dependencies>
-        <!-- Base Data-Plane -->
+
+        <!-- Http Transfer -->
         <dependency>
-            <groupId>org.eclipse.tractusx.edc</groupId>
-            <artifactId>edc-dataplane-base</artifactId>
-            <version>${tx.edc.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.eclipse.dataspaceconnector</groupId>
-                    <artifactId>data-plane-s3</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.eclipse.dataspaceconnector</groupId>
-                    <artifactId>s3-core</artifactId>
-                </exclusion>
-            </exclusions>
+            <groupId>org.eclipse.dataspaceconnector</groupId>
+            <artifactId>data-plane-http</artifactId>
+            <version>${edc.version}</version>
+        </dependency>
+
+        <!-- Http Transfer -->
+        <dependency>
+            <groupId>org.eclipse.dataspaceconnector</groupId>
+            <artifactId>web-spi</artifactId>
+            <version>${edc.version}</version>
         </dependency>
 
         <!-- Catalog SPI/SDK -->
@@ -124,55 +107,6 @@
             <groupId>org.eclipse.dataspaceconnector</groupId>
             <artifactId>transfer-spi</artifactId>
             <version>${edc.version}</version>
-        </dependency>
-
-        <!-- EDC Azure Vault -->
-        <dependency>
-            <groupId>org.eclipse.dataspaceconnector</groupId>
-            <artifactId>azure-vault</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.azure</groupId>
-                    <artifactId>azure-security-keyvault-secrets</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.azure</groupId>
-                    <artifactId>azure-identity</artifactId>
-                </exclusion>
-            </exclusions>
-            <version>${edc.version}</version>
-        </dependency>
-
-        <!-- Use the right Azure SDK -->
-        <dependency>
-            <groupId>com.azure</groupId>
-            <artifactId>azure-identity</artifactId>
-            <exclusions>
-                <exclusion>
-                        <groupId>org.ow2.asm</groupId>
-                        <artifactId>asm</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.azure</groupId>
-            <artifactId>azure-security-keyvault-secrets</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>dev.failsafe</groupId>
-            <artifactId>failsafe</artifactId>
-            <version>3.2.4</version>
-        </dependency>
-
-        <!-- use JWT inspection -->
-        <dependency>
-            <groupId>com.auth0</groupId>
-            <artifactId>java-jwt</artifactId>
-            <version>4.0.0</version>
         </dependency>
 
         <!-- Fuseki is a server-in-server -->
@@ -239,6 +173,12 @@
           </exclusions>
         </dependency>
 
+        <dependency>
+            <groupId>com.auth0</groupId>
+            <artifactId>java-jwt</artifactId>
+            <version>4.0.0</version>
+        </dependency>
+
         <!-- maybe we need advanced storage capacities <dependency>
           <groupId>org.apache.jena</groupId>
           <artifactId>jena-fuseki-arq</artifactId>
@@ -256,6 +196,25 @@
         </dependency>-->
 
 
+        <!-- Compile Only -->
+        <dependency>
+            <groupId>dev.failsafe</groupId>
+            <artifactId>failsafe</artifactId>
+            <version>${failsafe.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>${okhttp.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+            <scope>provided</scope>
+        </dependency>
         <!-- Test -->
         <dependency>
          <groupId>org.junit.jupiter</groupId>
@@ -267,20 +226,24 @@
          <artifactId>mockito-core</artifactId>
          <scope>test</scope>
        </dependency>
-
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <version>3.0.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <version>3.0.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.dataspaceconnector</groupId>
+            <artifactId>jersey</artifactId>
+            <version>${edc.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
-    <profiles>
-        <profile>
-            <id>with-docker-image</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>

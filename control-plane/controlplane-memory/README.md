@@ -1,18 +1,6 @@
-# Catena-X Knowledge Agents (Hey Catena!) EDC Agent Plane
+# Catena-X Knowledge Agents (Hey Catena!) Control Plane
 
-This folder hosts the [Http Protocols Aware Control Plane for the Eclipse Dataspace Connector (EDC)](https://projects.eclipse.org/projects/technology.dataspaceconnector).
-
-## Architecture
-
-The Control Plane is a variant/extension to the In Memory Plane which
-- supports routing synchronous sub-protocols of Http through attached data planes
-- supports multiple endpoint receiver callbacks in its configuration
-
-### Security
-
-The mechanism for support sub-protocols is implemented by introducing an additional field "protocol" in the
-proxy references (standard: HttpData) which corresponds to the type of the data address (and hence the type of DataSource 
-to use on provider side). Using that field, also the consumer data plane can find an appropriate Datasource proxy implementation.
+This folder hosts the [Agent Aware Control Plane for the Eclipse Dataspace Connector (EDC)](https://projects.eclipse.org/projects/technology.dataspaceconnector).
 
 ## Building
 
@@ -39,7 +27,7 @@ docker build -t ghcr.io/catenax-ng/product-knowledge/control-plane-memory:latest
 ```
 
 The image contains
-* an EDC Control Plane with in memory stores.
+* an EDC Control Plane with http protocols transfer and in-memory storage.
 
 To run the docker image, you could invoke this command
 
@@ -65,7 +53,7 @@ The following is a list of configuraton objects and properties that you might se
 | /app/configuration.properties| edc.dataplane.selector.agentplane.properties           |           | { "publicApiUrl": "http://oem-data-plane:8185/api/public" } | Http transfer endpoint         |      | 
 | /app/configuration.properties| edc.receiver.http.auth-codes.agent          |           | X-Api-Key  | Additional callback receiver auth key (if the default one is already used)              |      | 
 | /app/configuration.properties| edc.receiver.http.auth-keys.agent           |           |   | Additional callback receiver auth key (if the default one is already used)    |     | 
-| /app/configuration.properties| edc.receiver.http.endpoints.agent          |           |  | Additional callback receiver endpoont (if the default one is already used)   |       | 
+| /app/configuration.properties| edc.receiver.http.endpoints.agent          |           | http://oem-data-plane:8186/callback/endpoint-data-reference | Additional callback receiver endpoont (if the default one is already used)   |       | 
 | /app/logging.properties     |           |                                                            | Logging configuration | X    |
 | /app/opentelemetry.properties     |           |                                                            | Telemetry configuration | X    |
 

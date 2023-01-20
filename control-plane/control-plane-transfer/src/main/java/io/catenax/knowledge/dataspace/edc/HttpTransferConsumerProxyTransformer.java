@@ -1,5 +1,10 @@
 package io.catenax.knowledge.dataspace.edc;
-
+//
+// EDC Control Plane Agent Extension
+// See copyright notice in the top folder
+// See authors file in the top folder
+// See license file in the top folder
+//
 import org.eclipse.dataspaceconnector.spi.monitor.Monitor;
 import org.eclipse.dataspaceconnector.spi.result.Result;
 import org.eclipse.dataspaceconnector.spi.transfer.edr.EndpointDataReferenceTransformer;

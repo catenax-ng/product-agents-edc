@@ -16,7 +16,7 @@
     <properties>
     </properties>
     <modules>
-        <module>agentplane-azurevault</module>
-        <module>controlplane-memory</module>
+        <module>agent-plane</module>
+        <module>control-plane</module>
     </modules>
 </project>

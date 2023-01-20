@@ -4,8 +4,8 @@ This folder hosts extensions to the [Eclipse Dataspace Connector (EDC)](https://
 
 It consists of
 
-- [Agent Data Plane (Azure Vault)](agentplane-azurevault)
-- [Http Protocols Aware Control Plane (Memory)](controlplane-memory)
+- [Agent Data Plane](agent-plane)
+- [Control Plane](control-plane)
 
 ## Notice
 
