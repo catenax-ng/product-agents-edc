@@ -35,7 +35,7 @@ ARG APP_UID=10100
 ARG APP_GID=30000
 
 RUN apk update && \
-     apk add openjdk11-jre-headless11.0.18_p10-r0 --no-cache && \
+     apk add openjdk11-jre-headless=11.0.18_p10-r0 --no-cache && \
      rm -rf /var/cache/apk/*
 
 RUN addgroup --gid "$APP_GID" --system "$APP_USER"
