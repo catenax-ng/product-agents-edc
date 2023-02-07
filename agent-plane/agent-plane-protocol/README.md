@@ -77,8 +77,10 @@ The following is a list of configuration objects and properties that you might s
 | /app/configuration.properties | cx.agent.sparql.verbose            |          | false                                                          | Controls the verbosity of the SparQL Engine)                                                        |      | 
 | /app/configuration.properties | cx.agent.threadpool.size           |          | 4                                                              | Number of threads for batch/synchronisation processing                                              |      | 
 | /app/configuration.properties | cx.agent.federation.batch.max      |          | 9223372036854775807                                            | Maximal number of tuples to send in one query                                                       |      | 
-| /app/configuration.properties | cx.agent.negotiation.poll          |          | 1000                                                           | Number of seconds between negotiation status checks                                                 |      | 
-| /app/configuration.properties | cx.agent.negotiation.timeout       |          | 30000                                                          | Number of seconds after which a pending negotiation is regarded as stale                            |      | 
+| /app/configuration.properties | cx.agent.negotiation.poll          |          | 1000                                                           | Number of milliseconds between negotiation status checks                                            |      | 
+| /app/configuration.properties | cx.agent.negotiation.timeout       |          | 30000                                                          | Number of milliseconds after which a pending negotiation is regarded as stale                       |      | 
+| /app/configuration.properties | cx.agent.connect.timeout           |          | 30000                                                          | Number of milliseconds after which a connection attempt is regarded as stale                        |      | 
+| /app/configuration.properties | cx.agent.read.timeout              |          | 1080000                                                        | Number of milliseconds after which a reading attempt is regarded as stale               |      | 
 
 ## Notice
 

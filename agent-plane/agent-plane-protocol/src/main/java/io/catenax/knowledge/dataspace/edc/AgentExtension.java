@@ -8,6 +8,7 @@ package io.catenax.knowledge.dataspace.edc;
 
 import dev.failsafe.RetryPolicy;
 import io.catenax.knowledge.dataspace.edc.http.AgentController;
+import io.catenax.knowledge.dataspace.edc.http.HttpClientFactory;
 import io.catenax.knowledge.dataspace.edc.rdf.RDFStore;
 import io.catenax.knowledge.dataspace.edc.service.DataspaceSynchronizer;
 import io.catenax.knowledge.dataspace.edc.sparql.DataspaceServiceExecutor;
@@ -54,9 +55,6 @@ public class AgentExtension implements ServiceExtension {
     protected WebService webService;
 
     @Inject
-    protected OkHttpClient httpClient;
-
-    @Inject
     @SuppressWarnings("rawtypes")
     protected RetryPolicy retryPolicy;
 
@@ -81,6 +79,11 @@ public class AgentExtension implements ServiceExtension {
     protected DataspaceSynchronizer synchronizer;
 
     /**
+     * we use our own http client
+     */
+    protected OkHttpClient httpClient;
+
+    /**
      * @return name of the extension
      */
     @Override
@@ -99,6 +102,7 @@ public class AgentExtension implements ServiceExtension {
         monitor.debug(String.format("Initializing %s",name()));
 
         AgentConfig config = new AgentConfig(monitor,context.getConfig());
+        httpClient= HttpClientFactory.create(config);
         TypeManager typeManager = context.getTypeManager();
 
         DataManagement catalogService=new DataManagement(monitor,typeManager,httpClient,config);

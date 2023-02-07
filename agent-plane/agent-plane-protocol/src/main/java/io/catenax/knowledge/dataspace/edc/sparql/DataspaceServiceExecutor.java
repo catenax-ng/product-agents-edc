@@ -369,7 +369,7 @@ public class DataspaceServiceExecutor implements ServiceExecutor, ChainingServic
 
             // -- Setup
             //boolean withCompression = context.isTrueOrUndef(httpQueryCompression);
-            long timeoutMillis = timeoutFromContext(context);
+            long timeoutMillis = config.getReadTimeout();
 
             // RegistryServiceModifier is applied by QueryExecHTTP
             Params serviceParams = getServiceParamsFromContext(serviceURL, context);

@@ -44,6 +44,11 @@ public class AgentConfig {
     public static String THREAD_POOL_SIZE = "cx.agent.threadpool.size";
     public static int DEFAULT_THREAD_POOL_SIZE = 4;
 
+    public static String CONNECT_TIMEOUT_PROPERTY = "cx.agent.connect.timeout";
+    public static int DEFAULT_CONNECT_TIMEOUT=30000;
+    public static String READ_TIMEOUT_PROPERTY = "cx.agent.read.timeout";
+    public static int DEFAULT_READ_TIMEOUT=1080000;
+
     /**
      * references to EDC services
      */
@@ -159,4 +164,19 @@ public class AgentConfig {
     public long getFederationServiceBatchSize() {
         return config.getLong(FEDERATION_SERVICE_BATCH_SIZE,DEFAULT_FEDERATION_SERVICE_BATCH_SIZE);
     }
+
+    /**
+     * @return outgoing socket connect timeout
+     */
+    public int getConnectTimeout() {
+        return config.getInteger(CONNECT_TIMEOUT_PROPERTY,DEFAULT_CONNECT_TIMEOUT);
+    }
+
+    /**
+     * @return outgoing socket read timeout
+     */
+    public int getReadTimeout() {
+        return config.getInteger(READ_TIMEOUT_PROPERTY,DEFAULT_READ_TIMEOUT);
+    }
+
 }
