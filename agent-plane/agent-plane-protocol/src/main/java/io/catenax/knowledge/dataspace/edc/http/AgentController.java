@@ -28,6 +28,7 @@ import org.eclipse.dataspaceconnector.spi.monitor.Monitor;
 import org.eclipse.dataspaceconnector.spi.types.domain.edr.EndpointDataReference;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Matcher;
 
 /**
@@ -351,7 +352,16 @@ public class AgentController {
 
         try {
             // exchange skill against text
-            skill = skillStore.get(asset).orElse(null);
+            if( asset!=null ) {
+                if(skillStore.isSkill(asset)) {
+                    Optional<String> skillOption = skillStore.get(asset);
+                    if (skillOption.isPresent()) {
+                        skill = skillOption.get();
+                    } else {
+                        return HttpUtils.respond(request, Status.NOT_FOUND.getStatusCode(), "The requested skill is not registered.", null);
+                    }
+                }
+            }
 
             processor.execute(request,response,skill,graph);
             // kind of redundant, but javax.ws.rs likes it this way

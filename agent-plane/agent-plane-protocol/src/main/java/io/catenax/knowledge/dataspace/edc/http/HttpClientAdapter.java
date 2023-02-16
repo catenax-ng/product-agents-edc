@@ -105,7 +105,14 @@ public class HttpClientAdapter extends HttpClient {
 
                 @Override
                 public void onNext(ByteBuffer item) {
-                    body = item;
+                    if(body==null) {
+                        body = item;
+                    } else if(item!=null) {
+                        ByteBuffer combined=ByteBuffer.allocate(body.capacity()+item.capacity());
+                        combined.put(body);
+                        combined.put(item);
+                        body=combined;
+                    }
                 }
 
                 @Override
