@@ -111,6 +111,7 @@ public class HttpClientAdapter extends HttpClient {
                         ByteBuffer combined=ByteBuffer.allocate(body.capacity()+item.capacity());
                         combined.put(body);
                         combined.put(item);
+                        combined.flip();
                         body=combined;
                     }
                 }
