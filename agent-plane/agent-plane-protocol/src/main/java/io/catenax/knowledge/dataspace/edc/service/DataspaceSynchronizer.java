@@ -171,10 +171,16 @@ public class DataspaceSynchronizer implements Runnable {
                 connector,
                 CX_ASSET,
                 assetNode));
-        for(Map.Entry<String,Node> assetProp : assetPropertyMap.entrySet()) {
-            if(offer.getAsset().getProperty(assetProp.getKey())!=null) {
-                String pureProperty=String.valueOf(offer.getAsset().getProperty(assetProp.getKey()));
-                switch(assetProp.getKey()) {
+        for(Map.Entry<String,Object> assetProp : offer.getAsset().getProperties().entrySet()) {
+            String key=assetProp.getKey();
+            Node node=assetPropertyMap.get(key);
+            while(node==null && key.indexOf('.')>=0) {
+                key=key.substring(key.lastIndexOf(".")-1);
+                node=assetPropertyMap.get(key);
+            }
+            if(node!=null) {
+                String pureProperty=String.valueOf(assetProp.getValue());
+                switch(key) {
                     case "asset:prop:contract":
                     case "rdfs:isDefinedBy":
                     case "rdf:type":
@@ -190,14 +196,14 @@ public class DataspaceSynchronizer implements Runnable {
                                 // TODO parse ^^literalType annotations
                                 url=url.substring(1,url.length()-1);
                                 o=NodeFactory.createLiteral(url);
-                                                       } else {
+                            } else {
                                 o=NodeFactory.createLiteral(url);
                             }
-                            quads.add(Quad.create(graph,assetNode,assetProp.getValue(),o));
+                            quads.add(Quad.create(graph,assetNode,node,o));
                         }
                         break;
                     default:
-                        quads.add(Quad.create(graph,assetNode,assetProp.getValue(),NodeFactory.createLiteral(pureProperty)));                   
+                        quads.add(Quad.create(graph,assetNode,node,NodeFactory.createLiteral(pureProperty)));
                 }
             }
         }
