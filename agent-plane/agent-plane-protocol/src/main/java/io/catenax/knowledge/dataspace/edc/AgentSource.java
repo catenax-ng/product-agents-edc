@@ -15,9 +15,9 @@ import org.eclipse.dataspaceconnector.dataplane.spi.pipeline.DataSource;
 import org.eclipse.dataspaceconnector.spi.EdcException;
 import org.eclipse.dataspaceconnector.spi.types.domain.transfer.DataFlowRequest;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.stream.Stream;
@@ -50,6 +50,8 @@ public class AgentSource implements DataSource {
 
     protected DataFlowRequest request;
 
+    public static String AGENT_BOUNDARY="--";
+
     /**
      * creates new agent source
      */
@@ -58,15 +60,9 @@ public class AgentSource implements DataSource {
 
     @Override
     public Stream<Part> openPartStream() {
-        return Stream.of(getPart());
-    }
-
-    /**
-     * main logic calling the agent
-     * @return the result as a named byte array
-     */
-    protected AgentPart getPart() {
+        // check whether this is a cross-plane call or a final agent call
         if(!isTransfer) {
+            // Agent call, we translate from KA-MATCH to KA-TRANSFER
             String skill=null;
             String graph=null;
             String asset= request.getSourceDataAddress().getProperties().get("asset:prop:id");
@@ -83,36 +79,64 @@ public class AgentSource implements DataSource {
             String authKey=request.getSourceDataAddress().getProperties().getOrDefault("authKey",null);
             String authCode=request.getSourceDataAddress().getProperties().getOrDefault("authCode",null);
             try (Response response = processor.execute(params.toRequest(),skill,graph,authKey,authCode)) {
-                return getPart(response);
+                if(!response.isSuccessful()) {
+                    throw new EdcException(format("Received code transferring HTTP data for request %s: %s - %s.", requestId, response.code(), response.message()));
+                }
+                List<Part> results=new ArrayList<>();
+                if(response.body()!=null) {
+                    results.add(new AgentPart(response.body().contentType().toString(),response.body().bytes()));
+                }
+                if(response.header("cx_warnings")!=null) {
+                    results.add(new AgentPart("application/cx-warnings+json",response.header("cx_warnings").getBytes()));
+                }
+                return results.stream();
             } catch (IOException e) {
                 throw new EdcException(e);
             }
         } else {
             try (var response = with(retryPolicy).get(() -> httpClient.newCall(params.toRequest()).execute())) {
-                return getPart(response);
+                if(!response.isSuccessful()) {
+                    throw new EdcException(format("Received code transferring HTTP data for request %s: %s - %s.", requestId, response.code(), response.message()));
+                }
+                List<Part> results=new ArrayList<>();
+                if(response.body()!=null) {
+                    BufferedInputStream bis = new BufferedInputStream(response.body().byteStream());
+                    bis.mark(AGENT_BOUNDARY.length());
+                    byte[] boundary=new byte[AGENT_BOUNDARY.length()];
+                    int all=bis.read(boundary);
+                    bis.reset();
+                    if(AGENT_BOUNDARY.equals(new String(boundary))) {
+                        StringBuilder nextPart=null;
+                        String embeddedContentType=null;
+                        BufferedReader reader=new BufferedReader(new InputStreamReader(bis));
+                        for(String line = reader.readLine(); line!=null; line=reader.readLine()) {
+                            if(AGENT_BOUNDARY.equals(line)) {
+                                if(nextPart!=null && embeddedContentType!=null) {
+                                    results.add(new AgentPart(embeddedContentType,nextPart.toString().getBytes()));
+                                }
+                                nextPart=new StringBuilder();
+                                String contentLine=reader.readLine();
+                                if(contentLine!=null && contentLine.startsWith("Content-Type: ")) {
+                                    embeddedContentType=contentLine.substring(14);
+                                } else {
+                                    embeddedContentType=null;
+                                }
+                            } else {
+                                nextPart.append(line);
+                                nextPart.append("\n");
+                            }
+                        }
+                        if(nextPart!=null && embeddedContentType!=null) {
+                            results.add(new AgentPart(embeddedContentType,nextPart.toString().getBytes()));
+                        }
+                    } else {
+                        results.add(new AgentPart(name,response.body().bytes()));
+                    }
+                }
+                return results.stream();
             } catch (IOException e) {
                 throw new EdcException(e);
             }
-        }
-    }
-
-    /**
-     * helper to perform the body processing
-     * @param response a given response from the agent
-     * @return body as named byte array
-     * @throws IOException in case anything goes wrong
-     * TODO proper status handling in case of expected failures
-     */
-    protected AgentPart getPart(Response response) throws IOException {
-        var body = response.body();
-        var stringBody = body != null ? body.string() : null;
-        if (stringBody == null) {
-            throw new EdcException(format("Received empty response body transferring HTTP data for request %s: %s", requestId, response.code()));
-        }
-        if (response.isSuccessful()) {
-            return new AgentPart(name, stringBody.getBytes());
-        } else {
-            throw new EdcException(format("Received code transferring HTTP data for request %s: %s - %s. %s", requestId, response.code(), response.message(), stringBody));
         }
     }
 
@@ -194,7 +218,18 @@ public class AgentSource implements DataSource {
 
         AgentPart(String name, byte[] content) {
             this.name = name;
-            this.content = content;
+            if(this.name!=null) {
+                StringBuilder newContent=new StringBuilder();
+                newContent.append(AGENT_BOUNDARY);
+                newContent.append("\n");
+                newContent.append("Content-Type: ");
+                newContent.append(name);
+                newContent.append("\n");
+                newContent.append(new String(content));
+                this.content=newContent.toString().getBytes();
+            } else {
+                this.content = content;
+            }
         }
 
         @Override
@@ -213,4 +248,5 @@ public class AgentSource implements DataSource {
         }
 
     }
+
 }
