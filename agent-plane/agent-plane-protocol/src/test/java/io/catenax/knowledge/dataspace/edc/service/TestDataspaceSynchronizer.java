@@ -11,27 +11,27 @@ import io.catenax.knowledge.dataspace.edc.rdf.RDFStore;
 import okhttp3.*;
 import org.apache.jena.graph.Node;
 import org.apache.jena.sparql.core.Quad;
-import org.eclipse.dataspaceconnector.policy.model.Policy;
-import org.eclipse.dataspaceconnector.spi.types.TypeManager;
-import org.eclipse.dataspaceconnector.spi.types.domain.asset.Asset;
+import org.eclipse.edc.policy.model.Policy;
+import org.eclipse.edc.spi.types.TypeManager;
+import org.eclipse.edc.spi.types.domain.asset.Asset;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.io.IOException;
-import org.eclipse.dataspaceconnector.spi.monitor.ConsoleMonitor;
+import org.eclipse.edc.spi.monitor.ConsoleMonitor;
 import org.apache.jena.graph.NodeFactory;
 
 
 import org.mockito.MockitoAnnotations;
 
+import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
-import org.eclipse.dataspaceconnector.spi.types.domain.contract.offer.ContractOffer;
+import org.eclipse.edc.connector.contract.spi.types.offer.ContractOffer;
 
 /**
  * Tests the dataspace synchronization
@@ -67,7 +67,6 @@ public class TestDataspaceSynchronizer {
     
     /**
      * test quad representation of a contract offer
-     * @throws IOException in case of an error
      */
     @Test
     public void testQuadRepresentation()  {
@@ -76,7 +75,7 @@ public class TestDataspaceSynchronizer {
         Asset asset = Asset.Builder.newInstance()
                 .id("urn:cx:test:ExampleAsset")
                 .contentType("application/json, application/xml")
-                .version("0.8.1-SNAPSHOT")
+                .version("0.8.5-SNAPSHOT")
                 .name("Test Asset")
                 .description("Test Asset for RDF Representation")
                 .property("asset:prop:contract","<urn:cx:test:Contract>")
@@ -87,7 +86,7 @@ public class TestDataspaceSynchronizer {
                 .property("cx:isFederated","true")
                 .build();
         Policy policy = Policy.Builder.newInstance().build();
-        ContractOffer offer = ContractOffer.Builder.newInstance().id("urn:cx:test:Contract").policy(policy).asset(asset).build();
+        ContractOffer offer = ContractOffer.Builder.newInstance().id("urn:cx:test:Contract").policy(policy).contractStart(ZonedDateTime.now()).contractEnd(ZonedDateTime.now().plusDays(1)).asset(asset).build();
         Collection<Quad> result=synchronizer.convertToQuads(graph, connector, offer);
         assertEquals(12,result.size(),"Got correct number of quads (1 connector subject and 11 asset subjects).");
     }

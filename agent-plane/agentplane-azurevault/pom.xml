@@ -10,7 +10,7 @@
     <parent>
         <groupId>io.catenax.knowledge.dataspace.edc</groupId>
         <artifactId>agent-plane</artifactId>
-        <version>0.8.1-SNAPSHOT</version>
+        <version>0.8.5-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -59,7 +59,7 @@
                         <manifest>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib/</classpathPrefix>
-                            <mainClass>org.eclipse.dataspaceconnector.boot.system.runtime.BaseRuntime</mainClass>
+                            <mainClass>org.eclipse.edc.boot.system.runtime.BaseRuntime</mainClass>
                             <useUniqueVersions>false</useUniqueVersions>
                         </manifest>
                     </archive>
@@ -95,12 +95,8 @@
             <version>${tx.edc.version}</version>
             <exclusions>
                 <exclusion>
-                    <groupId>org.eclipse.dataspaceconnector</groupId>
-                    <artifactId>data-plane-s3</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.eclipse.dataspaceconnector</groupId>
-                    <artifactId>s3-core</artifactId>
+                    <groupId>org.eclipse.edc</groupId>
+                    <artifactId>data-plane-aws-s3</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

@@ -6,7 +6,9 @@
 //
 package io.catenax.knowledge.dataspace.edc.http;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.catenax.knowledge.dataspace.edc.*;
+import io.catenax.knowledge.dataspace.edc.sparql.CatenaxWarning;
 import io.catenax.knowledge.dataspace.edc.sparql.SparqlQueryProcessor;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
@@ -14,8 +16,7 @@ import jakarta.ws.rs.core.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.util.List;
 import java.util.Map;
 
@@ -23,23 +24,24 @@ import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
-import org.eclipse.dataspaceconnector.spi.monitor.Monitor;
-import org.eclipse.dataspaceconnector.spi.types.domain.edr.EndpointDataReference;
+import org.eclipse.edc.spi.monitor.Monitor;
+import org.eclipse.edc.spi.types.TypeManager;
+import org.eclipse.edc.spi.types.domain.edr.EndpointDataReference;
 
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 
 /**
- * The Agent Controller provides an API endpoint
+ * The Agent Controller provides a REST API endpoint
  * with which the EDC tenant can issue queries and execute
  * skills in interaction with local resources and the complete
- * Dataspace.
+ * Dataspace (the so-called Matchmaking Agent).
  * It is currently implemented using a single query language (SparQL) 
  * on top of an Apache Fuseki Engine using a memory store (for local
  * graphs=assets).
- * TODO deal with remote skills
- * TODO exchange fixed store by configurable options
+ * TODO deal with remote (textual) skills
+ * TODO exchange fixed memory store by configurable options
  * TODO generalize sub-protocols from SparQL
  */
 @Path("/agent")
@@ -53,7 +55,9 @@ public class AgentController {
     protected final SkillStore skillStore;
 
     // the actual Fuseki engine components
-    private final SparqlQueryProcessor processor;
+    protected final SparqlQueryProcessor processor;
+    protected final TypeManager typeManager;
+    public final static TypeReference<List<CatenaxWarning>> warningTypeReference = new TypeReference<>(){};
 
     /** 
      * creates a new agent controller 
@@ -63,13 +67,14 @@ public class AgentController {
      * @param client http client
      * @param processor sparql processor
      */
-    public AgentController(Monitor monitor, IAgreementController agreementController, AgentConfig config, OkHttpClient client, SparqlQueryProcessor processor, SkillStore skillStore) {
+    public AgentController(Monitor monitor, IAgreementController agreementController, AgentConfig config, OkHttpClient client, SparqlQueryProcessor processor, SkillStore skillStore, TypeManager typeManager) {
         this.monitor = monitor;
         this.agreementController = agreementController;
         this.client=client;
         this.config=config;
         this.processor=processor;
         this.skillStore=skillStore;
+        this.typeManager=typeManager;
     }
 
     /**
@@ -552,16 +557,90 @@ public class AgentController {
 
             response.setStatus(myResponse.code());
 
+            Optional<List<CatenaxWarning>> warnings=Optional.empty();
+
             for(String header : myResponse.headers().names()) {
                 for(String value : myResponse.headers().values(header)) {
-                    response.addHeader(header,value);
+                    if(header.equals("cx_warnings")) {
+                        warnings=Optional.of(typeManager.getMapper().readValue(value,warningTypeReference ));
+                    } else if(!header.equals("Content-Length")) {
+                        response.addHeader(header, value);
+                    }
                 }
             }
 
             var body = myResponse.body();
 
             if (body != null) {
-                IOUtils.copy(body.byteStream(), response.getOutputStream());
+                okhttp3.MediaType contentType=body.contentType();
+                InputStream inputStream=new BufferedInputStream(body.byteStream());
+                inputStream.mark(2);
+                byte[] boundaryBytes=new byte[2];
+                String boundary="";
+                if(inputStream.read(boundaryBytes)>0) {
+                    boundary = new String(boundaryBytes);
+                }
+                inputStream.reset();
+                if("--".equals(boundary)) {
+                    if(contentType!=null) {
+                        int boundaryIndex;
+                        boundaryIndex=contentType.toString().indexOf(";boundary=");
+                        if(boundaryIndex>=0) {
+                            boundary=boundary+contentType.toString().substring(boundaryIndex+10);
+                        }
+                    }
+                    StringBuilder nextPart=null;
+                    String embeddedContentType=null;
+                    BufferedReader reader=new BufferedReader(new InputStreamReader(inputStream));
+                    for(String line = reader.readLine(); line!=null; line=reader.readLine()) {
+                        if(boundary.equals(line)) {
+                            if(nextPart!=null && embeddedContentType!=null) {
+                                if(embeddedContentType.equals("application/cx-warnings+json")) {
+                                    List<CatenaxWarning> nextWarnings=typeManager.readValue(nextPart.toString(),warningTypeReference);
+                                    if(warnings.isPresent()) {
+                                        warnings.get().addAll(nextWarnings);
+                                    } else {
+                                        warnings=Optional.of(nextWarnings);
+                                    }
+                                } else {
+                                    inputStream=new ByteArrayInputStream(nextPart.toString().getBytes());
+                                    contentType=okhttp3.MediaType.parse(embeddedContentType);
+                                }
+                            }
+                            nextPart=new StringBuilder();
+                            String contentLine=reader.readLine();
+                            if(contentLine!=null && contentLine.startsWith("Content-Type: ")) {
+                                embeddedContentType=contentLine.substring(14);
+                            } else {
+                                embeddedContentType=null;
+                            }
+                        } else if(nextPart!=null) {
+                            nextPart.append(line);
+                            nextPart.append("\n");
+                        }
+                    }
+                    reader.close();
+                    if(nextPart!=null && embeddedContentType!=null) {
+                        if(embeddedContentType.equals("application/cx-warnings+json")) {
+                            List<CatenaxWarning> nextWarnings=typeManager.readValue(nextPart.toString(), warningTypeReference);
+                            if(warnings.isPresent()) {
+                                warnings.get().addAll(nextWarnings);
+                            } else {
+                                warnings=Optional.of(nextWarnings);
+                            }
+                        } else {
+                            inputStream=new ByteArrayInputStream(nextPart.toString().getBytes());
+                            contentType=okhttp3.MediaType.parse(embeddedContentType);
+                        }
+                    }
+                }
+                warnings.ifPresent(catenaxWarnings -> response.addHeader("cx_warnings", typeManager.writeValueAsString(catenaxWarnings)));
+                if(contentType!=null) {
+                    response.setContentType(contentType.toString());
+                }
+                IOUtils.copy(inputStream, response.getOutputStream());
+                inputStream.close();
+                //response.getOutputStream().close();
             }
         }
     }
