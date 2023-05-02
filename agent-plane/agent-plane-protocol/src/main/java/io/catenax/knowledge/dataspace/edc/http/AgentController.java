@@ -31,6 +31,7 @@ import org.eclipse.edc.spi.types.domain.edr.EndpointDataReference;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 
 /**
  * The Agent Controller provides a REST API endpoint
@@ -510,6 +511,7 @@ public class AgentController {
      * computes the url to target the given data plane
      * @param connectorUrl data plane url
      * @param subUrl sub-path to use
+     * @param headers containing additional info that we need to wrap into a transfer request
      * @return typed url
      */
     protected HttpUrl getUrl(String connectorUrl, String subUrl, HttpHeaders headers, UriInfo uri) throws UnsupportedEncodingException {
@@ -534,12 +536,17 @@ public class AgentController {
             }
         }
 
-        if(headers.getHeaderString("Accept")!=null) {
-            httpBuilder = httpBuilder.addQueryParameter("cx_accept", HttpUtils.urlEncodeParameter(headers.getHeaderString("Accept")));
-        } else {
+        String acceptHeader=headers.getHeaderString("Accept");
+        List<MediaType> mediaTypes=headers.getAcceptableMediaTypes();
+        if(mediaTypes.isEmpty() || mediaTypes.stream().anyMatch( mediaType -> {
+         return MediaType.APPLICATION_JSON_TYPE.isCompatible(mediaType);
+        })) {
             httpBuilder = httpBuilder.addQueryParameter("cx_accept", HttpUtils.urlEncodeParameter("application/json"));
+        } else {
+            String mediaParam=mediaTypes.stream().map(mediaType -> mediaType.toString()).collect(Collectors.joining(", "));
+            mediaParam=HttpUtils.urlEncodeParameter(mediaParam);
+            httpBuilder.addQueryParameter("cx_accept",mediaParam);
         }
-
         return httpBuilder.build();
     }
 
