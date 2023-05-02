@@ -403,7 +403,7 @@ public class AgentController {
                     if (skillOption.isPresent()) {
                         skill = skillOption.get();
                     } else {
-                        return HttpUtils.respond(headers, HttpStatus.SC_NOT_FOUND, "The requested skill is not registered.", null);
+                        return HttpUtils.respond(monitor,headers, HttpStatus.SC_NOT_FOUND, "The requested skill is not registered.", null);
                     }
                 }
             }
@@ -412,7 +412,7 @@ public class AgentController {
             // kind of redundant, but javax.ws.rs likes it this way
             return Response.status(response.getStatus()).build();
         } catch(WebApplicationException e) {
-            return HttpUtils.respond(headers,e.getResponse().getStatus(),e.getMessage(),e.getCause());
+            return HttpUtils.respond(monitor,headers,e.getResponse().getStatus(),e.getMessage(),e.getCause());
         }
     }
 
@@ -430,26 +430,26 @@ public class AgentController {
             try {
                 endpoint=agreementController.createAgreement(remoteUrl,asset);
             } catch(WebApplicationException e) {
-                return HttpUtils.respond(headers, e.getResponse().getStatus(),String.format("Could not get an agreement from connector %s to asset %s",remoteUrl,asset),e.getCause());
+                return HttpUtils.respond(monitor,headers, e.getResponse().getStatus(),String.format("Could not get an agreement from connector %s to asset %s",remoteUrl,asset),e.getCause());
             }
         }
         if(endpoint==null) {
-            return HttpUtils.respond(headers,HttpStatus.SC_FORBIDDEN,String.format("Could not get an agreement from connector %s to asset %s",remoteUrl,asset),null);
+            return HttpUtils.respond(monitor,headers,HttpStatus.SC_FORBIDDEN,String.format("Could not get an agreement from connector %s to asset %s",remoteUrl,asset),null);
         }
         if("GET".equals(request.getMethod())) {
             try {
                 sendGETRequest(endpoint, "", headers, response, uri);
             } catch(IOException e) {
-                return HttpUtils.respond(headers, HttpStatus.SC_INTERNAL_SERVER_ERROR,String.format("Could not delegate remote GET call to connector %s asset %s",remoteUrl,asset),e);
+                return HttpUtils.respond(monitor,headers, HttpStatus.SC_INTERNAL_SERVER_ERROR,String.format("Could not delegate remote GET call to connector %s asset %s",remoteUrl,asset),e);
             }
         } else if("POST".equals(request.getMethod())) {
             try {
                 sendPOSTRequest(endpoint, "", headers, request, response, uri);
             } catch(IOException e) {
-                return HttpUtils.respond(headers, HttpStatus.SC_INTERNAL_SERVER_ERROR,String.format("Could not delegate remote POST call to connector %s asset %s",remoteUrl,asset),e);
+                return HttpUtils.respond(monitor,headers, HttpStatus.SC_INTERNAL_SERVER_ERROR,String.format("Could not delegate remote POST call to connector %s asset %s",remoteUrl,asset),e);
             }
         } else {
-            return HttpUtils.respond(headers, HttpStatus.SC_METHOD_NOT_ALLOWED,String.format("%s calls to connector %s asset %s are not allowed",request.getMethod(),remoteUrl,asset),null);
+            return HttpUtils.respond(monitor,headers, HttpStatus.SC_METHOD_NOT_ALLOWED,String.format("%s calls to connector %s asset %s are not allowed",request.getMethod(),remoteUrl,asset),null);
         }
         return Response.status(response.getStatus()).build();
     }
