@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.edc.spi.monitor.Monitor;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -54,12 +55,21 @@ public class HttpUtils {
     /**
      * creates a response from a given setting
      * depending on the accept type
+     * @param monitor logging system to save the reference error
      * @param headers of the request
-     * @param message message to include
-     * @param cause error
-     * @return http response with the right body
+     * @param message error message
+     * @param cause error object
+     * @return http response with the right body and reference to the logging subsystem
      */
-    public static Response respond(HttpHeaders headers, int status, String message, Throwable cause) {
+    public static Response respond(Monitor monitor, HttpHeaders headers, int status, String message, Throwable cause) {
+        int messageCode=message.hashCode();
+        if(monitor!=null) {
+            if(cause!=null) {
+                monitor.warning(String.format("Response with error id %d delivered message %s under cause %s", messageCode, message, cause.getMessage()),cause);
+            } else {
+                monitor.warning(String.format("Response with error id %d delivered message %s", messageCode, message));
+            }
+        }
         var builder = Response.status(status);
         String accept=headers.getHeaderString("Accept");
         if(accept==null || accept.length()==0 ) {
@@ -72,16 +82,12 @@ public class HttpUtils {
             builder.type("application/json");
             builder.entity("{ " +
                     "\"status\":" + String.valueOf(status) + "," +
-                    "\"message\":\"" + message + "\"" +
-                    (cause != null ? ",\"cause\":\"" + cause.getMessage() + "\"" : "") +
-                    "}");
+                    "\"message\":\"" + messageCode + "\" }");
         } else if(accept.contains("text/xml") || accept.contains("application/xml")) {
             builder.type(accept.contains("text/xml") ? "text/xml" : "application/xml");
             builder.entity("<failure> " +
                     "<status>" + String.valueOf(status) + "</status>" +
-                    "<message>" + message + "</message>" +
-                    (cause != null ? "<cause>" + cause.getMessage() + "</cause>" : "") +
-                    "</failure>");
+                    "<message>" + messageCode + "</message> </failure>");
         } else if(accept.contains("text/html")) {
             builder.type("text/html");
             builder.entity("<!DOCTYPE html>\n" +
@@ -93,14 +99,13 @@ public class HttpUtils {
                     "\n" +
                     "<h1>An Problem has occured in the Catena-X Agent subsystem.</h1>\n" +
                     "<p> Status: " + String.valueOf(status) + "</p>\n" +
-                    "<p>" + message + "</p>\n" +
-                    (cause != null ? "<p>" + cause.getMessage() + "</p>\n" : "") +
+                    "<p>" + messageCode + "</p>\n" +
                     "\n" +
                     "</body>\n" +
                     "</html>");
         } else {
             builder.type("text/plain");
-            builder.entity(message+(cause!=null ? ":"+cause.getMessage() : ""));
+            builder.entity(messageCode);
         }
         return builder.build();
      }

@@ -31,6 +31,7 @@ import org.eclipse.edc.spi.types.domain.edr.EndpointDataReference;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -407,7 +408,7 @@ public class AgentController {
                 }
             }
 
-            processor.execute(request, response,skill,graph);
+            processor.execute(request,response,skill,graph);
             // kind of redundant, but javax.ws.rs likes it this way
             return Response.status(response.getStatus()).build();
         } catch(WebApplicationException e) {
@@ -483,6 +484,7 @@ public class AgentController {
         var url = getUrl(dataReference.getEndpoint(), subUrl, headers, uri);
 
         String contentType=request.getContentType();
+        okhttp3.MediaType parsedContentType=okhttp3.MediaType.parse(contentType);
 
         monitor.debug(String.format("About to delegate POST %s with content type %s",url,contentType));
 
@@ -491,20 +493,32 @@ public class AgentController {
                 .addHeader(Objects.requireNonNull(dataReference.getAuthKey()), Objects.requireNonNull(dataReference.getAuthCode()))
                 .addHeader("Content-Type", contentType);
 
-        requestBuilder.post(okhttp3.RequestBody.create(request.getInputStream().readAllBytes(), okhttp3.MediaType.parse(contentType)));
+        requestBuilder.post(okhttp3.RequestBody.create(request.getInputStream().readAllBytes(),parsedContentType));
 
         var newRequest = requestBuilder.build();
 
         sendRequest(newRequest, response);
     }
 
+    protected static Pattern PARAMETER_KEY_ALLOW = Pattern.compile("^(?!asset$)[^&\\?=]+$");
+    protected static Pattern PARAMETER_VALUE_ALLOW = Pattern.compile("^[^&\\?=]+$");
+
     /**
-     * filter particular parameteres
+     * filter particular parameters
      * @param key parameter key
      * @return whether to filter the parameter
      */
-    protected boolean allowParameter(String key) {
-        return !"asset".equals(key);
+    protected boolean allowParameterKey(String key) {
+        return PARAMETER_KEY_ALLOW.matcher(key).matches();
+    }
+
+    /**
+     * filter particular parameters
+     * @param value parameter value
+     * @return whether to filter the parameter
+     */
+    protected boolean allowParameterValue(String value) {
+        return PARAMETER_VALUE_ALLOW.matcher(value).matches();
     }
 
     /**
@@ -528,10 +542,13 @@ public class AgentController {
 
         HttpUrl.Builder httpBuilder = Objects.requireNonNull(okhttp3.HttpUrl.parse(url)).newBuilder();
         for (Map.Entry<String, List<String>> param : uri.getQueryParameters().entrySet()) {
-            for (String value : param.getValue()) {
-                if(allowParameter(param.getKey())) {
-                    String recode = HttpUtils.urlEncodeParameter(value);
-                    httpBuilder = httpBuilder.addQueryParameter(param.getKey(), recode);
+            String key=param.getKey();
+            if(allowParameterKey(key)) {
+                for (String value : param.getValue()) {
+                    if(allowParameterValue(value)) {
+                        String recode = HttpUtils.urlEncodeParameter(value);
+                        httpBuilder = httpBuilder.addQueryParameter(key, recode);
+                    }
                 }
             }
         }
