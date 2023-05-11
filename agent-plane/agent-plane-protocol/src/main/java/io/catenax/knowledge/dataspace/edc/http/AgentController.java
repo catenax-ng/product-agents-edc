@@ -35,13 +35,11 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * The Agent Controller provides a REST API endpoint
+ * The Agent Controller exposes a REST API endpoint
  * with which the EDC tenant can issue queries and execute
  * skills in interaction with local resources and the complete
- * Dataspace (the so-called Matchmaking Agent).
- * It is currently implemented using a single query language (SparQL) 
- * on top of an Apache Fuseki Engine using a memory store (for local
- * graphs=assets).
+ * Dataspace (the so-called Matchmaking Agent that is also hit by
+ * incoming Agent transfers).
  * TODO deal with remote (textual) skills
  * TODO exchange fixed memory store by configurable options
  * TODO generalize sub-protocols from SparQL
@@ -56,7 +54,7 @@ public class AgentController {
     protected final AgentConfig config;
     protected final SkillStore skillStore;
 
-    // the actual Fuseki engine components
+    // the actual Matchmaking Agent is a Fuseki engine
     protected final SparqlQueryProcessor processor;
     protected final TypeManager typeManager;
     public final static TypeReference<List<CatenaxWarning>> warningTypeReference = new TypeReference<>(){};
@@ -500,26 +498,8 @@ public class AgentController {
         sendRequest(newRequest, response);
     }
 
-    protected static Pattern PARAMETER_KEY_ALLOW = Pattern.compile("^(?!asset$)[^&\\?=]+$");
-    protected static Pattern PARAMETER_VALUE_ALLOW = Pattern.compile("^[^&\\?=]+$");
-
-    /**
-     * filter particular parameters
-     * @param key parameter key
-     * @return whether to filter the parameter
-     */
-    protected boolean allowParameterKey(String key) {
-        return PARAMETER_KEY_ALLOW.matcher(key).matches();
-    }
-
-    /**
-     * filter particular parameters
-     * @param value parameter value
-     * @return whether to filter the parameter
-     */
-    protected boolean allowParameterValue(String value) {
-        return PARAMETER_VALUE_ALLOW.matcher(value).matches();
-    }
+    protected static Pattern PARAMETER_KEY_ALLOW = Pattern.compile("^(?!asset$)[^&?=]+$");
+    protected static Pattern PARAMETER_VALUE_ALLOW = Pattern.compile("^[^&?=]+$");
 
     /**
      * computes the url to target the given data plane
@@ -543,24 +523,22 @@ public class AgentController {
         HttpUrl.Builder httpBuilder = Objects.requireNonNull(okhttp3.HttpUrl.parse(url)).newBuilder();
         for (Map.Entry<String, List<String>> param : uri.getQueryParameters().entrySet()) {
             String key=param.getKey();
-            if(allowParameterKey(key)) {
+            if(PARAMETER_KEY_ALLOW.matcher(key).matches()) {
                 for (String value : param.getValue()) {
-                    if(allowParameterValue(value)) {
-                        String recode = HttpUtils.urlEncodeParameter(value);
-                        httpBuilder = httpBuilder.addQueryParameter(key, recode);
+                    if(PARAMETER_VALUE_ALLOW.matcher(value).matches()) {
+                        String recodeKey = HttpUtils.urlEncodeParameter(key);
+                        String recodeValue = HttpUtils.urlEncodeParameter(value);
+                        httpBuilder = httpBuilder.addQueryParameter(recodeKey, recodeValue);
                     }
                 }
             }
         }
 
-        String acceptHeader=headers.getHeaderString("Accept");
         List<MediaType> mediaTypes=headers.getAcceptableMediaTypes();
-        if(mediaTypes.isEmpty() || mediaTypes.stream().anyMatch( mediaType -> {
-         return MediaType.APPLICATION_JSON_TYPE.isCompatible(mediaType);
-        })) {
+        if(mediaTypes.isEmpty() || mediaTypes.stream().anyMatch(MediaType.APPLICATION_JSON_TYPE::isCompatible)) {
             httpBuilder = httpBuilder.addQueryParameter("cx_accept", HttpUtils.urlEncodeParameter("application/json"));
         } else {
-            String mediaParam=mediaTypes.stream().map(mediaType -> mediaType.toString()).collect(Collectors.joining(", "));
+            String mediaParam=mediaTypes.stream().map(MediaType::toString).collect(Collectors.joining(", "));
             mediaParam=HttpUtils.urlEncodeParameter(mediaParam);
             httpBuilder.addQueryParameter("cx_accept",mediaParam);
         }
