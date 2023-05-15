@@ -8,6 +8,8 @@ package io.catenax.knowledge.dataspace.edc.sparql;
 
 import io.catenax.knowledge.dataspace.edc.AgentConfig;
 import org.apache.jena.atlas.io.IndentedWriter;
+import org.apache.jena.graph.Node;
+import org.apache.jena.sparql.core.Var;
 import org.apache.jena.sparql.engine.QueryIterator;
 import org.apache.jena.sparql.engine.binding.Binding;
 import org.apache.jena.sparql.engine.iterator.QueryIteratorBase;
@@ -29,13 +31,13 @@ public class QueryIterFutures extends QueryIteratorBase {
 
     final List<Future<QueryIterator>> futures;
     QueryIterator current;
+    Binding lastBinding;
     final Monitor monitor;
     final AgentConfig config;
 
     final String sourceTenant;
     final String sourceAsset;
-    final String targetTenant;
-    final String targetAsset;
+    final Node targetNode;
     final Context executionContext;
 
     /**
@@ -43,20 +45,18 @@ public class QueryIterFutures extends QueryIteratorBase {
      * @param config agent config
      * @param monitor logging subsystem
      * @param sourceTenant the name/uri of the source tenant
-     * @param targetTenant the name/uri of the remote tenant
+     * @param targetNode a node (var, the name/uri of the remote tenant
      * @param sourceAsset the name of the calling/consuming graph
-     * @param targetAsset the name of the target/producing graph
      * @param executionContext description of the execution context
      * @param futures list of futures to synchronize on
      */
-    public QueryIterFutures(AgentConfig config, Monitor monitor, String sourceTenant, String sourceAsset, String targetTenant, String targetAsset, Context executionContext, List<Future<QueryIterator>> futures) {
+    public QueryIterFutures(AgentConfig config, Monitor monitor, String sourceTenant, String sourceAsset, Node targetNode, Context executionContext, List<Future<QueryIterator>> futures) {
         this.futures=futures;
         this.monitor=monitor;
         this.config=config;
         this.sourceAsset=sourceAsset;
         this.sourceTenant=sourceTenant;
-        this.targetAsset=targetAsset;
-        this.targetTenant=targetTenant;
+        this.targetNode=targetNode;
         this.executionContext=executionContext;
     }
 
@@ -66,6 +66,27 @@ public class QueryIterFutures extends QueryIteratorBase {
     @Override
     protected boolean hasNextBinding() {
         return (current!=null && current.hasNext()) || hasNextInternalBinding();
+    }
+
+    /**
+     * @return the last service node bindings uri
+     */
+    protected String getTargetTenant() {
+        Node resolvedNode=targetNode;
+        if(targetNode.isVariable() && lastBinding!=null) {
+            resolvedNode=lastBinding.get((Var) targetNode);
+        }
+        if(resolvedNode!=null) {
+            return resolvedNode.toString(false);
+        }
+        return "<UNKNOWN>";
+    }
+
+    /**
+     * @return the last service node bindings asset
+     */
+    protected String getTargetAsset() {
+        return getTargetTenant();
     }
 
     /**
@@ -88,23 +109,23 @@ public class QueryIterFutures extends QueryIteratorBase {
                 CatenaxWarning newWarning=new CatenaxWarning();
                 newWarning.setSourceAsset(sourceAsset);
                 newWarning.setSourceTenant(sourceTenant);
-                newWarning.setTargetAsset(targetAsset);
-                newWarning.setTargetTenant(targetTenant);
-                newWarning.setContext(executionContext.toString());
-                newWarning.setProblem(String.format("Synchronization on a remote future was interrupted with %s.",e.getMessage()));
+                newWarning.setTargetAsset(getTargetAsset());
+                newWarning.setTargetTenant(getTargetTenant());
+                newWarning.setContext(String.valueOf(executionContext.hashCode()));
+                newWarning.setProblem("Timeout/Interruption invoking a remote batch: Result may be partial.");
                 warnings.add(newWarning);
-                monitor.warning(newWarning.getProblem());
+                monitor.warning(String.format("Produced warning %s for context %s",newWarning,executionContext),e);
             } catch(ExecutionException e) {
                 List<CatenaxWarning> warnings=CatenaxWarning.getOrSetWarnings(executionContext);
                 CatenaxWarning newWarning=new CatenaxWarning();
                 newWarning.setSourceAsset(sourceAsset);
                 newWarning.setSourceTenant(sourceTenant);
-                newWarning.setTargetAsset(targetAsset);
-                newWarning.setTargetTenant(targetTenant);
-                newWarning.setContext(executionContext.toString());
-                newWarning.setProblem(String.format("Accessing a remote future failed because of %s. Ignoring.",e.getCause()));
+                newWarning.setTargetAsset(getTargetAsset());
+                newWarning.setTargetTenant(getTargetTenant());
+                newWarning.setContext(String.valueOf(executionContext.hashCode()));
+                newWarning.setProblem("Failure invoking a remote batch: Result may be partial.");
                 warnings.add(newWarning);
-                monitor.warning(newWarning.getProblem());
+                monitor.warning(String.format("Produced warning %s for context %s",newWarning,executionContext),e);
             }
             return hasNextBinding();
         }
@@ -113,7 +134,8 @@ public class QueryIterFutures extends QueryIteratorBase {
 
     @Override
     protected Binding moveToNextBinding() {
-        return current.next();
+        lastBinding=current.next();
+        return lastBinding;
     }
 
     @Override

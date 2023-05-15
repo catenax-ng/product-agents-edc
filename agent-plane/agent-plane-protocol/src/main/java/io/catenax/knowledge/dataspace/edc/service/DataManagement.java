@@ -38,7 +38,7 @@ public class DataManagement {
      */
     public static final String IDS_PATH="%s/api/v1/ids/data";
     public static final String CATALOG_CALL = "%s/catalog/request";
-    public static final String CATALOG_REQUEST_BODY="{ \"providerUrl\": \"%s%s\", \"querySpec\": %s }";
+    public static final String CATALOG_REQUEST_BODY="{ \"providerUrl\": \"%s\", \"querySpec\": %s }";
     public static final String NEGOTIATION_INITIATE_CALL = "%s/contractnegotiations";
     public static final String NEGOTIATION_CHECK_CALL = "%s/contractnegotiations/%s";
     public static final String TRANSFER_INITIATE_CALL = "%s/transferprocess";
@@ -96,7 +96,7 @@ public class DataManagement {
     public Catalog getCatalog(String remoteControlPlaneIdsUrl, QuerySpec spec) throws IOException {
 
         var url = String.format(CATALOG_CALL,config.getControlPlaneManagementUrl());
-        var catalogSpec =String.format(CATALOG_REQUEST_BODY,remoteControlPlaneIdsUrl,IDS_PATH,objectMapper.writeValueAsString(spec));
+        var catalogSpec =String.format(CATALOG_REQUEST_BODY,String.format(IDS_PATH,remoteControlPlaneIdsUrl),objectMapper.writeValueAsString(spec));
 
         var request = new Request.Builder().url(url).post(RequestBody.create(catalogSpec,MediaType.parse("application/json")));
         config.getControlPlaneManagementHeaders().forEach(request::addHeader);

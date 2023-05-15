@@ -10,13 +10,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.catenax.knowledge.dataspace.edc.AgentConfig;
 import io.catenax.knowledge.dataspace.edc.IAgreementController;
 import io.catenax.knowledge.dataspace.edc.http.HttpClientAdapter;
-import jakarta.ws.rs.WebApplicationException;
 import okhttp3.OkHttpClient;
 import org.apache.jena.atlas.logging.Log;
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecException;
+import org.apache.jena.query.ResultSet;
+import org.apache.jena.riot.ResultSetMgr;
+import org.apache.jena.riot.WebContent;
+import org.apache.jena.riot.resultset.ResultSetLang;
 import org.apache.jena.sparql.algebra.Op;
 import org.apache.jena.sparql.algebra.OpAsQuery;
 import org.apache.jena.sparql.algebra.Transformer;
@@ -32,8 +35,10 @@ import org.apache.jena.sparql.engine.iterator.QueryIter;
 import org.apache.jena.sparql.engine.iterator.QueryIter1;
 import org.apache.jena.sparql.engine.iterator.QueryIterPlainWrapper;
 import org.apache.jena.sparql.exec.RowSet;
+import org.apache.jena.sparql.exec.RowSetAdapter;
 import org.apache.jena.sparql.exec.http.*;
 import org.apache.jena.sparql.graph.NodeTransformLib;
+import org.apache.jena.sparql.resultset.ResultSetMem;
 import org.apache.jena.sparql.service.bulk.ChainingServiceExecutorBulk;
 import org.apache.jena.sparql.service.bulk.ServiceExecutorBulk;
 import org.apache.jena.sparql.service.single.ServiceExecutor;
@@ -43,7 +48,14 @@ import org.eclipse.edc.spi.monitor.Monitor;
 import org.eclipse.edc.spi.types.TypeManager;
 import org.eclipse.edc.spi.types.domain.edr.EndpointDataReference;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -77,7 +89,7 @@ public class DataspaceServiceExecutor implements ServiceExecutor, ChainingServic
      */
     public final static Symbol authKey = Symbol.create("cx:authKey");
     public final static Symbol authCode = Symbol.create("cx:authCode");
-    public final static Pattern EDC_TARGET_ADDRESS = Pattern.compile("(?<protocol>edc|edcs)://(?<connector>[^#?]*)(#(?<asset>[^/?]*))?(\\?(?<params>.*))?");
+    public final static Pattern EDC_TARGET_ADDRESS = Pattern.compile("((?<protocol>edc|edcs)://(?<connector>[^#?]*))?(#(?<asset>[^/?]*))?(\\?(?<params>.*))?");
     public final static Symbol targetUrl = Symbol.create("cx:targetUrl");
     public final static Symbol asset = Symbol.create("cx:asset");
 
@@ -95,53 +107,6 @@ public class DataspaceServiceExecutor implements ServiceExecutor, ChainingServic
         this.executor=executor;
         this.objectMapper=typeManager.getMapper();
         this.agentConfig=agentConfig;
-    }
-
-    /**
-     * derive unique asset name from embedded graph operators
-     * @param operator embedding operator
-     * @return unique graph asset found, null if there is none
-     */
-    protected String getUniqueGraph(Op operator, List<Binding> bindings) {
-        if(operator instanceof OpGraph) {
-            Node graphNode = ((OpGraph) operator).getNode();
-            if(graphNode.isVariable()) {
-                Var var = (Var) graphNode;
-                Node resolveNode=null;
-                for(Binding binding : bindings) {
-                    Node resolveNode2=binding.get(var);
-                    if(resolveNode!=null && !resolveNode.equals(resolveNode2)) {
-                        throw new QueryExecException(String.format("got two different graph bindings for %s. Found %s and %s.", var, resolveNode,resolveNode2));
-                    } else {
-                        resolveNode = resolveNode2;
-                    }
-                }
-                graphNode=resolveNode;
-            }
-            if(graphNode==null || !graphNode.isURI()) {
-                throw new QueryExecException(String.format("Could not derive asset name from graph operator %s which is not bound to an uri.",operator));
-            } else {
-                return graphNode.getURI();
-            }
-        } else if(operator instanceof Op2) {
-            String asset=getUniqueGraph(((Op2) operator).getLeft(),bindings);
-            String asset2=getUniqueGraph(((Op2) operator).getRight(),bindings);
-            if(asset!=null) {
-                if(asset2!=null) {
-                    if(!(asset.equals(asset2))) {
-                        throw new QueryExecException(String.format("Only a single graph asset is allowed in EDC-Protocol Services. Found %s and %s.", asset, asset2));
-                    }
-                }
-                return asset;
-            }
-            return asset2;
-        } else if(operator instanceof Op1) {
-            // currently, we need to stop looking for graphes
-            // in remote services
-            if(!(operator instanceof OpService))
-                return getUniqueGraph(((Op1) operator).getSubOp(),bindings);
-        }
-        return null;
     }
 
     /**
@@ -192,7 +157,7 @@ public class DataspaceServiceExecutor implements ServiceExecutor, ChainingServic
                             }
                             bindings.get(key).add(binding);
                         } else {
-                            monitor.warning(String.format("Omitting a call because of lacking service binding"));
+                            monitor.warning("Omitting a call because of lacking service binding");
                         }
                     }
                     ExecutionContext ctx=this.getExecContext();
@@ -200,7 +165,7 @@ public class DataspaceServiceExecutor implements ServiceExecutor, ChainingServic
                     List<Future<QueryIterator>> futureBindings=bindings.entrySet().stream().map(serviceSpec -> executor.submit(() ->
                             createExecution(opService, serviceSpec.getKey(), boundVars, serviceSpec.getValue(), ctx))).collect(Collectors.toList());
 
-                    batchIterator=new QueryIterFutures(config,monitor,config.getControlPlaneManagementUrl(),config.getDefaultAsset(),serviceNode.getURI(), serviceNode.getURI(), ctx.getContext(),futureBindings);
+                    batchIterator=new QueryIterFutures(config,monitor,config.getControlPlaneManagementUrl(),config.getDefaultAsset(),serviceNode, ctx.getContext(),futureBindings);
                     return hasNextBinding();
                 } else {
                     return false;
@@ -253,7 +218,7 @@ public class DataspaceServiceExecutor implements ServiceExecutor, ChainingServic
     }
 
     /**
-     * (re-) implements the http service execution
+     * (re-) implements the remote http service execution
      * @param opOriginal the unbound operator
      * @param serviceURL uri of the target service
      * @param boundVars a set of all bound variables
@@ -265,8 +230,17 @@ public class DataspaceServiceExecutor implements ServiceExecutor, ChainingServic
         Context context = execCxt.getContext();
         boolean silent = opOriginal.getSilent();
 
+        // derive the asset type from the service URL, if possible
+        String assetType= serviceURL.contains("urn:cx:Skill") ? "<{{cxOntologyRoot}}/cx_ontology.ttl#SkillAsset>" : "<{{cxOntologyRoot}}/cx_ontology.ttl#Asset>";
+
+        // in case we have an EDC target, we need to negotiate/proxy the transfer
         Matcher edcMatcher = EDC_TARGET_ADDRESS.matcher(serviceURL);
         if (edcMatcher.matches()) {
+
+            //
+            // EDC case: negotiate and proxy the transfer
+            //
+
             monitor.info(String.format("About to execute edc target %s via dataspace", serviceURL));
             String remoteUrl = edcMatcher.group("connector");
             if (remoteUrl == null || remoteUrl.length() == 0) {
@@ -282,26 +256,28 @@ public class DataspaceServiceExecutor implements ServiceExecutor, ChainingServic
             if (asset == null || asset.length() == 0) {
                 GraphRewrite gr=new GraphRewrite(monitor,bindings);
                 opOriginal= (OpService) Transformer.transform(gr,opOriginal);
-                if(gr.getGraphNames().isEmpty()) {
-                    throw new QueryExecException("There is no graph asset under EDC-based service: " + serviceURL);
-                }
-                if(gr.getGraphNames().size()>1) {
+                Set<String> graphNames=gr.getGraphNames();
+                if(graphNames.size()>1) {
                     throw new QueryExecException("There are several graph assets (currently not supported due to negotiation strategy, please rewrite your query) under EDC-based service: " + serviceURL);
+                } else {
+                    Optional<String> graphName=graphNames.stream().findAny();
+                    if(graphName.isEmpty()) {
+                        throw new QueryExecException("There is no graph asset under EDC-based service: " + serviceURL);
+                    } else {
+                        asset = graphName.get();
+                    }
                 }
-                asset=gr.getGraphNames().stream().findFirst().get();
             }
             EndpointDataReference endpoint = agreementController.get(asset);
             if (endpoint == null) {
-                try {
-                    endpoint = agreementController.createAgreement(remoteUrl, asset);
-                } catch (WebApplicationException e) {
-                    if (silent) {
-                        monitor.warning(String.format("Could not get an agreement from connector %s to asset %s", remoteUrl, asset), e.getCause());
-                        return QueryIterPlainWrapper.create(bindings.iterator(), execCxt);
-                    }
-                    throw e;
+                endpoint = agreementController.createAgreement(remoteUrl, asset);
+                if(endpoint == null) {
+                    throw new QueryExecException(String.format("Could not get an endpoint calback from connector %s to asset %s - Most likely this was a recursive call and you forgot to setup two control planes.", remoteUrl, asset));
                 }
             }
+            // the asset type should be annotated in the rdf type property
+            assetType=endpoint.getProperties().getOrDefault("rdf:type",assetType);
+
             // put the endpoint information into a new service operator
             // and cater for the EDC public api slash problem
             serviceURL = endpoint.getEndpoint();
@@ -324,98 +300,199 @@ public class DataspaceServiceExecutor implements ServiceExecutor, ChainingServic
             monitor.info(String.format("About to execute http target %s without dataspace", serviceURL));
         }
 
-        // http execute with headers and such
-        try {
-            // [QExec] Add getSubOpUnmodified();
-            Op opRemote = opOriginal.getSubOp();
-            int hashCode=Math.abs(opRemote.hashCode());
-            String bindingVarName="binding"+hashCode;
-            Var idVar= Var.alloc(bindingVarName);
-            VariableDetector vd = new VariableDetector(boundVars);
-            opRemote=NodeTransformLib.transform(vd,opRemote);
-            List<Var> neededVars=vd.getVariables();
-            Map<String,Binding> resultingBindings=new HashMap<>();
-            Map<Node,List<Binding>> newBindings=new HashMap<>();
-            for(Binding originalBinding : bindings) {
-                StringBuilder keyBuilder = new StringBuilder();
-                BindingBuilder bb=BindingBuilder.create();
-                for(Var neededVar : neededVars) {
-                    Node node=originalBinding.get(neededVar);
-                    keyBuilder.append(neededVar.getVarName());
-                    keyBuilder.append("#");
-                    keyBuilder.append(node.toString());
-                    bb.add(neededVar,node);
+        // Next case distinction: we could either have a query or
+        // a direct skill call
+        if(!assetType.endsWith("SkillAsset>")) {
+            // http execute with headers and such
+            try {
+                Op opRemote = opOriginal.getSubOp();
+                int hashCode = Math.abs(opRemote.hashCode());
+                String bindingVarName = "binding" + hashCode;
+                Var idVar = Var.alloc(bindingVarName);
+                VariableDetector vd = new VariableDetector(boundVars);
+                opRemote = NodeTransformLib.transform(vd, opRemote);
+                List<Var> neededVars = vd.getVariables();
+                Map<String, Binding> resultingBindings = new HashMap<>();
+                Map<Node, List<Binding>> newBindings = new HashMap<>();
+                for (Binding originalBinding : bindings) {
+                    StringBuilder keyBuilder = new StringBuilder();
+                    BindingBuilder bb = BindingBuilder.create();
+                    for (Var neededVar : neededVars) {
+                        Node node = originalBinding.get(neededVar);
+                        keyBuilder.append(neededVar.getVarName());
+                        keyBuilder.append("#");
+                        keyBuilder.append(node.toString());
+                        bb.add(neededVar, node);
+                    }
+                    String key = keyBuilder.toString();
+                    Node keyNode;
+                    if (resultingBindings.containsKey(key)) {
+                        Binding existingBinding = resultingBindings.get(key);
+                        keyNode = existingBinding.get(idVar);
+                    } else {
+                        keyNode = NodeFactory.createLiteral(String.valueOf(resultingBindings.size()));
+                        bb.add(idVar, keyNode);
+                        newBindings.put(keyNode, new ArrayList<>());
+                        Binding newBinding = bb.build();
+                        bb = BindingBuilder.create(newBinding);
+                        resultingBindings.put(key, newBinding);
+                    }
+                    final BindingBuilder bb2 = BindingBuilder.create(originalBinding);
+                    bb2.set(idVar, keyNode);
+                    newBindings.get(keyNode).add(bb2.build());
                 }
-                String key=keyBuilder.toString();
-                Node keyNode;
-                if(resultingBindings.containsKey(key)) {
-                    Binding existingBinding=resultingBindings.get(key);
-                    keyNode=existingBinding.get(idVar);
+                neededVars.add(idVar);
+                TableData table = new TableData(neededVars, new ArrayList<>(resultingBindings.values()));
+                OpTable opTable = OpTable.create(table);
+                Op join = OpSequence.create(opTable, opRemote);
+                Query query = OpAsQuery.asQuery(join);
+                //query.addProjectVars(List.of(idVar));
+
+                monitor.debug(String.format("Prepared target %s for query %s", serviceURL, query));
+
+                // -- Setup
+                //boolean withCompression = context.isTrueOrUndef(httpQueryCompression);
+                long timeoutMillis = config.getReadTimeout();
+
+                // RegistryServiceModifier is applied by QueryExecHTTP
+                Params serviceParams = getServiceParamsFromContext(serviceURL, context);
+                HttpClient httpClient = chooseHttpClient(serviceURL, context);
+
+                QuerySendMode querySendMode = chooseQuerySendMode(serviceURL, context, QuerySendMode.asGetWithLimitBody);
+                // -- End setup
+
+                // Build the execution
+                QueryExecBuilder qExecBuilder = QueryExec.newBuilder()
+                        .endpoint(serviceURL)
+                        .timeout(timeoutMillis, TimeUnit.MILLISECONDS)
+                        .query(query)
+                        .params(serviceParams)
+                        .context(context)
+                        .httpClient(httpClient)
+                        .objectMapper(objectMapper)
+                        .agentConfig(agentConfig)
+                        .sendMode(querySendMode);
+
+                if (context.isDefined(authKey)) {
+                    String authKeyProp = context.get(authKey);
+                    monitor.debug(String.format("About to use authentication header %s on http target %s", authKeyProp, serviceURL));
+                    String authCodeProp = context.get(authCode);
+                    qExecBuilder = qExecBuilder.httpHeader(authKeyProp, authCodeProp);
+                }
+
+                try (QueryExec qExec = qExecBuilder.build()) {
+                    // Detach from the network stream.
+                    RowSet rowSet = qExec.select().materialize();
+                    QueryIterator qIter = QueryIterPlainWrapper.create(rowSet);
+                    qIter = QueryIter.makeTracked(qIter, execCxt);
+                    return new QueryIterJoin(qIter, newBindings, idVar, execCxt);
+                }
+            } catch (RuntimeException ex) {
+                if (silent) {
+                    Log.warn(this, "SERVICE " + serviceURL + " : " + ex.getMessage());
+                    // Return the input
+                    return QueryIterPlainWrapper.create(bindings.iterator(), execCxt);
+                }
+                throw ex;
+            }
+        } else {
+            // Skill call
+            try {
+                // [QExec] Add getSubOpUnmodified();
+                Op opRemote = opOriginal.getSubOp();
+                String bindingVarName="binding";
+                Var idVar = Var.alloc(bindingVarName);
+                SkillVariableDetector vd = new SkillVariableDetector(boundVars);
+                opRemote=Transformer.transform(vd,opRemote);
+                Map<String,Node> neededVars=vd.getVariables();
+                var parameterSet=new ResultSetMem() {
+                    public void setVarNames(List<String> vars) {
+                        this.varNames=vars;
+                    }
+                    public List<Binding> getRows() {
+                        return this.rows;
+                    }
+
+                };
+                List<String> vars=new ArrayList<>();
+                vars.add(bindingVarName);
+                neededVars.forEach((key1, value) -> vars.add(key1));
+                parameterSet.setVarNames(vars);
+                Map<String, Binding> resultingBindings = new HashMap<>();
+                Map<Node, List<Binding>> newBindings = new HashMap<>();
+                for(Binding originalBinding : bindings) {
+                    StringBuilder keyBuilder = new StringBuilder();
+                    BindingBuilder bb=BindingBuilder.create();
+                    for(Map.Entry<String,Node> neededVar : neededVars.entrySet()) {
+                        Node node=neededVar.getValue();
+                        if(node.isVariable()) {
+                            node=originalBinding.get((Var) node);
+                        }
+                        if(node!=null) {
+                            keyBuilder.append(neededVar.getKey());
+                            keyBuilder.append("#");
+                            keyBuilder.append(node);
+                            bb.add(Var.alloc(neededVar.getKey()), node);
+                        }
+                    }
+                    String key=keyBuilder.toString();
+                    Node keyNode;
+                    if(resultingBindings.containsKey(key)) {
+                        Binding existingBinding=resultingBindings.get(key);
+                        keyNode=existingBinding.get(idVar);
+                    } else {
+                        keyNode=NodeFactory.createLiteral(String.valueOf(resultingBindings.size()));
+                        bb.add(idVar,keyNode);
+                        newBindings.put(keyNode,new ArrayList<>());
+                        Binding newBinding=bb.build();
+                        bb=BindingBuilder.create(newBinding);
+                        resultingBindings.put(key,newBinding);
+                    }
+                    final BindingBuilder bb2=BindingBuilder.create(originalBinding);
+                    bb2.set(idVar,keyNode);
+                    newBindings.get(keyNode).add(bb2.build());
+                }
+                parameterSet.getRows().addAll(resultingBindings.values());
+                parameterSet.reset();
+                long timeoutMillis = config.getReadTimeout();
+                HttpClient httpClient = chooseHttpClient(serviceURL, context);
+
+                String bindingSet=ResultSetMgr.asString(parameterSet, ResultSetLang.RS_JSON);
+                HttpRequest.Builder skillRequest= HttpRequest.newBuilder().
+                        uri(new URI(serviceURL)).
+                        header("Content-Type", WebContent.contentTypeResultsJSON).
+                        timeout(Duration.ofMillis(timeoutMillis)).
+                        header("Accept",WebContent.contentTypeResultsJSON).
+                        POST(HttpRequest.BodyPublishers.ofString(bindingSet));
+
+                if (context.isDefined(authKey)) {
+                    String authKeyProp=context.get(authKey);
+                    monitor.debug(String.format("About to use authentication header %s on http target %s", authKeyProp,serviceURL));
+                    String authCodeProp=context.get(authCode);
+                    skillRequest=skillRequest.header(authKeyProp,authCodeProp);
+                }
+
+                HttpResponse<InputStream> remoteCall=httpClient.send(skillRequest.build(), HttpResponse.BodyHandlers.ofInputStream());
+                if(remoteCall.statusCode()>=200 && remoteCall.statusCode()<300) {
+                    ResultSet result=ResultSetMgr.read(remoteCall.body(), ResultSetLang.RS_JSON);
+                    RowSet rowSet=new RowSetAdapter(result);
+                    QueryIterator qIter = QueryIterPlainWrapper.create(rowSet);
+                    qIter = QueryIter.makeTracked(qIter, execCxt);
+                    return new QueryIterJoin(qIter, newBindings, idVar, execCxt);
                 } else {
-                    keyNode=NodeFactory.createLiteral(String.valueOf(resultingBindings.size()));
-                    bb.add(idVar,keyNode);
-                    newBindings.put(keyNode,new ArrayList<>());
-                    Binding newBinding=bb.build();
-                    bb=BindingBuilder.create(newBinding);
-                    resultingBindings.put(key,newBinding);
+                    Log.warn(this, "SERVICE " + serviceURL + " resulted in status code " + remoteCall.statusCode());
+                    remoteCall.body().close();
+                    // Return the input
+                    return QueryIterPlainWrapper.create(bindings.iterator(), execCxt);
                 }
-                final BindingBuilder bb2=BindingBuilder.create(originalBinding);
-                bb2.set(idVar,keyNode);
-                newBindings.get(keyNode).add(bb2.build());
+            } catch (URISyntaxException | IOException | InterruptedException | RuntimeException ex) {
+                if (silent) {
+                    Log.warn(this, "SERVICE " + serviceURL + " : " + ex.getMessage());
+                    // Return the input
+                    return QueryIterPlainWrapper.create(bindings.iterator(), execCxt);
+                }
+                throw new RuntimeException("Could not invoke remote skill",ex);
             }
-            neededVars.add(idVar);
-            TableData table = new TableData(neededVars,new ArrayList<>(resultingBindings.values()));
-            OpTable opTable = OpTable.create(table);
-            Op join = OpSequence.create(opTable,opRemote);
-            Query query = OpAsQuery.asQuery(join);
-            //query.addProjectVars(List.of(idVar));
-
-            monitor.debug(String.format("Prepared target %s for query %s",serviceURL,query));
-
-            // -- Setup
-            //boolean withCompression = context.isTrueOrUndef(httpQueryCompression);
-            long timeoutMillis = config.getReadTimeout();
-
-            // RegistryServiceModifier is applied by QueryExecHTTP
-            Params serviceParams = getServiceParamsFromContext(serviceURL, context);
-            HttpClient httpClient = chooseHttpClient(serviceURL, context);
-
-            QuerySendMode querySendMode = chooseQuerySendMode(serviceURL, context, QuerySendMode.asGetWithLimitBody);
-            // -- End setup
-
-            // Build the execution
-            QueryExecBuilder qExecBuilder = QueryExec.newBuilder()
-                    .endpoint(serviceURL)
-                    .timeout(timeoutMillis, TimeUnit.MILLISECONDS)
-                    .query(query)
-                    .params(serviceParams)
-                    .context(context)
-                    .httpClient(httpClient)
-                    .objectMapper(objectMapper)
-                    .agentConfig(agentConfig)
-                    .sendMode(querySendMode);
-
-            if (context.isDefined(authKey)) {
-                String authKeyProp=context.get(authKey);
-                monitor.debug(String.format("About to use authentication header %s on http target %s", authKeyProp,serviceURL));
-                String authCodeProp=context.get(authCode);
-                qExecBuilder=qExecBuilder.httpHeader(authKeyProp,authCodeProp);
-            }
-
-            try(QueryExec qExec = qExecBuilder.build()) {
-                // Detach from the network stream.
-                RowSet rowSet = qExec.select().materialize();
-                QueryIterator qIter = QueryIterPlainWrapper.create(rowSet);
-                qIter = QueryIter.makeTracked(qIter, execCxt);
-                return new QueryIterJoin(qIter, newBindings, idVar, execCxt);
-            }
-        } catch (RuntimeException ex) {
-            if (silent) {
-                Log.warn(this, "SERVICE " + serviceURL + " : " + ex.getMessage());
-                // Return the input
-                return QueryIterPlainWrapper.create(bindings.iterator(), execCxt);
-            }
-            throw ex;
         }
     }
 
@@ -488,35 +565,4 @@ public class DataspaceServiceExecutor implements ServiceExecutor, ChainingServic
         }
     }
 
-    /**
-     * read timeout param
-     *
-     * @param context query context
-     * @return parsed param
-     */
-    protected long timeoutFromContext(Context context) {
-        return parseTimeout(context.get(Service.httpQueryTimeout));
-    }
-
-    /**
-     * Find the timeout. Return -1L for no setting.
-     *
-     * @param obj config object
-     * @return parsed long
-     */
-    protected long parseTimeout(Object obj) {
-        if (obj == null)
-            return -1L;
-        try {
-            if (obj instanceof Number)
-                return ((Number) obj).longValue();
-            if (obj instanceof String)
-                return Long.parseLong((String) obj);
-            monitor.warning("Can't interpret timeout: " + obj);
-            return -1L;
-        } catch (Exception ex) {
-            monitor.warning("Exception setting timeout (context) from: " + obj);
-            return -1L;
-        }
-    }
 }

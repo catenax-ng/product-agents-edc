@@ -19,11 +19,10 @@ import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nimbusds.jose.util.IOUtils;
 import io.catenax.knowledge.dataspace.edc.AgentConfig;
 import org.apache.jena.atlas.RuntimeIOException;
-import org.apache.jena.atlas.io.IO;
 import org.apache.jena.atlas.iterator.Iter;
 import org.apache.jena.atlas.json.JSON;
 import org.apache.jena.atlas.json.JsonArray;
@@ -31,7 +30,6 @@ import org.apache.jena.atlas.json.JsonObject;
 import org.apache.jena.atlas.lib.InternalErrorException;
 import org.apache.jena.atlas.lib.Pair;
 import org.apache.jena.atlas.logging.Log;
-import org.apache.jena.atlas.web.HttpException;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Triple;
 import org.apache.jena.http.HttpEnv;
@@ -81,20 +79,20 @@ public class QueryExec implements org.apache.jena.sparql.exec.QueryExec {
     private final AgentConfig agentConfig;
 
     // Params
-    private Params params = null;
+    private final Params params;
 
     private final QuerySendMode sendMode;
-    private int urlLimit = HttpEnv.urlLimit;
+    private final int urlLimit;
 
     // Protocol
-    private List<String> defaultGraphURIs = new ArrayList<>();
-    private List<String> namedGraphURIs = new ArrayList<>();
+    private final List<String> defaultGraphURIs;
+    private final List<String> namedGraphURIs;
 
     private boolean closed = false;
 
     // Timeout of query execution.
-    private long readTimeout = -1;
-    private TimeUnit readTimeoutUnit = TimeUnit.MILLISECONDS;
+    private final long readTimeout;
+    private final TimeUnit readTimeoutUnit;
 
     // Content Types: these list the standard formats and also include */*.
     private final String selectAcceptheader    = WebContent.defaultSparqlResultsHeader;
@@ -104,7 +102,7 @@ public class QueryExec implements org.apache.jena.sparql.exec.QueryExec {
     private final String datasetAcceptHeader   = WebContent.defaultDatasetAcceptHeader;
 
     // If this is non-null, it overrides the use of any Content-Type above.
-    private String appProvidedAcceptHeader         = null;
+    private String appProvidedAcceptHeader;
 
     // Received content type
     private String httpResponseContentType = null;
@@ -112,7 +110,7 @@ public class QueryExec implements org.apache.jena.sparql.exec.QueryExec {
     // set streaming, and will close it when the execution is closed
     private InputStream retainedConnection = null;
 
-    private HttpClient httpClient = HttpEnv.getDftHttpClient();
+    private final HttpClient httpClient;
     private Map<String, String> httpHeaders;
 
     public QueryExec(String serviceURL, Query query, String queryString, int urlLimit,
@@ -172,13 +170,6 @@ public class QueryExec implements org.apache.jena.sparql.exec.QueryExec {
 
         // More reliable to use the format-defined charsets e.g. JSON -> UTF-8
         actualContentType = removeCharset(actualContentType);
-
-        if (false) {
-            byte b[] = IO.readWholeFile(in);
-            String str = new String(b);
-            System.out.println(str);
-            in = new ByteArrayInputStream(b);
-        }
 
         retainedConnection = in; // This will be closed on close()
 
@@ -434,10 +425,6 @@ public class QueryExec implements org.apache.jena.sparql.exec.QueryExec {
         return queryString;
     }
 
-    private static long asMillis(long duration, TimeUnit timeUnit) {
-        return (duration < 0) ? duration : timeUnit.toMillis(duration);
-    }
-
     /**
      * Make a query over HTTP.
      * The response is returned after status code processing so the caller can assume the
@@ -542,7 +529,7 @@ public class QueryExec implements org.apache.jena.sparql.exec.QueryExec {
             if(warnings.isPresent()) {
                 List<CatenaxWarning> yetWarnings=CatenaxWarning.getOrSetWarnings(context);
                 try {
-                    List<CatenaxWarning> newWarnings=objectMapper.readValue(warnings.get(), new TypeReference<List<CatenaxWarning>>(){});
+                    List<CatenaxWarning> newWarnings=objectMapper.readValue(warnings.get(), new TypeReference<>(){});
                     yetWarnings.addAll(newWarnings);
                 } catch (JsonProcessingException e) {
                     CatenaxWarning newWarning=new CatenaxWarning();
@@ -550,22 +537,23 @@ public class QueryExec implements org.apache.jena.sparql.exec.QueryExec {
                     newWarning.setSourceAsset(agentConfig.getDefaultAsset());
                     newWarning.setTargetTenant(request.uri().toString());
                     newWarning.setTargetAsset(request.uri().toString());
-                    newWarning.setContext(context.toString());
-                    newWarning.setProblem(String.format("Could not deserialize warnings because of %s",e.getMessage()));
+                    newWarning.setContext(String.valueOf(context.hashCode()));
+                    newWarning.setProblem("Could not deserialize embedded warnings.");
                     yetWarnings.add(newWarning);
                 }
             }
-            HttpLib.handleHttpStatusCode(response);
-            return new AbstractMap.SimpleEntry(contentType,inputStream);
-        } catch (HttpException httpEx) {
-            throw QueryExceptionHTTP.rewrap(httpEx);
+            int httpStatusCode = response.statusCode();
+            if(httpStatusCode<200 || httpStatusCode>299) {
+                String msg= IOUtils.readInputStreamToString(inputStream);
+                throw new QueryExceptionHTTP(httpStatusCode,msg);
+            }
+            return new AbstractMap.SimpleEntry<>(contentType,inputStream);
         } catch (IOException e) {
-            throw new HttpException(e);
+            throw new QueryException(e);
         }
     }
 
     private QuerySendMode actualSendMode() {
-        int thisLengthLimit = urlLimit;
         switch(sendMode) {
             case asGetAlways :
             case asPostForm :
@@ -576,8 +564,6 @@ public class QueryExec implements org.apache.jena.sparql.exec.QueryExec {
                 break;
         }
 
-        // Only QuerySendMode.asGetWithLimitBody and QuerySendMode.asGetWithLimitForm here.
-        String requestURL = service;
         // Other params (query= has not been added at this point)
         int paramsLength = params.httpString().length();
         int qEncodedLength = calcEncodeStringLength(queryString);
@@ -587,7 +573,7 @@ public class QueryExec implements org.apache.jena.sparql.exec.QueryExec {
                 + /* ?query= */        1 + HttpParams.pQuery.length()
                 + /* encoded query */  qEncodedLength
                 + /* &other params*/   1 + paramsLength;
-        if ( length <= thisLengthLimit )
+        if ( length <= urlLimit )
             return QuerySendMode.asGetAlways;
         return (sendMode==QuerySendMode.asGetWithLimitBody) ? QuerySendMode.asPost : QuerySendMode.asPostForm;
     }
@@ -609,9 +595,8 @@ public class QueryExec implements org.apache.jena.sparql.exec.QueryExec {
 
     private HttpRequest.Builder executeQueryPostForm(Params thisParams, String acceptHeader) {
         thisParams.add(HttpParams.pQuery, queryString);
-        String requestURL = service;
         String formBody = thisParams.httpString();
-        HttpRequest.Builder builder = HttpLib.requestBuilder(requestURL, httpHeaders, readTimeout, readTimeoutUnit);
+        HttpRequest.Builder builder = HttpLib.requestBuilder(service, httpHeaders, readTimeout, readTimeoutUnit);
         acceptHeader(builder, acceptHeader);
         // Use an HTML form.
         contentTypeHeader(builder, WebContent.contentTypeHTMLForm);

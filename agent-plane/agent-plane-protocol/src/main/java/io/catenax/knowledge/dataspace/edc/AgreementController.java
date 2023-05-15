@@ -127,7 +127,8 @@ public class AgreementController implements IAgreementController {
                             JWSObject jwt = JWSObject.parse(token);
                             Object expiryObject=jwt.getPayload().toJSONObject().get("exp");
                             if(expiryObject instanceof Long) {
-                                if(!new Date((Long) expiryObject).before(new Date(System.currentTimeMillis() + 30 * 1000))) {
+                                // token times are in seconds
+                                if(!new Date((Long) expiryObject*1000).before(new Date(System.currentTimeMillis() + 30 * 1000))) {
                                     return result;
                                 }
                             }
@@ -234,8 +235,9 @@ public class AgreementController implements IAgreementController {
 
         // TODO implement a cost-based offer choice
         ContractOffer contractOffer = contractOffers.stream().findFirst().get();
+        String assetType=contractOffer.getAsset().getProperties().getOrDefault("rdf:type","<cx_ontology.ttl#Asset>").toString();
 
-        monitor.debug(String.format("About to create an agreement for contract offer %s (for asset %s at connector %s)",contractOffer.getId(),asset,remoteUrl));
+        monitor.debug(String.format("About to create an agreement for contract offer %s (for asset %s of type %s at connector %s)",contractOffer.getId(),asset,assetType,remoteUrl));
 
         // Initiate negotiation
         var policy = Policy.Builder.newInstance()
@@ -384,6 +386,11 @@ public class AgreementController implements IAgreementController {
             }
         } catch (InterruptedException e) {
             monitor.info(String.format("Wait thread for reference to asset %s has been interrupted. Giving up.", asset),e);
+        }
+
+        // mark the type in the endpoint
+        if(reference!=null) {
+            reference.getProperties().put("rdf:type",assetType);
         }
 
         // now delegate to the original getter

@@ -50,7 +50,8 @@ public class JwtAuthenticationService implements AuthenticationService {
                 if(checkExpiry) {
                     Object expiryObject=jwsObject.getPayload().toJSONObject().get("exp");
                     if(expiryObject instanceof Long) {
-                        return !new Date((Long) expiryObject).before(new Date());
+                        // token times are in seconds
+                        return !new Date((Long) expiryObject*1000).before(new Date());
                     } else {
                         return true;
                     }
