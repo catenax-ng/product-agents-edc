@@ -187,10 +187,11 @@ public class AgentController {
     @GET
     @Path("/repositories/AGENT/import/active")
     public Response getRepositoryImportQuery(
-            @Context HttpHeaders headers,
-            @Context HttpServletRequest request,
-            @Context HttpServletResponse response,
-            @Context UriInfo uri) {
+            //@Context HttpHeaders headers,
+            @Context HttpServletRequest request
+            //,@Context HttpServletResponse response,
+            //@Context UriInfo uri
+    ) {
         monitor.debug(String.format("Received a GET repository import active request %s",request));
         return Response.status(406,"Not Acceptable (HTTP status 406)").build();
     }
@@ -202,10 +203,11 @@ public class AgentController {
     @GET
     @Path("/rest/repositories/AGENT/size")
     public Response getRestRepositorySizeQuery(
-            @Context HttpHeaders headers,
-            @Context HttpServletRequest request,
-            @Context HttpServletResponse response,
-            @Context UriInfo uri) {
+            //@Context HttpHeaders headers,
+            @Context HttpServletRequest request
+            //,@Context HttpServletResponse response,
+            //@Context UriInfo uri
+    ) {
         monitor.debug(String.format("Received a GET rest repository size request %s",request));
         return Response.ok("{\n" +
                 "    \"inferred\": 70,\n" +
@@ -221,10 +223,11 @@ public class AgentController {
     @GET
     @Path("/repositories/AGENT/size")
     public Response getRepositorySizeQuery(
-            @Context HttpHeaders headers,
-            @Context HttpServletRequest request,
-            @Context HttpServletResponse response,
-            @Context UriInfo uri) {
+            //@Context HttpHeaders headers,
+            @Context HttpServletRequest request
+            //,@Context HttpServletResponse response,
+            //@Context UriInfo uri
+    ) {
         monitor.debug(String.format("Received a GET repository size request %s",request));
         return Response.ok("0" ).type(jakarta.ws.rs.core.MediaType.APPLICATION_JSON_TYPE).build();
     }
@@ -236,10 +239,11 @@ public class AgentController {
     @GET
     @Path("/rest/repositories/AGENT/import/active")
     public Response getRestRepositoryImportQuery(
-            @Context HttpHeaders headers,
-            @Context HttpServletRequest request,
-            @Context HttpServletResponse response,
-            @Context UriInfo uri) {
+            //@Context HttpHeaders headers,
+            @Context HttpServletRequest request
+            //,@Context HttpServletResponse response,
+            //@Context UriInfo uri
+    ) {
         monitor.debug(String.format("Received a GET rest repository import active request %s",request));
         return Response.ok("0").type(jakarta.ws.rs.core.MediaType.APPLICATION_JSON_TYPE).build();
     }
@@ -251,10 +255,11 @@ public class AgentController {
     @GET
     @Path("/rest/info/version")
     public String getVersion(
-            @Context HttpHeaders headers,
-            @Context HttpServletRequest request,
-            @Context HttpServletResponse response,
-            @Context UriInfo uri) {
+            //@Context HttpHeaders headers,
+            @Context HttpServletRequest request
+            //,@Context HttpServletResponse response,
+            //@Context UriInfo uri
+    ) {
         monitor.debug(String.format("Received a GET Version request %s",request));
         return "0.8.4";
     }
@@ -266,10 +271,11 @@ public class AgentController {
     @GET
     @Path("/protocol")
     public String getProtocol(
-            @Context HttpHeaders headers,
-            @Context HttpServletRequest request,
-            @Context HttpServletResponse response,
-            @Context UriInfo uri) {
+            //@Context HttpHeaders headers,
+            @Context HttpServletRequest request
+            //,@Context HttpServletResponse response,
+            //@Context UriInfo uri
+    ) {
         monitor.debug(String.format("Received a GET Protocol request %s",request));
         return "12";
     }
@@ -281,10 +287,11 @@ public class AgentController {
     @GET
     @Path("/rest/locations/id")
     public String getId(
-            @Context HttpHeaders headers,
-            @Context HttpServletRequest request,
-            @Context HttpServletResponse response,
-            @Context UriInfo uri) {
+            //@Context HttpHeaders headers,
+            @Context HttpServletRequest request
+            //,@Context HttpServletResponse response,
+            //@Context UriInfo uri
+    ) {
         monitor.debug(String.format("Received a GET Id request %s",request));
         return "Catena-X Knowledge Agent";
     }
@@ -296,10 +303,11 @@ public class AgentController {
     @GET
     @Path("/rest/repositories")
     public String getRestRepositories(
-            @Context HttpHeaders headers,
+            //@Context HttpHeaders headers,
             @Context HttpServletRequest request,
-            @Context HttpServletResponse response,
-            @Context UriInfo uri) {
+            //@Context HttpServletResponse response,
+            @Context UriInfo uri
+    ) {
         monitor.debug(String.format("Received a GET Rest Repositories request %s",request));
         String url=uri.toString();
         url=url.substring(0,url.length()-18);
@@ -328,10 +336,11 @@ public class AgentController {
     @GET
     @Path("/repositories")
     public Response getRepositories(
-            @Context HttpHeaders headers,
+            //@Context HttpHeaders headers,
             @Context HttpServletRequest request,
-            @Context HttpServletResponse response,
-            @Context UriInfo uri) {
+            //@Context HttpServletResponse response,
+            @Context UriInfo uri
+    ) {
         monitor.debug(String.format("Received a GET Repositories request %s",request));
         String url=uri.toString();
         url=url.substring(0,url.length()-13);
@@ -348,10 +357,11 @@ public class AgentController {
     @GET
     @Path("/repositories/AGENT/namespaces")
     public Response getNamespaces(
-            @Context HttpHeaders headers,
-            @Context HttpServletRequest request,
-            @Context HttpServletResponse response,
-            @Context UriInfo uri) {
+            //@Context HttpHeaders headers,
+            @Context HttpServletRequest request
+            //,@Context HttpServletResponse response,
+            //@Context UriInfo uri
+    ) {
         monitor.debug(String.format("Received a GET Namespaces request %s",request));
         Response.ResponseBuilder builder=Response.ok("prefix,namespace\n" +
                 "rdf,http://www.w3.org/1999/02/22-rdf-syntax-ns#\n" +

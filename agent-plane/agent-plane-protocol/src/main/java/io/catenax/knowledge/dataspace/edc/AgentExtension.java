@@ -6,7 +6,6 @@
 //
 package io.catenax.knowledge.dataspace.edc;
 
-import dev.failsafe.RetryPolicy;
 import io.catenax.knowledge.dataspace.edc.http.AgentController;
 import io.catenax.knowledge.dataspace.edc.http.HttpClientFactory;
 import io.catenax.knowledge.dataspace.edc.http.transfer.AgentSourceFactory;
@@ -21,7 +20,6 @@ import org.apache.jena.query.Syntax;
 import org.apache.jena.sparql.serializer.*;
 import org.apache.jena.sparql.service.ServiceExecutorRegistry;
 import org.eclipse.edc.connector.dataplane.http.params.HttpRequestFactory;
-import org.eclipse.edc.connector.dataplane.spi.pipeline.DataTransferExecutorServiceContainer;
 import org.eclipse.edc.spi.http.EdcHttpClient;
 import org.eclipse.edc.web.spi.WebService;
 import org.eclipse.edc.spi.monitor.Monitor;
@@ -58,9 +56,6 @@ public class AgentExtension implements ServiceExtension {
     @Inject
     protected WebService webService;
 
-    @Inject
-    @SuppressWarnings("rawtypes")
-    protected RetryPolicy retryPolicy;
 
     @Inject
     protected PipelineService pipelineService;
@@ -69,9 +64,9 @@ public class AgentExtension implements ServiceExtension {
     protected Vault vault;
 
     @Inject
-    protected DataTransferExecutorServiceContainer executorContainer;
+    protected EdcHttpClient edcHttpClient;
     @Inject
-    private EdcHttpClient edcHttpClient;
+    protected TypeManager typeManager;
 
     /**
      * refers a scheduler
@@ -88,6 +83,7 @@ public class AgentExtension implements ServiceExtension {
      * we use our own http client
      */
     protected OkHttpClient httpClient;
+
 
     /**
      * @return name of the extension
@@ -109,7 +105,6 @@ public class AgentExtension implements ServiceExtension {
 
         AgentConfig config = new AgentConfig(monitor,context.getConfig());
         httpClient= HttpClientFactory.create(config);
-        TypeManager typeManager = context.getTypeManager();
 
         DataManagement catalogService=new DataManagement(monitor,typeManager,httpClient,config);
 

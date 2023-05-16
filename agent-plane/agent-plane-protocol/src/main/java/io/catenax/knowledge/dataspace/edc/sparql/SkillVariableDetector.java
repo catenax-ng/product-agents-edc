@@ -12,7 +12,7 @@ import org.apache.jena.sparql.algebra.TransformSingle;
 import org.apache.jena.sparql.algebra.op.OpExtend;
 import org.apache.jena.sparql.core.Var;
 import org.apache.jena.sparql.expr.ExprVar;
-import org.apache.jena.sparql.expr.nodevalue.NodeValueNode;
+import org.apache.jena.sparql.expr.NodeValue;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,12 +37,14 @@ public class SkillVariableDetector extends TransformSingle {
     public Op transform(OpExtend opExtend, Op subOp) {
         opExtend.getVarExprList().forEachExpr( (assignment,expr) -> {
             String varName= assignment.getVarName();
-            if(allowed.contains(varName) && !variables.containsKey(varName)) {
-                if(expr.isVariable()) {
-                    Var var = (Var) ((ExprVar)expr).getAsNode();
-                    variables.put(varName, var);
-                } else if(expr.isConstant()) {
-                    Node node = ((NodeValueNode) expr).getNode();
+            if(!variables.containsKey(varName)) {
+                if (expr.isVariable()) {
+                    Var var = (Var) ((ExprVar) expr).getAsNode();
+                    if (allowed.contains(var.getVarName())) {
+                        variables.put(varName, var);
+                    }
+                } else if (expr.isConstant()) {
+                    Node node = ((NodeValue) expr).getNode();
                     variables.put(varName, node);
                 }
             }

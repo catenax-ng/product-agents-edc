@@ -334,7 +334,7 @@ public class DataspaceServiceExecutor implements ServiceExecutor, ChainingServic
                         bb.add(idVar, keyNode);
                         newBindings.put(keyNode, new ArrayList<>());
                         Binding newBinding = bb.build();
-                        bb = BindingBuilder.create(newBinding);
+                        //bb = BindingBuilder.create(newBinding);
                         resultingBindings.put(key, newBinding);
                     }
                     final BindingBuilder bb2 = BindingBuilder.create(originalBinding);
@@ -362,7 +362,7 @@ public class DataspaceServiceExecutor implements ServiceExecutor, ChainingServic
                 // -- End setup
 
                 // Build the execution
-                QueryExecBuilder qExecBuilder = QueryExec.newBuilder()
+                QueryExecutorBuilder qExecBuilder = QueryExecutor.newBuilder()
                         .endpoint(serviceURL)
                         .timeout(timeoutMillis, TimeUnit.MILLISECONDS)
                         .query(query)
@@ -380,7 +380,7 @@ public class DataspaceServiceExecutor implements ServiceExecutor, ChainingServic
                     qExecBuilder = qExecBuilder.httpHeader(authKeyProp, authCodeProp);
                 }
 
-                try (QueryExec qExec = qExecBuilder.build()) {
+                try (QueryExecutor qExec = qExecBuilder.build()) {
                     // Detach from the network stream.
                     RowSet rowSet = qExec.select().materialize();
                     QueryIterator qIter = QueryIterPlainWrapper.create(rowSet);
@@ -445,7 +445,7 @@ public class DataspaceServiceExecutor implements ServiceExecutor, ChainingServic
                         bb.add(idVar,keyNode);
                         newBindings.put(keyNode,new ArrayList<>());
                         Binding newBinding=bb.build();
-                        bb=BindingBuilder.create(newBinding);
+                        //bb=BindingBuilder.create(newBinding);
                         resultingBindings.put(key,newBinding);
                     }
                     final BindingBuilder bb2=BindingBuilder.create(originalBinding);

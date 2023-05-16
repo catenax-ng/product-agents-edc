@@ -49,20 +49,21 @@ import org.apache.jena.sparql.exec.RowSet;
 import org.apache.jena.sparql.exec.http.Params;
 import org.apache.jena.sparql.exec.http.QuerySendMode;
 import org.apache.jena.sparql.util.Context;
+import org.apache.jena.sparql.exec.QueryExec;
 
 /**
  * An Exec implementation which understands KA-MATCH and KA-TRANSFER remote
  * services over HTTP.
  */
-public class QueryExec implements org.apache.jena.sparql.exec.QueryExec {
+public class QueryExecutor implements QueryExec {
 
     /** @deprecated Use {@link #newBuilder} */
     @Deprecated
-    public static QueryExecBuilder create() { return newBuilder() ; }
+    public static QueryExecutorBuilder create() { return newBuilder() ; }
 
-    public static QueryExecBuilder newBuilder() { return QueryExecBuilder.create(); }
+    public static QueryExecutorBuilder newBuilder() { return QueryExecutorBuilder.create(); }
 
-    public static QueryExecBuilder service(String serviceURL) {
+    public static QueryExecutorBuilder service(String serviceURL) {
         return newBuilder().endpoint(serviceURL);
     }
 
@@ -97,15 +98,11 @@ public class QueryExec implements org.apache.jena.sparql.exec.QueryExec {
     // Content Types: these list the standard formats and also include */*.
     private final String selectAcceptheader    = WebContent.defaultSparqlResultsHeader;
     private final String askAcceptHeader       = WebContent.defaultSparqlAskHeader;
-    private final String describeAcceptHeader  = WebContent.defaultGraphAcceptHeader;
-    private final String constructAcceptHeader = WebContent.defaultGraphAcceptHeader;
     private final String datasetAcceptHeader   = WebContent.defaultDatasetAcceptHeader;
 
     // If this is non-null, it overrides the use of any Content-Type above.
     private String appProvidedAcceptHeader;
 
-    // Received content type
-    private String httpResponseContentType = null;
     // Releasing HTTP input streams is important. We remember this for SELECT result
     // set streaming, and will close it when the execution is closed
     private InputStream retainedConnection = null;
@@ -113,7 +110,7 @@ public class QueryExec implements org.apache.jena.sparql.exec.QueryExec {
     private final HttpClient httpClient;
     private Map<String, String> httpHeaders;
 
-    public QueryExec(String serviceURL, Query query, String queryString, int urlLimit,
+    public QueryExecutor(String serviceURL, Query query, String queryString, int urlLimit,
                          HttpClient httpClient, Map<String, String> httpHeaders, Params params, Context context,
                          List<String> defaultGraphURIs, List<String> namedGraphURIs,
                          QuerySendMode sendMode, String explicitAcceptHeader,
@@ -143,17 +140,11 @@ public class QueryExec implements org.apache.jena.sparql.exec.QueryExec {
         this.agentConfig=agentConfig;
     }
 
-    /** The Content-Type response header received (null before the remote operation is attempted). */
-    public String getHttpResponseContentType() {
-        return httpResponseContentType;
-    }
-
     @Override
     public RowSet select() {
         checkNotClosed();
         check(QueryType.SELECT);
-        RowSet rs = execRowSet();
-        return rs;
+        return execRowSet();
     }
 
     private RowSet execRowSet() {
@@ -165,16 +156,10 @@ public class QueryExec implements org.apache.jena.sparql.exec.QueryExec {
         // Don't assume the endpoint actually gives back the content type we asked for
         String actualContentType = response.getKey();
 
-        // Remember the response.
-        httpResponseContentType = actualContentType;
-
         // More reliable to use the format-defined charsets e.g. JSON -> UTF-8
         actualContentType = removeCharset(actualContentType);
 
         retainedConnection = in; // This will be closed on close()
-
-        if (actualContentType == null || actualContentType.length()==0)
-            actualContentType = WebContent.contentTypeResultsXML;
 
         // Map to lang, with pragmatic alternatives.
         Lang lang = WebContent.contentTypeToLangResultSet(actualContentType);
@@ -197,13 +182,7 @@ public class QueryExec implements org.apache.jena.sparql.exec.QueryExec {
         InputStream in = response.getValue();
 
         String actualContentType = response.getKey();
-        httpResponseContentType = actualContentType;
         actualContentType = removeCharset(actualContentType);
-
-        // If the server fails to return a Content-Type then we will assume
-        // the server returned the type we asked for
-        if (actualContentType == null || actualContentType.length()==0)
-            actualContentType = askAcceptHeader;
 
         Lang lang = RDFLanguages.contentTypeToLang(actualContentType);
         if ( lang == null ) {
@@ -233,14 +212,14 @@ public class QueryExec implements org.apache.jena.sparql.exec.QueryExec {
     public Graph construct(Graph graph) {
         checkNotClosed();
         check(QueryType.CONSTRUCT);
-        return execGraph(graph, constructAcceptHeader);
+        return execGraph(graph);
     }
 
     @Override
     public Iterator<Triple> constructTriples() {
         checkNotClosed();
         check(QueryType.CONSTRUCT);
-        return execTriples(constructAcceptHeader);
+        return execTriples();
     }
 
     @Override
@@ -266,17 +245,17 @@ public class QueryExec implements org.apache.jena.sparql.exec.QueryExec {
     public Graph describe(Graph graph) {
         checkNotClosed();
         check(QueryType.DESCRIBE);
-        return execGraph(graph, describeAcceptHeader);
+        return execGraph(graph);
     }
 
     @Override
     public Iterator<Triple> describeTriples() {
         checkNotClosed();
-        return execTriples(describeAcceptHeader);
+        return execTriples();
     }
 
-    private Graph execGraph(Graph graph, String acceptHeader) {
-        Pair<InputStream, Lang> p = execRdfWorker(acceptHeader, WebContent.contentTypeRDFXML);
+    private Graph execGraph(Graph graph) {
+        Pair<InputStream, Lang> p = execRdfWorker(WebContent.defaultRDFAcceptHeader);
         InputStream in = p.getLeft();
         Lang lang = p.getRight();
         try {
@@ -289,7 +268,7 @@ public class QueryExec implements org.apache.jena.sparql.exec.QueryExec {
     }
 
     private DatasetGraph execDataset(DatasetGraph dataset) {
-        Pair<InputStream, Lang> p = execRdfWorker(datasetAcceptHeader, WebContent.contentTypeNQuads);
+        Pair<InputStream, Lang> p = execRdfWorker(datasetAcceptHeader);
         InputStream in = p.getLeft();
         Lang lang = p.getRight();
         try {
@@ -302,8 +281,8 @@ public class QueryExec implements org.apache.jena.sparql.exec.QueryExec {
     }
 
     @SuppressWarnings("deprecation")
-    private Iterator<Triple> execTriples(String acceptHeader) {
-        Pair<InputStream, Lang> p = execRdfWorker(acceptHeader, WebContent.contentTypeRDFXML);
+    private Iterator<Triple> execTriples() {
+        Pair<InputStream, Lang> p = execRdfWorker(WebContent.defaultGraphAcceptHeader);
         InputStream input = p.getLeft();
         Lang lang = p.getRight();
         // Base URI?
@@ -315,7 +294,7 @@ public class QueryExec implements org.apache.jena.sparql.exec.QueryExec {
     @SuppressWarnings("deprecation")
     private Iterator<Quad> execQuads() {
         checkNotClosed();
-        Pair<InputStream, Lang> p = execRdfWorker(datasetAcceptHeader, WebContent.contentTypeNQuads);
+        Pair<InputStream, Lang> p = execRdfWorker(datasetAcceptHeader);
         InputStream input = p.getLeft();
         Lang lang = p.getRight();
         // Unless N-Quads, this creates a thread.
@@ -325,7 +304,7 @@ public class QueryExec implements org.apache.jena.sparql.exec.QueryExec {
 
     // Any RDF data back (CONSTRUCT, DESCRIBE, QUADS)
     // ifNoContentType - some wild guess at the content type.
-    private Pair<InputStream, Lang> execRdfWorker(String contentType, String ifNoContentType) {
+    private Pair<InputStream, Lang> execRdfWorker(String contentType) {
         checkNotClosed();
         String thisAcceptHeader = dft(appProvidedAcceptHeader, contentType);
         Map.Entry<String,InputStream> response = performQuery(thisAcceptHeader);
@@ -333,13 +312,7 @@ public class QueryExec implements org.apache.jena.sparql.exec.QueryExec {
 
         // Don't assume the endpoint actually gives back the content type we asked for
         String actualContentType = response.getKey();
-        httpResponseContentType = actualContentType;
         actualContentType = removeCharset(actualContentType);
-
-        // If the server fails to return a Content-Type then we will assume
-        // the server returned the type we asked for
-        if (actualContentType == null || actualContentType.length()==0)
-            actualContentType = ifNoContentType;
 
         Lang lang = RDFLanguages.contentTypeToLang(actualContentType);
         if ( ! RDFLanguages.isQuads(lang) && ! RDFLanguages.isTriples(lang) )
@@ -409,9 +382,11 @@ public class QueryExec implements org.apache.jena.sparql.exec.QueryExec {
             // syntax in the query or may be because the query string was available and the app
             // didn't want the overhead of parsing it every time.
             // Try to parse it else return null;
-            try { return QueryFactory.create(queryString, Syntax.syntaxARQ); }
-            catch (QueryParseException ex) {}
-            return null;
+            try {
+                return QueryFactory.create(queryString, Syntax.syntaxARQ); }
+            catch (QueryParseException ex) {
+                return null;
+            }
         }
         return null;
     }
@@ -476,7 +451,6 @@ public class QueryExec implements org.apache.jena.sparql.exec.QueryExec {
     }
 
     private Map.Entry<String,InputStream>  executeQuery(HttpRequest request) {
-        logQuery(queryString, request);
         try {
             HttpResponse<InputStream> response = execute(httpClient, request);
             String contentType=responseHeader(response,HttpNames.hContentType);
@@ -581,8 +555,7 @@ public class QueryExec implements org.apache.jena.sparql.exec.QueryExec {
     private static int calcEncodeStringLength(String str) {
         // Could approximate by counting non-queryString character and adding that *2 to the length of the string.
         String qs = HttpLib.urlEncodeQueryString(str);
-        int encodedLength = qs.length();
-        return encodedLength;
+        return qs.length();
     }
 
     private HttpRequest.Builder executeQueryGet(Params thisParams, String acceptHeader) {
@@ -612,15 +585,6 @@ public class QueryExec implements org.apache.jena.sparql.exec.QueryExec {
         contentTypeHeader(builder, QUERY_MIME_TYPE);
         acceptHeader(builder, acceptHeader);
         return builder.POST(BodyPublishers.ofString(queryString));
-    }
-
-    private static void logQuery(String queryString, HttpRequest request) {}
-
-    /**
-     * Cancel query evaluation
-     */
-    public void cancel() {
-        closed = true;
     }
 
     @Override

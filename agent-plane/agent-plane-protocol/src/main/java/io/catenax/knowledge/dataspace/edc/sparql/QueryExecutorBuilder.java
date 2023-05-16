@@ -12,8 +12,6 @@ import org.apache.jena.http.sys.ExecHTTPBuilder;
 import org.apache.jena.query.Query;
 import org.apache.jena.sparql.exec.QueryExecMod;
 import org.apache.jena.sparql.exec.http.Params;
-import org.apache.jena.sparql.exec.http.QueryExecHTTP;
-import org.apache.jena.sparql.exec.http.QueryExecHTTPBuilder;
 import org.apache.jena.sparql.util.Context;
 
 import java.net.http.HttpClient;
@@ -22,19 +20,21 @@ import java.util.concurrent.TimeUnit;
 
 import static org.apache.jena.http.HttpLib.copyArray;
 
+import org.apache.jena.sparql.exec.QueryExecBuilder;
+
 /**
  * A builder for KA Remote Query Execs
  */
-public class QueryExecBuilder extends ExecHTTPBuilder<QueryExec, QueryExecBuilder> implements QueryExecMod, org.apache.jena.sparql.exec.QueryExecBuilder {
+public class QueryExecutorBuilder extends ExecHTTPBuilder<QueryExecutor, QueryExecutorBuilder> implements QueryExecMod, QueryExecBuilder {
 
-    public static QueryExecBuilder create() { return new QueryExecBuilder(); }
+    public static QueryExecutorBuilder create() { return new QueryExecutorBuilder(); }
 
-    public static QueryExecBuilder service(String serviceURL) { return create().endpoint(serviceURL); }
+    public static QueryExecutorBuilder service(String serviceURL) { return create().endpoint(serviceURL); }
 
-    private QueryExecBuilder() {}
+    private QueryExecutorBuilder() {}
 
     @Override
-    protected QueryExecBuilder thisBuilder() {
+    protected QueryExecutorBuilder thisBuilder() {
         return this;
     }
 
@@ -42,8 +42,8 @@ public class QueryExecBuilder extends ExecHTTPBuilder<QueryExec, QueryExecBuilde
     protected AgentConfig agentConfig;
 
     @Override
-    protected QueryExec buildX(HttpClient hClient, Query queryActual, String queryStringActual, Context cxt) {
-        return new QueryExec(serviceURL, queryActual, queryStringActual, urlLimit,
+    protected QueryExecutor buildX(HttpClient hClient, Query queryActual, String queryStringActual, Context cxt) {
+        return new QueryExecutor(serviceURL, queryActual, queryStringActual, urlLimit,
                 hClient, new HashMap<>(httpHeaders), Params.create(params), cxt,
                 copyArray(defaultGraphURIs),
                 copyArray(namedGraphURIs),
@@ -52,22 +52,22 @@ public class QueryExecBuilder extends ExecHTTPBuilder<QueryExec, QueryExecBuilde
     }
 
     @Override
-    public QueryExecBuilder initialTimeout(long timeout, TimeUnit timeUnit) {
+    public QueryExecutorBuilder initialTimeout(long timeout, TimeUnit timeUnit) {
         throw new UnsupportedOperationException();
     }
 
-    public QueryExecBuilder objectMapper(ObjectMapper objectMapper) {
+    public QueryExecutorBuilder objectMapper(ObjectMapper objectMapper) {
         this.objectMapper=objectMapper;
         return this;
     }
 
-    public QueryExecBuilder agentConfig(AgentConfig agentConfig) {
+    public QueryExecutorBuilder agentConfig(AgentConfig agentConfig) {
         this.agentConfig=agentConfig;
         return this;
     }
 
     @Override
-    public QueryExecBuilder overallTimeout(long timeout, TimeUnit timeUnit) {
+    public QueryExecutorBuilder overallTimeout(long timeout, TimeUnit timeUnit) {
         super.timeout(timeout, timeUnit);
         return thisBuilder();
     }
