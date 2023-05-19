@@ -75,7 +75,7 @@ public class TestDataspaceSynchronizer {
         Asset asset = Asset.Builder.newInstance()
                 .id("urn:cx:test:ExampleAsset")
                 .contentType("application/json, application/xml")
-                .version("0.8.6-SNAPSHOT")
+                .version("0.9.1-SNAPSHOT")
                 .name("Test Asset")
                 .description("Test Asset for RDF Representation")
                 .property("asset:prop:contract","<urn:cx:test:Contract>")

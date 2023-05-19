@@ -56,19 +56,24 @@ public class RDFStore {
         monitor.debug(String.format("Activating data service %s under access point %s",service,api));
         service.goActive();
         // read file with ontology, share this dataset with the catalogue sync procedure
-        if(config.getAssetFile()!=null) {
+        if(config.getAssetFiles()!=null) {
             startTx();
             StreamRDF dest = StreamRDFLib.dataset(dataset);
             StreamRDF graphDest = StreamRDFLib.extendTriplesToQuads(getDefaultGraph(),dest);
             StreamRDFCounting countingDest = StreamRDFLib.count(graphDest);
             ErrorHandler errorHandler = ErrorHandlerFactory.errorHandlerStd(monitorWrapper);
-            RDFParser.create()
-                    .errorHandler(errorHandler)
-                    .source(config.getAssetFile())
-                    .lang(Lang.TTL)
-                    .parse(countingDest);
+            for(String assetFile : config.getAssetFiles()) {
+                RDFParser.create()
+                        .errorHandler(errorHandler)
+                        .source(assetFile)
+                        .lang(Lang.TTL)
+                        .parse(countingDest);
+                monitor.debug(String.format("Initialised asset %s with file %s resulted in %d triples",config.getDefaultAsset(),assetFile,countingDest.countTriples()));
+            }
             commit();
-            monitor.info(String.format("Initialised asset %s with %d triples from file %s",config.getDefaultAsset(),countingDest.countTriples(),config.getAssetFile()));
+            monitor.info(String.format("Initialised asset %s with %d triples from %d files",config.getDefaultAsset(),countingDest.countTriples(),config.getAssetFiles().length));
+        } else {
+            monitor.info(String.format("Initialised asset %s with 0 triples.",config.getDefaultAsset()));
         }
     }
 

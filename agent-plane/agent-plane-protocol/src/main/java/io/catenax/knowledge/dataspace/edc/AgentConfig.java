@@ -86,8 +86,12 @@ public class AgentConfig {
     /**
      * @return initial file to load
      */
-    public String getAssetFile() {
-        return config.getString(ASSET_FILE_PROPERTY,null);
+    public String[] getAssetFiles() {
+        String[] files= config.getString(ASSET_FILE_PROPERTY,"").split(",");
+        if(files.length==1 && (files[0]==null || files[0].length()==0)) {
+            return null;
+        }
+        return files;
     }
 
     /**
@@ -166,8 +170,7 @@ public class AgentConfig {
      * @return array of validation endpoints
      */
     public String[] getValidatorEndpoints() {
-        String[] endpoints= config.getConfig(VALIDATION_ENDPOINTS).getEntries().values().toArray(new String[0]);
-        return endpoints;
+        return config.getConfig(VALIDATION_ENDPOINTS).getEntries().values().toArray(new String[0]);
     }
 
     /**
