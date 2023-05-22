@@ -8,25 +8,25 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <groupId>io.catenax.knowledge.dataspace.edc</groupId>
+        <groupId>org.eclipse.tractusx.agents.edc</groupId>
         <artifactId>control-plane</artifactId>
-        <version>0.9.1-SNAPSHOT</version>
+        <version>1.9.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.catenax.knowledge.dataspace.edc.control-plane</groupId>
+    <groupId>org.eclipse.tractusx.agents.edc.control-plane</groupId>
     <artifactId>controlplane-postgresql-hashicorp</artifactId>
     <packaging>jar</packaging>
 
-    <name>Catena-X Knowledge Agents EDC Ctrlplne (PGSQL+HASH)</name>
+    <name>Tractus-X Knowledge Agents EDC Ctrlplne (PGSQL+HASH)</name>
     <description>Builds an Extended Postgresql+Hashicorp Vault Controlplane.</description>
     <url>http://catena-x.net/</url>
 
     <properties>
         <sonar.moduleKey>${project.groupId}_${project.artifactId}</sonar.moduleKey>
-        <symbolic.name>io.catenax.knowledge.controlplane-postgresql-hashicorp</symbolic.name>
+        <symbolic.name>org.eclipse.tractusx.edc.agents.controlplane-postgresql-hashicorp</symbolic.name>
         <finalName>${symbolic.name}-${project.version}</finalName>
     </properties>
 
@@ -109,7 +109,7 @@
         
         <!-- Agent Extensions -->
         <dependency>
-            <groupId>io.catenax.knowledge.dataspace.edc.control-plane</groupId>
+            <groupId>org.eclipse.tractusx.agents.edc.control-plane</groupId>
             <artifactId>control-plane-transfer</artifactId>
             <version>${project.version}</version>
         </dependency>

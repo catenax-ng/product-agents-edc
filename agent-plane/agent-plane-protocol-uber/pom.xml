@@ -8,25 +8,25 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <groupId>io.catenax.knowledge.dataspace.edc</groupId>
+        <groupId>org.eclipse.tractusx.agents.edc</groupId>
         <artifactId>agent-plane</artifactId>
-        <version>0.9.1-SNAPSHOT</version>
+        <version>1.9.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.catenax.knowledge.dataspace.edc.agent-plane</groupId>
+    <groupId>org.eclipse.tractusx.agents.edc.agent-plane</groupId>
     <artifactId>agent-plane-protocol-uber</artifactId>
     <packaging>jar</packaging>
 
-    <name>Catena-X Knowledge Agents EDC Dataplane (Drop-In)</name>
+    <name>Tractus-X Knowledge Agents EDC Dataplane (Drop-In)</name>
     <description>Builds an EDC Drop-In with Agent/Triple Extensions.</description>
     <url>http://catena-x.net/</url>
 
     <properties>
         <sonar.moduleKey>${project.groupId}_${project.artifactId}</sonar.moduleKey>
-        <symbolic.name>io.catenax.knowledge.agent-plane-uber</symbolic.name>
+        <symbolic.name>org.eclipse.tractusx.edc.agent-plane.agent-plane-uber</symbolic.name>
         <finalName>${symbolic.name}-${project.version}</finalName>
     </properties>
 
@@ -98,7 +98,7 @@
     <dependencies>
         <!-- Agent Extensions -->
         <dependency>
-            <groupId>io.catenax.knowledge.dataspace.edc.agent-plane</groupId>
+            <groupId>org.eclipse.tractusx.agents.edc.agent-plane</groupId>
             <artifactId>agent-plane-protocol</artifactId>
             <version>${project.version}</version>
         </dependency>

@@ -1,16 +1,16 @@
 <project>
     <modelVersion>4.0.0</modelVersion>
-    <groupId>io.catenax.knowledge.dataspace.edc</groupId>
+    <groupId>org.eclipse.tractusx.agents.edc</groupId>
     <artifactId>control-plane</artifactId>
     <packaging>pom</packaging>
     <parent>
-        <groupId>io.catenax.knowledge.dataspace</groupId>
+        <groupId>org.eclipse.tractusx.agents</groupId>
         <artifactId>edc</artifactId>
-        <version>0.9.1-SNAPSHOT</version>
+        <version>1.9.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>    
     </parent>
-    <name>Catena-X Knowledge Agents Dataspace Control Plane</name>
-    <description>Project for all EDC-Related Control Plane Artifacts</description>
+    <name>Tractus-X Knowledge Agents Dataspace Control Plane</name>
+    <description>Artifacts for an Http-Like Protocol Proxy Transfer Control Plane</description>
     <dependencies>
     </dependencies>
     <properties>

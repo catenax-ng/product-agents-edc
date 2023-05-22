@@ -8,25 +8,25 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <groupId>io.catenax.knowledge.dataspace.edc</groupId>
+        <groupId>org.eclipse.tractusx.agents.edc</groupId>
         <artifactId>control-plane</artifactId>
-        <version>0.9.1-SNAPSHOT</version>
+        <version>1.9.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.catenax.knowledge.dataspace.edc.control-plane</groupId>
+    <groupId>org.eclipse.tractusx.agents.edc.control-plane</groupId>
     <artifactId>control-plane-transfer</artifactId>
     <packaging>jar</packaging>
 
-    <name>Catena-X Knowledge Agents EDC Ctrlplne Transfer</name>
+    <name>Tractus-X Knowledge Agents EDC Ctrlplne Transfer</name>
     <description>Builds an EDC Control Plane Extension which allows more callback endpoints in the config and allows to build sub-protocols for Http sync transfer.</description>
     <url>http://catena-x.net/</url>
 
     <properties>
         <sonar.moduleKey>${project.groupId}_${project.artifactId}</sonar.moduleKey>
-        <symbolic.name>io.catenax.knowledge.controlplane-memory</symbolic.name>
+        <symbolic.name>org.eclipse.tractusx.agents.edc.control-plane.control-plane-transfer</symbolic.name>
         <finalName>${symbolic.name}-${project.version}</finalName>
     </properties>
 
@@ -68,6 +68,10 @@
              <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
