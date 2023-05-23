@@ -158,7 +158,7 @@
         <dependency>
           <groupId>org.apache.jena</groupId>
           <artifactId>jena-fuseki-core</artifactId>
-          <version>4.6.0</version>
+          <version>4.8.0</version>
           <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
