@@ -1,0 +1,24 @@
+<project>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.eclipse.tractusx.agents.edc</groupId>
+    <artifactId>agent-plane</artifactId>
+    <packaging>pom</packaging>
+    <parent>
+        <groupId>org.eclipse.tractusx.agents</groupId>
+        <artifactId>edc</artifactId>
+        <version>1.9.1-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>    
+    </parent>
+    <name>Tractus-X EDC Agent Plane</name>
+    <description>Artifacts for Agent-Enabled Data Planes</description>
+    <dependencies>
+    </dependencies>
+    <properties>
+    </properties>
+    <modules>
+        <module>agent-plane-protocol</module>
+        <module>agent-plane-protocol-uber</module>
+        <module>agentplane-azurevault</module>
+        <module>agentplane-hashicorp</module>
+    </modules>
+</project>

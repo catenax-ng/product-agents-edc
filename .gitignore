@@ -1,0 +1,20 @@
+# Ignore build artifacts from checking in
+# See copyright notice in the top folder
+# See authors file in the top folder
+# See license file in the top folder
+node_modules/
+dist/
+reports/
+*.tsbuildinfo
+bin/
+target/
+dependency-reduced-pom.xml
+.DS_Store
+logs/
+*.data
+*.iml
+.idea/
+*.versionsBackup
+.vscode
+.env
+__pycache__

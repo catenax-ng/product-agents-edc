@@ -1,0 +1,24 @@
+<project>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.eclipse.tractusx.agents.edc</groupId>
+    <artifactId>control-plane</artifactId>
+    <packaging>pom</packaging>
+    <parent>
+        <groupId>org.eclipse.tractusx.agents</groupId>
+        <artifactId>edc</artifactId>
+        <version>1.9.1-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>    
+    </parent>
+    <name>Tractus-X Knowledge Agents Dataspace Control Plane</name>
+    <description>Artifacts for an Http-Like Protocol Proxy Transfer Control Plane</description>
+    <dependencies>
+    </dependencies>
+    <properties>
+    </properties>
+    <modules>
+        <module>control-plane-transfer</module>
+        <module>controlplane-memory</module>
+        <module>controlplane-memory-hashicorp</module>
+        <module>controlplane-postgresql-hashicorp</module>
+    </modules>
+</project>
