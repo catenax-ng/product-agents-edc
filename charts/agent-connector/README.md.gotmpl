@@ -9,9 +9,10 @@
 {{ template "chart.homepageLine" . }}
 
 ## TL;DR
+
 ```shell
-$ helm repo add catenax-ng-product-knowledge https://catenax-ng.github.io/product-knowledge/infrastructure
-$ helm install my-release catenax-ng-product-knowledge/agent-data-plane --version {{ .Version }}
+helm repo add tractusx-edc https://eclipse-tractusx.github.io/charts/dev
+helm install my-release tractusx-edc/tractusx-connector --version {{ .Version }}
 ```
 
 {{ template "chart.maintainersSection" . }}

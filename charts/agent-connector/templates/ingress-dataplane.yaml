@@ -1,11 +1,13 @@
-{{- $fullName := include "edc-dataplane.fullname" . }}
-{{- $labels := include "edc-dataplane.labels" . | nindent 4 }}
+{{- $fullName := include "txdc.fullname" . }}
+{{- $dataLabels := include "txdc.dataplane.labels" . | nindent 4 }}
+{{- range $dataplane_name, $dataplane := .Values.repositories }}
+{{- $dataEdcEndpoints := $dataplane.endpoints }}
 {{- $gitVersion := .Capabilities.KubeVersion.GitVersion }}
-{{- $edcEndpoints := .Values.edc.endpoints }}
 {{- $namespace := .Release.Namespace }}
-{{- range .Values.ingresses }}
+
+{{- range $dataplane.ingresses }}
 {{- if and .enabled .endpoints }}
-{{- $ingressName := printf "%s-%s" $fullName .hostname }}
+{{- $dataIngressName := printf "%s-%s-%s" $fullName $dataplane.name .hostname }}
 ---
 {{- if semverCompare ">=1.19-0" $gitVersion }}
 apiVersion: networking.k8s.io/v1
@@ -16,10 +18,10 @@ apiVersion: extensions/v1beta1
 {{- end }}
 kind: Ingress
 metadata:
-  name: {{ $ingressName }}
+  name: {{ $dataIngressName }}
   namespace: {{ $namespace | default "default" | quote }}
   labels:
-    {{- $labels | nindent 2 }}
+    {{- $dataLabels | nindent 2 }}
   annotations:
     {{- if and .className (not (semverCompare ">=1.18-0" $gitVersion)) }}
     {{- if not (hasKey .annotations "kubernetes.io/ingress.class") }}
@@ -49,7 +51,7 @@ spec:
       {{- if .tls.secretName }}
       secretName: {{ .tls.secretName }}
       {{- else }}
-      secretName: {{ $ingressName }}-tls
+      secretName: {{ $dataIngressName }}-tls
       {{- end }}
   {{- end }}
   rules:
@@ -57,23 +59,21 @@ spec:
       http:
         paths:
           {{- $ingressEdcEndpoints := .endpoints }}
-          {{- $prefix := .prefix }}
-          {{- range  $name, $mapping := $edcEndpoints }}
+          {{- range  $name, $mapping := $dataEdcEndpoints }}
           {{- if (has $name $ingressEdcEndpoints) }}
-          - path: {{ $prefix}}{{ $mapping.regex | default $mapping.path }}            
+          - path: {{ $mapping.path }}
             pathType: Prefix
             backend:
               {{- if semverCompare ">=1.19-0" $gitVersion }}
               service:
-                name: {{ $fullName }}
+                name: {{ $fullName }}-{{ $dataplane.name }}
                 port:
                   number: {{ $mapping.port }}
               {{- else }}
-              serviceName: {{ $fullName }}
-              servicePort: {{ $mapping.port }}
               {{- end }}
         {{- end }}
   {{- end }}
   {{- end }}
 {{- end }}{{- /* end: if .enabled */}}
 {{- end }}{{- /* end: range .Values.ingresses */}}
+{{- end }}{{- /* end: range .Values.dataplanes */}}

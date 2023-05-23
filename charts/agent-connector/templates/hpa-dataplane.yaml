@@ -1,0 +1,31 @@
+{{- range $dataplane_name, $dataplane := .Values.repositories }}
+{{- if $dataplane.autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "txdc.fullname" . }}-{{ $dataplane.name }}
+  labels:
+    {{- include "txdc.dataplane.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "txdc.fullname" . }}-dataplane
+  minReplicas: {{ $dataplane.autoscaling.minReplicas }}
+  maxReplicas: {{ $dataplane.autoscaling.maxReplicas }}
+  metrics:
+    {{- if $dataplane.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: {{ $dataplane.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if $dataplane.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        targetAverageUtilization: {{ $dataplane.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}
+{{- end }}

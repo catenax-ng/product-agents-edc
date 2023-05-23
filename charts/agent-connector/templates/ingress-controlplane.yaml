@@ -1,11 +1,12 @@
-{{- $fullName := include "edc-controlplane.fullname" . }}
-{{- $labels := include "edc-controlplane.labels" . | nindent 4 }}
+{{- $fullName := include "txdc.fullname" . }}
+{{- $controlLabels := include "txdc.controlplane.labels" . | nindent 4 }}
+{{- $controlEdcEndpoints := .Values.controlplane.endpoints }}
 {{- $gitVersion := .Capabilities.KubeVersion.GitVersion }}
-{{- $edcEndpoints := .Values.edc.endpoints }}
 {{- $namespace := .Release.Namespace }}
-{{- range .Values.ingresses }}
+
+{{- range .Values.controlplane.ingresses }}
 {{- if and .enabled .endpoints }}
-{{- $ingressName := printf "%s-%s" $fullName .hostname }}
+{{- $controlIngressName := printf "%s-controlplane-%s" $fullName .hostname }}
 ---
 {{- if semverCompare ">=1.19-0" $gitVersion }}
 apiVersion: networking.k8s.io/v1
@@ -16,10 +17,10 @@ apiVersion: extensions/v1beta1
 {{- end }}
 kind: Ingress
 metadata:
-  name: {{ $ingressName }}
+  name: {{ $controlIngressName }}
   namespace: {{ $namespace | default "default" | quote }}
   labels:
-    {{- $labels | nindent 2 }}
+    {{- $controlLabels | nindent 2 }}
   annotations:
     {{- if and .className (not (semverCompare ">=1.18-0" $gitVersion)) }}
     {{- if not (hasKey .annotations "kubernetes.io/ingress.class") }}
@@ -49,7 +50,7 @@ spec:
       {{- if .tls.secretName }}
       secretName: {{ .tls.secretName }}
       {{- else }}
-      secretName: {{ $ingressName }}-tls
+      secretName: {{ $controlIngressName }}-tls
       {{- end }}
   {{- end }}
   rules:
@@ -57,20 +58,17 @@ spec:
       http:
         paths:
           {{- $ingressEdcEndpoints := .endpoints }}
-          {{- $prefix := .prefix }}
-          {{- range  $name, $mapping := $edcEndpoints }}
+          {{- range  $name, $mapping := $controlEdcEndpoints }}
           {{- if (has $name $ingressEdcEndpoints) }}
-          - path: {{ $prefix}}{{ $mapping.regex | default $mapping.path }}
+          - path: {{ $mapping.path }}
             pathType: Prefix
             backend:
               {{- if semverCompare ">=1.19-0" $gitVersion }}
               service:
-                name: {{ $fullName }}
+                name: {{ $fullName }}-controlplane
                 port:
                   number: {{ $mapping.port }}
               {{- else }}
-              serviceName: {{ $fullName }}
-              servicePort: {{ $mapping.port }}
               {{- end }}
         {{- end }}
   {{- end }}
