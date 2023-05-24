@@ -1,12 +1,13 @@
-{{- range $dataplane_name, $dataplane := .Values.repositories }}
+{{ $root := . }}
+{{- range $dataplane_name, $dataplane := .Values.dataplanes }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "txdc.fullname" . }}-{{ $dataplane.name }}
-  namespace: {{ .Release.Namespace | default "default" | quote }}
+  name: {{ include "txdc.fullname" $root }}-{{ $dataplane.name }}
+  namespace: {{ $root.Release.Namespace | default "default" | quote }}
   labels:
-    {{- include "txdc.dataplane.labels" . | nindent 4 }}
+    {{- include "txdc.dataplane.labels" (dict "dataplane" $dataplane "root" $root) | nindent 4 }}
 spec:
   type: {{ $dataplane.service.type }}
   ports:
@@ -30,6 +31,12 @@ spec:
       targetPort: metrics
       protocol: TCP
       name: metrics
+  {{- if $dataplane.endpoints.callback }}
+    - port: {{ $dataplane.endpoints.callback.port }}
+      targetPort: callback
+      protocol: TCP
+      name: callback
+  {{- end }}
   selector:
-    {{- include "txdc.dataplane.selectorLabels" $dataplane | nindent 4 }}
+    {{- include "txdc.dataplane.selectorLabels" (dict "dataplane" $dataplane "root" $root) | nindent 4 }}
 {{- end }}

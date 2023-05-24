@@ -32,6 +32,6 @@ The following is a simple type of single-level Software-BOM for all official ope
 | EDC Agent Plane | [Javax Servlet API](https://de.wikipedia.org/wiki/Jakarta_Servlet) | >=4.0.1 | All | Common Development & Distribution License |     |
 | EDC Agent Plane | [Jakarta Servlet API](https://projects.eclipse.org/projects/ee4j.servlet) | >=5.0.2 | All | Eclipse Public License (2.0) |     |
 | EDC Agent Plane | [Java JWT](https://github.com/auth0/java-jwt) | >=4.0.0 | All | MIT |     |
-| EDC Agent Plane | [Azure SDK for Java](https://github.com/Azure/azure-sdk-for-java) | >=1.5 | All | MIT |     |
+| EDC Agent Plane | [Azure SDK for Java](https://github.com/Azure/azure-sdk-for-java) | >=1.2.2 | All | MIT |     |
 | EDC Agent Plane | [Failsafe](https://failsafe.dev/) | >=3.2.4 | All | Apache License 2.0 |     |
 | EDC Agent Plane | [Mockito](https://site.mockito.org/) | >=4.6.1 | Test | MIT |     | 

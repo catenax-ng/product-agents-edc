@@ -20,22 +20,22 @@
 #
 #  SPDX-License-Identifier: Apache-2.0
 #
-
-{{- range $dataplane_name, $dataplane := .Values.repositories }}
+{{ $root := . }}
+{{- range $dataplane_name, $dataplane := .Values.dataplanes }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "txdc.fullname" . }}-{{ $dataplane.name }}
+  name: {{ include "txdc.fullname" $root }}-{{ $dataplane.name }}
   labels:
-    {{- include "txdc.dataplane.labels" . | nindent 4 }}
+    {{- include "txdc.dataplane.labels" (dict "dataplane" $dataplane "root" $root) | nindent 4 }}
 spec:
   {{- if not $dataplane.autoscaling.enabled }}
   replicas: {{ $dataplane.replicaCount }}
   {{- end }}
   selector:
     matchLabels:
-      {{- include "txdc.dataplane.selectorLabels" $dataplane | nindent 6 }}
+      {{- include "txdc.dataplane.selectorLabels" (dict "dataplane" $dataplane "root" $root) | nindent 6 }}
   template:
     metadata:
       {{- with $dataplane.podAnnotations }}
@@ -43,30 +43,30 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "txdc.dataplane.selectorLabels" $dataplane | nindent 8 }}
+        {{- include "txdc.dataplane.selectorLabels" (dict "dataplane" $dataplane "root" $root) | nindent 8 }}
         {{- with $dataplane.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
-      {{- with .Values.imagePullSecrets }}
+      {{- with $root.Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "txdc.serviceAccountName" . }}
+      serviceAccountName: {{ include "txdc.serviceAccountName" $root }}
       securityContext:
         {{- toYaml $dataplane.podSecurityContext | nindent 8 }}
       initContainers:
         {{- toYaml $dataplane.initContainers | nindent 8 }}
       containers:
-        - name: {{ .Chart.Name }}
+        - name: {{ $root.Chart.Name }}
           securityContext:
             {{- toYaml $dataplane.securityContext | nindent 12 }}
           {{- if $dataplane.image.repository }}
-          image: "{{ $dataplane.image.repository }}:{{ $dataplane.image.tag | default .Chart.AppVersion }}"
+          image: "{{ $dataplane.image.repository }}:{{ $dataplane.image.tag | default $root.Chart.AppVersion }}"
           {{- else if and .Values.vault.hashicorp }}
-          image: "ghcr.io/catenax-ng/product-agents-edc/dataplane-hashicorp:{{ $dataplane.image.tag | default .Chart.AppVersion }}"
+          image: "ghcr.io/catenax-ng/product-agents-edc/dataplane-hashicorp:{{ $dataplane.image.tag | default $root.Chart.AppVersion }}"
           {{- else if .Values.vault.azure }}
-          image: "ghcr.io/catenax-ng/product-agents-edc/dataplane-azure-vault:{{ $dataplane.image.tag | default .Chart.AppVersion }}"
+          image: "ghcr.io/catenax-ng/product-agents-edc/dataplane-azure-vault:{{ $dataplane.image.tag | default $root.Chart.AppVersion }}"
           {{- else }}
           {{- fail "cannot choose data-plane image automatically based on configuration" }}
           {{- end }}
@@ -129,7 +129,7 @@ spec:
             - name: "WEB_HTTP_PUBLIC_PATH"
               value: {{ $dataplane.endpoints.public.path | quote }}
             - name: "EDC_DATAPLANE_TOKEN_VALIDATION_ENDPOINT"
-              value: {{ include "txdc.controlplane.url.validation" .}}
+              value: {{ include "txdc.controlplane.url.validation" $root}}
             - name: "WEB_HTTP_OBSERVABILITY_PORT"
               value: {{ $dataplane.endpoints.observability.port | quote }}
             - name: "WEB_HTTP_OBSERVABILITY_PATH"
@@ -137,37 +137,41 @@ spec:
             - name: "TRACTUSX_API_OBSERVABILITY_ALLOW-INSECURE"
               value: {{ $dataplane.endpoints.observability.insecure | quote }}
 
-          ###################
-          # AGENT STUFF     #
-          ###################
 
           {{- if $dataplane.endpoints.callback }}
+            ###################
+            # AGENT CALLBACK  #
+            ###################
             - name: "WEB_HTTP_CALLBACK_PORT"
               value: {{ $dataplane.endpoints.callback.port | quote }}
             - name: "WEB_HTTP_CALLBACK_PATH"
               value: {{ $dataplane.endpoints.callback.path | quote }}
             - name: "CX_AGENT_CALLBACK"
-              value: {{- printf "http://%s-%s:%v%s/endpoint-data-reference" ( include "txdc.fullname" $ ) $dataplane.name $dataplane.endpoints.callback.port $dataplane.endpoints.callback.path -}}
-
+              value: {{ printf "http://%s-%s:%v%s/endpoint-data-reference" ( include "txdc.fullname" $root ) $dataplane.name $dataplane.endpoints.callback.port $dataplane.endpoints.callback.path | quote }}
             - name: "EDC_API_AUTH_KEY"
-              value: { { .Values.controlplane.endpoints.management.authKey | required ".Values.controlplane.endpoints.mangement.authKey is required" | quote } }
+              value: {{ $root.Values.controlplane.endpoints.management.authKey | required ".Values.controlplane.endpoints.mangement.authKey is required" | quote }}
             - name: "CX_AGENT_CONTROLPLANE_URL"
-              value: {{- printf "http://%s-controlplane:%v" ( include "txdc.fullname" $ ) .Values.controlplane.endpoints.ids.port -}}
+              value: {{ printf "http://%s-controlplane:%v" ( include "txdc.fullname" $root ) $root.Values.controlplane.endpoints.protocol.port | quote }}
             - name: "CX_AGENT_CONTROLPLANE_MANAGEMENT"
-              value: {{- printf "http://%s-controlplane:%v%s" ( include "txdc.fullname" $ ) .Values.controlplane.endpoints.management.port .Values.controlplane.endpoints.management.path -}}
+              value: {{ printf "http://%s-controlplane:%v%s" ( include "txdc.fullname" $root ) $root.Values.controlplane.endpoints.management.port $root.Values.controlplane.endpoints.management.path  | quote }}
           {{- end }}
 
           {{- if $dataplane.agent.default }}
+            ###############
+            # AGENT INIT  #
+            ###############
             - name: "CX_AGENT_ASSET_FILE"
-              value: {{ join "," $dataplane.agent.default }} 
+              value: {{ join "," $dataplane.agent.default | quote }} 
           {{- end }}
           
           {{- if $dataplane.agent.connectors }}
+            ###################
+            # AGENT SYNC      #
+            ###################
             - name: "CX_AGENT_DATASPACE_REMOTES"
-              value: {{ join "," $dataplane.agent.connectors }} 
-
+              value: {{ join "," $dataplane.agent.connectors | quote }} 
             - name: "CX_AGENT_DATASPACE_SYNCHRONIZATION"
-              value: {{ $dataplane.agent.synchronization | required (printf ".Values.dataplane.%s.agent.synchronization should be set if connectors are specified" $dataplane_name) }}
+              value: {{ $dataplane.agent.synchronization | required (printf ".Values.dataplane.%s.agent.synchronization should be set if connectors are specified" $dataplane_name) | quote }}
           {{- end }}
 
             #######
@@ -190,40 +194,40 @@ spec:
             ## VAULT ##
             ###########
 
-          {{- if .Values.vault.hashicorp.enabled }}
+          {{- if $root.Values.vault.hashicorp.enabled }}
             # see extension https://github.com/eclipse-tractusx/tractusx-edc/tree/main/edc-extensions/hashicorp-vault
             - name: "EDC_VAULT_HASHICORP_URL"
-              value: {{ .Values.vault.hashicorp.url | required ".Values.vault.hashicorp.url is required" | quote }}
+              value: {{ $root.Values.vault.hashicorp.url | required ".Values.vault.hashicorp.url is required" | quote }}
             - name: "EDC_VAULT_HASHICORP_TOKEN"
-              value: {{ .Values.vault.hashicorp.token | required ".Values.vault.hashicorp.token is required" | quote }}
+              value: {{ $root.Values.vault.hashicorp.token | required ".Values.vault.hashicorp.token is required" | quote }}
             - name: "EDC_VAULT_HASHICORP_TIMEOUT_SECONDS"
-              value: {{ .Values.vault.hashicorp.timeout | quote }}
+              value: {{ $root.Values.vault.hashicorp.timeout | quote }}
             - name: "EDC_VAULT_HASHICORP_HEALTH_CHECK_ENABLED"
-              value: {{ .Values.vault.hashicorp.healthCheck.enabled | quote }}
+              value: {{ $root.Values.vault.hashicorp.healthCheck.enabled | quote }}
             - name: "EDC_VAULT_HASHICORP_HEALTH_CHECK_STANDBY_OK"
-              value: {{ .Values.vault.hashicorp.healthCheck.standbyOk | quote }}
+              value: {{ $root.Values.vault.hashicorp.healthCheck.standbyOk | quote }}
             - name: "EDC_VAULT_HASHICORP_API_SECRET_PATH"
-              value: {{ .Values.vault.hashicorp.paths.secret | quote }}
+              value: {{ $root.Values.vault.hashicorp.paths.secret | quote }}
             - name: "EDC_VAULT_HASHICORP_API_HEALTH_CHECK_PATH"
-              value: {{ .Values.vault.hashicorp.paths.health | quote }}
+              value: {{ $root.Values.vault.hashicorp.paths.health | quote }}
           {{- end }}
 
-          {{- if .Values.vault.azure.enabled }}
+          {{- if $root.Values.vault.azure.enabled }}
             - name: "EDC_VAULT_CLIENTID"
-              value: {{ .Values.vault.azure.client | quote  }}
+              value: {{ $root.Values.vault.azure.client | quote  }}
             - name: "EDC_VAULT_TENANTID"
-              value: {{ .Values.vault.azure.tenant | quote }}
+              value: {{ $root.Values.vault.azure.tenant | quote }}
             - name: "EDC_VAULT_NAME"
-              value: {{ .Values.vault.azure.name | quote }}
+              value: {{ $root.Values.vault.azure.name | quote }}
             # only set the env var if config value not null
-            {{- if .Values.vault.azure.secret }}
+            {{- if $root.Values.vault.azure.secret }}
             - name: "EDC_VAULT_CLIENTSECRET"
-              value: {{ .Values.vault.azure.secret | quote }}
+              value: {{ $root.Values.vault.azure.secret | quote }}
             {{- end }}
             # only set the env var if config value not null
-            {{- if .Values.vault.azure.certificate }}
+            {{- if $root.Values.vault.azure.certificate }}
             - name: "EDC_VAULT_CERTIFICATE"
-              value: {{ .Values.vault.azure.certificate | quote }}
+              value: {{ $root.Values.vault.azure.certificate | quote }}
             {{- end }}
           {{- end }}
 
@@ -257,15 +261,24 @@ spec:
             - name: "configuration"
               mountPath: "/app/logging.properties"
               subPath: "logging.properties"
+            {{- range $config_name, $config_value := $dataplane.configs }}
+            - name: "configuration"
+              mountPath: {{ printf "/app/%s" $config_name | quote }}
+              subPath: {{ printf "%s" $config_name | quote }}
+            {{- end }}
       volumes:
         - name: "configuration"
           configMap:
-            name: {{ include "txdc.fullname" . }}-{{ $dataplane_name }}
+            name: {{ include "txdc.fullname" $root }}-{{ $dataplane_name }}
             items:
               - key: "opentelemetry.properties"
                 path: "opentelemetry.properties"
               - key: "logging.properties"
                 path: "logging.properties"
+            {{- range $config_name, $config_value := $dataplane.configs }}
+              - key: {{ printf "%s" $config_name | quote }}
+                path: {{ printf "%s" $config_name | quote }}
+            {{- end }}
       {{- with $dataplane.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

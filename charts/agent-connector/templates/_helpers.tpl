@@ -59,12 +59,12 @@ app.kubernetes.io/part-of: edc
 Data Common labels
 */}}
 {{- define "txdc.dataplane.labels" -}}
-helm.sh/chart: {{ include "txdc.chart" . }}
+helm.sh/chart: {{ include "txdc.chart" .root }}
 {{ include "txdc.dataplane.selectorLabels" . }}
-{{- if .Chart.AppVersion }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- if .root.Chart.AppVersion }}
+app.kubernetes.io/version: {{ .root.Chart.AppVersion | quote }}
 {{- end }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/managed-by: {{ .root.Release.Service }}
 app.kubernetes.io/component: edc-dataplane
 app.kubernetes.io/part-of: edc
 {{- end }}
@@ -81,8 +81,8 @@ app.kubernetes.io/instance: {{ .Release.Name }}-controlplane
 Data Selector labels
 */}}
 {{- define "txdc.dataplane.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "txdc.name" . }}-{{ .name }}
-app.kubernetes.io/instance: {{ .Release.Name }}-{{ .name }}
+app.kubernetes.io/name: {{ include "txdc.name" .root }}-{{ .dataplane.name }}
+app.kubernetes.io/instance: {{ .root.Release.Name }}-{{ .dataplane.name }}
 {{- end }}
 
 {{/*
@@ -139,18 +139,19 @@ Validation URL
 Data Control URL
 */}}
 {{- define "txdc.dataplane.url.control" -}}
-{{- printf "http://%s-%s:%v%s" (include "txdc.fullname" . ) .name .endpoints.control.port .endpoints.control.path -}}
+{{- printf "http://%s-%s:%v%s" (include "txdc.fullname" .root ) .dataplane.name .dataplane.endpoints.control.port .dataplane.endpoints.control.path -}}
 {{- end }}
 
 {{/*
 Data Public URL
 */}}
 {{- define "txdc.dataplane.url.public" -}}
-{{- if .url.public }}{{/* if public api url has been specified explicitly */}}
-{{- .url.public }}
+{{- $dataplane := .dataplane -}}
+{{- $root := .root -}}
+{{- if .dataplane.url.public }}{{/* if public api url has been specified explicitly */}}
+{{- .dataplane.url.public }}
 {{- else }}{{/* else when public api url has not been specified explicitly */}}
-{{ $dataplane := . }}
-{{- with (index  .ingresses 0) }}
+{{- with (index .dataplane.ingresses 0) }}
 {{- if .enabled }}{{/* if ingress enabled */}}
 {{- if .tls.enabled }}{{/* if TLS enabled */}}
 {{- printf "https://%s%s" .hostname $dataplane.endpoints.public.path -}}
@@ -158,7 +159,7 @@ Data Public URL
 {{- printf "http://%s%s" .hostname $dataplane.endpoints.public.path -}}
 {{- end }}{{/* end if tls */}}
 {{- else }}{{/* else when ingress not enabled */}}
-{{- printf "http://%s-%s:%v%s" (include "txdc.fullname" $ ) $dataplane.name $dataplane.endpoints.public.port $dataplane.endpoints.public.path -}}
+{{- printf "http://%s-%s:%v%s" (include "txdc.fullname" $root ) $dataplane.name $dataplane.endpoints.public.port $dataplane.endpoints.public.path -}}
 {{- end }}{{/* end if ingress */}}
 {{- end }}{{/* end with ingress */}}
 {{- end }}{{/* end if .url.public */}}
