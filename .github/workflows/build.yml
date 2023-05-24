@@ -78,7 +78,7 @@ jobs:
           submodules: recursive
 
       # We need to manually instruct maven
-      - uses: ./.github/actions/setup_java
+      - uses: ./.github/actions/setup-java
 
       - name: Login to GitHub Container Registry
         if: ${{ github.repository == 'catenax-ng/product-agents-edc' && github.ref == 'refs/heads/main' }}
