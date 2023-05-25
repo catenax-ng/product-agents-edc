@@ -515,13 +515,14 @@ dataplanes:
       # -- The synchronization interval in ms to update the federated data catalogue
       synchronization: -1
       # -- The list of remote connector IDS URLs to synchronize with
-      connectors  : []
+      connectors: []
 
+# -- Standard settings for persistence, "jdbcUrl", "username" and "password" need to be overridden
 postgresql:
   enabled: false
-  jdbcUrl: ""
-  username: ""
-  password: ""
+  jdbcUrl:
+  username:
+  password:
 
 vault:
   hashicorp:
