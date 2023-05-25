@@ -165,7 +165,7 @@ spec:
             - name: "IDS_WEBHOOK_ADDRESS"
               value: {{ include "txdc.controlplane.url.protocol" . | quote }}
             - name: "EDC_IDS_ENDPOINT"
-              value: {{ printf "%s%s" (include "txdc.controlplane.url.protocol" .) .Values.controlplane.endpoints.protocol.path | quote }}
+              value: {{ printf "%s%s" (include "txdc.controlplane.url.protocol" . ) .Values.controlplane.endpoints.protocol.path | quote }}
             - name: "EDC_IDS_ID"
               value: {{ printf "urn:connector:%s" (lower .Values.controlplane.internationalDataSpaces.id) | quote }}
             - name: "EDC_IDS_DESCRIPTION"
@@ -247,30 +247,30 @@ spec:
             ## DATA PLANE ##
             ################
 
-          {{- range $dataplane_name, $dataplane := .Values.repositories }}
+          {{- range $dataplane_name, $dataplane := .Values.dataplanes }}
             # see extension https://github.com/eclipse-tractusx/tractusx-edc/tree/main/edc-extensions/dataplane-selector-configuration
             - name: {{ printf "EDC_DATAPLANE_SELECTOR_%s_URL" (upper $dataplane.name) | quote }}
-              value: {{ include include "txdc.dataplane.url.control" $dataplane }}
+              value: {{ include "txdc.dataplane.url.control" (dict "dataplane" $dataplane "root" $) }}
             - name: {{ printf "EDC_DATAPLANE_SELECTOR_%s_SOURCETYPES" (upper $dataplane.name) | quote }}
               value: $dataplane.sourceTypes
             - name: {{ printf "EDC_DATAPLANE_SELECTOR_%s_DESTINATIONTYPES" (upper $dataplane.name) | quote }}
               value: $dataplane.destinationTypes
             - name: {{ printf "EDC_DATAPLANE_SELECTOR_%s_PROPERTIES" (upper $dataplane.name) | quote }}
               value: |-
-                {{ printf "{ \"publicApiUrl\": \"%s\" }" (include "txdc.dataplane.url.public" $dataplane ) }}
+                {{ printf "{ \"publicApiUrl\": \"%s\" }" (include "txdc.dataplane.url.public" (dict "dataplane" $dataplane "root" $)) }}
           {{- end }}
 
             # see extension https://github.com/eclipse-edc/Connector/tree/main/extensions/control-plane/data-plane-transfer
             - name: "EDC_TRANSFER_PROXY_ENDPOINT"
-              value: {{ include "txdc.dataplane.url.public" .Values.dataplanes.dataplane }}
+              value: {{ include "txdc.dataplane.url.public" (dict "dataplane" .Values.dataplanes.dataplane "root" $) }}
             - name: "EDC_TRANSFER_PROXY_TOKEN_SIGNER_PRIVATEKEY_ALIAS"
               value: {{ .Values.vault.secretNames.transferProxyTokenSignerPrivateKey | quote }}
             - name: "EDC_TRANSFER_PROXY_TOKEN_VERIFIER_PUBLICKEY_ALIAS"
               value: {{ .Values.vault.secretNames.transferProxyTokenSignerPublicKey | quote }}
 
-            # see extension https://github.com/eclipse-edc/Connector/tree/main/extensions/control-plane/transfer/transfer-pull-http-dynamic-receiver
 
           {{- if .Values.backendService.httpProxyTokenReceiverUrl }}
+            # see extension https://github.com/eclipse-edc/Connector/tree/main/extensions/control-plane/transfer/transfer-pull-http-dynamic-receiver
             - name: "EDC_RECEIVER_HTTP_DYNAMIC_ENDPOINT"
               value: {{ .Values.backendService.httpProxyTokenReceiverUrl | required ".Values.backendService.httpProxyTokenReceiverUrl is required" | quote }}
           {{- end }}

@@ -65,7 +65,7 @@ helm install my-release tractusx-edc/tractusx-connector --version 1.9.1
 | controlplane.ingresses[0].certManager.issuer | string | `""` | If preset enables certificate generation via cert-manager namespace scoped issuer |
 | controlplane.ingresses[0].className | string | `""` | Defines the [ingress class](https://kubernetes.io/docs/concepts/services-networking/ingress/#ingress-class)  to use |
 | controlplane.ingresses[0].enabled | bool | `false` |  |
-| controlplane.ingresses[0].endpoints | list | `["ids"]` | EDC endpoints exposed by this ingress resource |
+| controlplane.ingresses[0].endpoints | list | `["protocol"]` | EDC endpoints exposed by this ingress resource |
 | controlplane.ingresses[0].hostname | string | `"edc-control.local"` | The hostname to be used to precisely map incoming traffic onto the underlying network service |
 | controlplane.ingresses[0].tls | object | `{"enabled":false,"secretName":""}` | TLS [tls class](https://kubernetes.io/docs/concepts/services-networking/ingress/#tls) applied to the ingress resource |
 | controlplane.ingresses[0].tls.enabled | bool | `false` | Enables TLS on the ingress resource |

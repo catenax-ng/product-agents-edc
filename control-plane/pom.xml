@@ -20,5 +20,6 @@
         <module>controlplane-memory</module>
         <module>controlplane-memory-hashicorp</module>
         <module>controlplane-postgresql-hashicorp</module>
+        <module>controlplane-postgresql</module>
     </modules>
 </project>

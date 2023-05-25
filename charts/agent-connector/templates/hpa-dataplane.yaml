@@ -1,17 +1,18 @@
-{{- range $dataplane_name, $dataplane := .Values.repositories }}
+{{ $root := . }}
+{{- range $dataplane_name, $dataplane := .Values.dataplanes }}
 {{- if $dataplane.autoscaling.enabled }}
 ---
 apiVersion: autoscaling/v2beta1
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ include "txdc.fullname" . }}-{{ $dataplane.name }}
+  name: {{ include "txdc.fullname" $root }}-{{ $dataplane.name }}
   labels:
-    {{- include "txdc.dataplane.labels" . | nindent 4 }}
+    {{- include "txdc.dataplane.labels" (dict "dataplane" $dataplane "root" $root) | nindent 4 }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ include "txdc.fullname" . }}-dataplane
+    name: {{ include "txdc.fullname" $root }}-{{ $dataplane.name }}
   minReplicas: {{ $dataplane.autoscaling.minReplicas }}
   maxReplicas: {{ $dataplane.autoscaling.maxReplicas }}
   metrics:

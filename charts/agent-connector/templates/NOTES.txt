@@ -36,7 +36,7 @@
      NOTE: It may take a few minutes for the LoadBalancer IP to be available.
            You can watch the status of by running 'kubectl get --namespace {{ $.Release.Namespace }} svc -w {{ include "txdc.fullname" $ }}'
   export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "txdc.fullname" $ }} --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
-  echo http://$SERVICE_IP:{{ $datalane.service.port }}
+  echo http://$SERVICE_IP:{{ $dataplane.service.port }}
 {{- else if contains "ClusterIP" $dataplane.service.type }}
   export POD_NAME=$(kubectl get pods --namespace {{ $.Release.Namespace }} -l "app.kubernetes.io/name={{ include "txdc.name" $ }},app.kubernetes.io/instance={{ $.Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
   export CONTAINER_PORT=$(kubectl get pod --namespace {{ $.Release.Namespace }} $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
