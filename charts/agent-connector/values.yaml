@@ -522,7 +522,7 @@ postgresql:
   enabled: false
   jdbcUrl:
   username:
-  password:
+#  password:
 
 vault:
   hashicorp:
