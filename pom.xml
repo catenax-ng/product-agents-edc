@@ -19,7 +19,7 @@
         <tx.edc.version>0.3.3</tx.edc.version>
         <edc.version>0.0.1-20230220.patch1</edc.version>
         <failsafe.version>3.2.4</failsafe.version>
-        <okhttp.version>4.9.3</okhttp.version>
+        <okhttp.version>4.11.0</okhttp.version>
         <rdf4j.version>4.2.0</rdf4j.version>
         <slf4j.version>2.0.3</slf4j.version>
 
