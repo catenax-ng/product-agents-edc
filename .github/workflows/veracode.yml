@@ -70,7 +70,7 @@ jobs:
       # Build
       - name: Build ${{ matrix.variant.name }}
         run: |-
-          ./mvnw -f ${{ matrix.variant.dir }}/${{ matrix.variant.name }} install
+          ./mvnw -s settings.xml -f ${{ matrix.variant.dir }}/${{ matrix.variant.name }} install
         env:
           GITHUB_PACKAGE_USERNAME: ${{ github.actor }}
           GITHUB_PACKAGE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
