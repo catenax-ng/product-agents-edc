@@ -72,8 +72,8 @@ jobs:
         run: |-
           ./mvnw -s settings.xml -f ${{ matrix.variant.dir }}/${{ matrix.variant.name }} install
         env:
-          GITHUB_PACKAGE_USERNAME: ${{ github.actor }}
-          GITHUB_PACKAGE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Tar gzip files for veracode upload
         run: |-
           tar -czvf ${{ matrix.variant.dir }}/${{ matrix.variant.name }}/target/${{ matrix.variant.name }}.tar.gz ${{ matrix.variant.dir }}/${{ matrix.variant.name }}/target/${{ matrix.variant.name }}.jar

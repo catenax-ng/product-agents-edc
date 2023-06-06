@@ -42,13 +42,20 @@ jobs:
     steps:
       - uses: actions/checkout@v3.5.2
 
+#
+# Take out 
+#   - the "Always" Image Pull Policy Rule (caa3479d-885d-4882-9aac-95e5e78ef5c2) because depending on the deployment/rollout scenarios, other policies are more reasonable.
+#   - the "LimitRange" Namespace Rule (4a20ebac-1060-4c81-95d1-1f7f620e983b) because the target namespace may define that external to the Chart.
+#   - the "ResourceQuota" Namespace Rule (48a5beba-e4c0-4584-a2aa-e6894e4cf424) because the target namespace may define that external to the Chart.
+#
       - name: KICS scan
-        uses: checkmarx/kics-github-action@v1.5
+        uses: checkmarx/kics-github-action@v1.7.0
         with:
           path: "."
           fail_on: high
           disable_secrets: true
-          output_path: kicsResults/
+          output_path: kicsResults/          
+          exclude_queries: caa3479d-885d-4882-9aac-95e5e78ef5c2,4a20ebac-1060-4c81-95d1-1f7f620e983b,48a5beba-e4c0-4584-a2aa-e6894e4cf424
           output_formats: "json,sarif"
 
       - name: Upload SARIF file for GitHub Advanced Security Dashboard

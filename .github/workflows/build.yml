@@ -91,7 +91,7 @@ jobs:
       - name: Deploy Java via Maven
         if: ${{ github.repository == 'catenax-ng/product-agents-edc' && github.ref == 'refs/heads/main' }}
         run: |
-          mvn -s settings.xml deploy -Pwith-docker-image
+          ./mvnw -s settings.xml deploy -Pwith-docker-image
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -99,7 +99,7 @@ jobs:
       - name: Build Java via Maven
         if: ${{ github.repository != 'catenax-ng/product-agents-edc' || github.ref != 'refs/heads/main' }}
         run: |
-          mvn -s settings.xml install
+          ./mvnw -s settings.xml install
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
