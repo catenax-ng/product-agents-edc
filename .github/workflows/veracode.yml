@@ -61,7 +61,7 @@ jobs:
                    { dir: control-plane, name: controlplane-memory-hashicorp },
                    { dir: control-plane, name: controlplane-postgresql-hashicorp },
                    { dir: agent-plane, name: agent-plane-protocol-uber },
-                   { dir: agent-plane, name: agentplane-azurevault },
+                   { dir: agent-plane, name: agentplane-azure-vault },
                    { dir: agent-plane, name: agentplane-hashicorp } ]
     steps:
       # Set-Up
