@@ -10,7 +10,7 @@
     <parent>
         <groupId>org.eclipse.tractusx.agents.edc</groupId>
         <artifactId>control-plane</artifactId>
-        <version>1.9.1-SNAPSHOT</version>
+        <version>1.9.2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -90,23 +90,10 @@
     <dependencies>
          <dependency>
             <groupId>org.eclipse.tractusx.edc</groupId>
-            <artifactId>edc-controlplane-postgresql</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.eclipse.edc</groupId>
-                    <artifactId>azure-vault</artifactId>
-                </exclusion>
-            </exclusions>
+            <artifactId>edc-controlplane-postgresql-hashicorp-vault</artifactId>
             <version>${tx.edc.version}</version>
         </dependency>
 
-        <!-- Vault -->
-        <dependency>
-            <groupId>org.eclipse.tractusx.edc</groupId>
-            <artifactId>hashicorp-vault</artifactId>
-            <version>${tx.edc.version}</version>
-        </dependency>
-        
         <!-- Agent Extensions -->
         <dependency>
             <groupId>org.eclipse.tractusx.agents.edc.control-plane</groupId>

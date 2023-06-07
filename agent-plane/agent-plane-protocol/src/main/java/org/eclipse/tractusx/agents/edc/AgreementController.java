@@ -17,8 +17,8 @@ import org.eclipse.edc.policy.model.PolicyType;
 import org.eclipse.edc.spi.monitor.Monitor;
 import org.eclipse.edc.spi.types.domain.DataAddress;
 import org.eclipse.edc.connector.contract.spi.types.offer.ContractOffer;
+import org.eclipse.edc.spi.types.domain.callback.CallbackAddress;
 import org.eclipse.edc.spi.types.domain.edr.EndpointDataReference;
-import org.eclipse.edc.connector.transfer.spi.types.TransferType;
 import org.eclipse.tractusx.agents.edc.service.*;
 
 import java.io.IOException;
@@ -235,9 +235,9 @@ public class AgreementController implements IAgreementController {
 
         // TODO implement a cost-based offer choice
         ContractOffer contractOffer = contractOffers.stream().findFirst().get();
-        String assetType=contractOffer.getAsset().getProperties().getOrDefault("rdf:type","<cx_ontology.ttl#Asset>").toString();
+        Map<String,String> assetProperties = DataspaceSynchronizer.getProperties(contractOffer);
 
-        monitor.debug(String.format("About to create an agreement for contract offer %s (for asset %s of type %s at connector %s)",contractOffer.getId(),asset,assetType,remoteUrl));
+        monitor.debug(String.format("About to create an agreement for contract offer %s (for asset %s of type %s at connector %s)",contractOffer.getId(),contractOffer.getAssetId(),assetProperties.getOrDefault("rdf:type","<unknown>"),remoteUrl));
 
         // Initiate negotiation
         var policy = Policy.Builder.newInstance()
@@ -315,12 +315,8 @@ public class AgreementController implements IAgreementController {
                 .type(TRANSFER_TYPE)
                 .build();
 
-        TransferType transferType = TransferType.Builder.
-                transferType()
-                .contentType("application/octet-stream")
-                // TODO make streaming
-                .isFinite(true)
-                .build();
+        CallbackAddress address=
+                CallbackAddress.Builder.newInstance().uri(config.getCallbackEndpoint()).build();
 
         TransferRequest transferRequest = TransferRequest.Builder.newInstance()
                 .assetId(asset)
@@ -330,8 +326,7 @@ public class AgreementController implements IAgreementController {
                 .protocol("ids-multipart")
                 .dataDestination(dataDestination)
                 .managedResources(false)
-                .properties(Map.of("receiver.http.endpoint",config.getCallbackEndpoint()))
-                .transferType(transferType)
+                .callbackAddresses(List.of(address))
                 .build();
 
         monitor.debug(String.format("About to initiate transfer for agreement %s (for asset %s at connector %s)",negotiation.getContractAgreementId(),asset,remoteUrl));
@@ -390,7 +385,7 @@ public class AgreementController implements IAgreementController {
 
         // mark the type in the endpoint
         if(reference!=null) {
-            reference.getProperties().put("rdf:type",assetType);
+            reference.getProperties().putAll(assetProperties);
         }
 
         // now delegate to the original getter

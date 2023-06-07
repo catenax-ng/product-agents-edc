@@ -6,6 +6,7 @@
 //
 package org.eclipse.tractusx.agents.edc.http.transfer;
 
+import org.eclipse.edc.connector.dataplane.spi.pipeline.StreamResult;
 import org.eclipse.tractusx.agents.edc.AgentExtension;
 import org.eclipse.tractusx.agents.edc.SkillStore;
 import org.eclipse.tractusx.agents.edc.sparql.SparqlQueryProcessor;
@@ -13,7 +14,6 @@ import okhttp3.Response;
 import org.eclipse.edc.connector.dataplane.http.params.HttpRequestFactory;
 import org.eclipse.edc.connector.dataplane.http.spi.HttpRequestParams;
 import org.eclipse.edc.connector.dataplane.spi.pipeline.DataSource;
-import org.eclipse.edc.spi.EdcException;
 import org.eclipse.edc.spi.http.EdcHttpClient;
 import org.eclipse.edc.spi.types.domain.transfer.DataFlowRequest;
 
@@ -60,7 +60,7 @@ public class AgentSource implements DataSource {
     }
 
     @Override
-    public Stream<Part> openPartStream() {
+    public StreamResult<Stream<Part>> openPartStream() {
         // check whether this is a cross-plane call or a final agent call
         if(!isTransfer) {
             // Agent call, we translate from KA-MATCH to KA-TRANSFER
@@ -81,7 +81,7 @@ public class AgentSource implements DataSource {
             String authCode=request.getSourceDataAddress().getProperties().getOrDefault("authCode",null);
             try (Response response = processor.execute(this.requestFactory.toRequest(params),skill,graph,authKey,authCode)) {
                 if(!response.isSuccessful()) {
-                    throw new EdcException(format("Received code transferring HTTP data for request %s: %s - %s.", requestId, response.code(), response.message()));
+                    return StreamResult.error(format("Received code transferring HTTP data for request %s: %s - %s.", requestId, response.code(), response.message()));
                 }
                 List<Part> results=new ArrayList<>();
                 if(response.body()!=null) {
@@ -90,14 +90,14 @@ public class AgentSource implements DataSource {
                 if(response.header("cx_warnings")!=null) {
                     results.add(new AgentPart("application/cx-warnings+json",response.header("cx_warnings").getBytes()));
                 }
-                return results.stream();
+                return StreamResult.success(results.stream());
             } catch (IOException e) {
-                throw new EdcException(e);
+                return StreamResult.error(e.getMessage());
             }
         } else {
             try (var response = httpClient.execute(this.requestFactory.toRequest(params))) {
                 if(!response.isSuccessful()) {
-                    throw new EdcException(format("Received code transferring HTTP data for request %s: %s - %s.", requestId, response.code(), response.message()));
+                    return StreamResult.error(format("Received code transferring HTTP data for request %s: %s - %s.", requestId, response.code(), response.message()));
                 }
                 List<Part> results=new ArrayList<>();
                 if(response.body()!=null) {
@@ -136,9 +136,9 @@ public class AgentSource implements DataSource {
                         }
                     }
                 }
-                return results.stream();
+                return StreamResult.success(results.stream());
             } catch (IOException e) {
-                throw new EdcException(e);
+                return StreamResult.error(e.getMessage());
             }
         }
     }

@@ -10,24 +10,33 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import org.eclipse.edc.spi.types.domain.DataAddress;
-import org.eclipse.edc.connector.transfer.spi.types.TransferType;
+import org.eclipse.edc.spi.types.domain.callback.CallbackAddress;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import static org.eclipse.edc.spi.CoreConstants.EDC_NAMESPACE;
 
 @JsonDeserialize(builder = TransferRequest.Builder.class)
 public class TransferRequest {
 
     private String id;
-    private String connectorAddress;
+    private String connectorAddress; // TODO change to callbackAddress
     private String contractId;
     private DataAddress dataDestination;
     private boolean managedResources = true;
     private Map<String, String> properties = new HashMap<>();
-    private TransferType transferType = new TransferType();
-    private String protocol = "ids-multipart";
+
+    private Map<String, String> privateProperties = new HashMap<>();
+
+    private String protocol;
     private String connectorId;
     private String assetId;
+
+    private List<CallbackAddress> callbackAddresses = new ArrayList<>();
+
 
     public String getConnectorAddress() {
         return connectorAddress;
@@ -53,8 +62,8 @@ public class TransferRequest {
         return properties;
     }
 
-    public TransferType getTransferType() {
-        return transferType;
+    public Map<String, String> getPrivateProperties() {
+        return privateProperties;
     }
 
     public String getProtocol() {
@@ -67,6 +76,10 @@ public class TransferRequest {
 
     public String getAssetId() {
         return assetId;
+    }
+
+    public List<CallbackAddress> getCallbackAddresses() {
+        return callbackAddresses;
     }
 
     @JsonPOJOBuilder(withPrefix = "")
@@ -82,13 +95,13 @@ public class TransferRequest {
             return new Builder();
         }
 
-        public Builder id(String id){
-            request.id = id;
+        public Builder connectorAddress(String connectorAddress) {
+            request.connectorAddress = connectorAddress;
             return this;
         }
 
-        public Builder connectorAddress(String connectorAddress) {
-            request.connectorAddress = connectorAddress;
+        public Builder id(String id) {
+            request.id = id;
             return this;
         }
 
@@ -112,8 +125,8 @@ public class TransferRequest {
             return this;
         }
 
-        public Builder transferType(TransferType transferType) {
-            request.transferType = transferType;
+        public Builder privateProperties(Map<String, String> privateProperties) {
+            request.privateProperties = privateProperties;
             return this;
         }
 
@@ -129,6 +142,11 @@ public class TransferRequest {
 
         public Builder assetId(String assetId) {
             request.assetId = assetId;
+            return this;
+        }
+
+        public Builder callbackAddresses(List<CallbackAddress> callbackAddresses) {
+            request.callbackAddresses = callbackAddresses;
             return this;
         }
 

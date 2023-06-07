@@ -6,6 +6,7 @@
 //
 package org.eclipse.tractusx.agents.edc.service;
 
+import org.eclipse.edc.policy.model.PolicyType;
 import org.eclipse.tractusx.agents.edc.TestConfig;
 import org.eclipse.tractusx.agents.edc.rdf.RDFStore;
 import okhttp3.*;
@@ -27,7 +28,6 @@ import org.apache.jena.graph.NodeFactory;
 
 import org.mockito.MockitoAnnotations;
 
-import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -74,22 +74,32 @@ public class TestDataspaceSynchronizer {
         Node graph = store.getDefaultGraph();
         Node connector = NodeFactory.createURI("edc://test");
         Asset asset = Asset.Builder.newInstance()
-                .id("urn:cx:test:ExampleAsset")
+                .id("urn:cx-common#GraphAsset?test:ExampleAsset")
                 .contentType("application/json, application/xml")
-                .version("1.9.1-SNAPSHOT")
+                .version("1.9.2-SNAPSHOT")
                 .name("Test Asset")
                 .description("Test Asset for RDF Representation")
-                .property("asset:prop:contract","<urn:cx:test:Contract>")
-                .property("rdf:type","<https://raw.githubusercontent.com/catenax-ng/product-knowledge/main/ontology/cx_ontology.ttl#GraphAsset>")
-                .property("rdfs:isDefinedBy","<https://raw.githubusercontent.com/catenax-ng/product-knowledge/main/ontology/diagnosis_ontology.ttl>,<https://raw.githubusercontent.com/catenax-ng/product-knowledge/main/ontology/part_ontology.ttl>")
-                .property("cx:protocol","<urn:cx:Protocol:w3c:Http#SPARQL>")
-                .property("cx:shape","@prefix : <urn:cx:Graph:oem:Diagnosis2022> .\n@prefix cx: <https://raw.githubusercontent.com/catenax-ng/product-knowledge/main/ontology/cx_ontology.ttl#> .\n@prefix cx-diag: <https://raw.githubusercontent.com/catenax-ng/product-knowledge/main/ontology/diagnosis_ontology.ttl#> .\n@prefix owl: <http://www.w3.org/2002/07/owl#> .\n@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\\n@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n@prefix sh: <http://www.w3.org/ns/shacl#> .\n\n:OemDTC rdf:type sh:NodeShape ;\n  sh:targetClass cx:DTC ;\n  sh:property [\n        sh:path cx:provisionedBy ;\n        sh:hasValue <urn:bpn:legal:BPNL00000003COJN> ;\n    ] ;\n  sh:property [\n        sh:path cx:Version ;\n        sh:hasValue \"0\"^^xsd:long ;\n    ] ;\n  sh:property [\n        sh:path cx:affects ;\n        sh:class :OemDiagnosedParts ;\n    ] ;\n\n:OemDiagnosedParts rdf:type sh:NodeShape ;\n  sh:targetClass cx:DiagnosedPart ;\n  sh:property [\n        sh:path cx:provisionedBy ;\n        sh:hasValue <urn:bpn:legal:BPNL00000003COJN> ;\n    ] ;\n")
+                .property("asset:prop:contract","<urn:cx-common#Contract?test:Contract>")
+                .property("rdf:type","<urn:cx-common#GraphAsset>")
+                .property("rdfs:isDefinedBy","<urn:cx-diagnosis>,<urn:cx-part>")
+                .property("cx:protocol","<urn:cx-common#Protocol?w3c:Http#SPARQL>")
+                .property("sh:shapeGraph","@prefix : <urn:cx-common#GraphAsset?test:ExampleAsset&> .\n@prefix cx: <urn:cx#> .\n@prefix cx-diag: <urn:cx-diagnosis#> .\n@prefix owl: <http://www.w3.org/2002/07/owl#> .\n@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\\n@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n@prefix sh: <http://www.w3.org/ns/shacl#> .\n\n:OemDTC rdf:type sh:NodeShape ;\n  sh:targetClass cx:DTC ;\n  sh:property [\n        sh:path cx:provisionedBy ;\n        sh:hasValue <urn:bpn:legal:BPNL00000003COJN> ;\n    ] ;\n  sh:property [\n        sh:path cx:Version ;\n        sh:hasValue \"0\"^^xsd:long ;\n    ] ;\n  sh:property [\n        sh:path cx:affects ;\n        sh:class :OemDiagnosedParts ;\n    ] ;\n\n:OemDiagnosedParts rdf:type sh:NodeShape ;\n  sh:targetClass cx:DiagnosedPart ;\n  sh:property [\n        sh:path cx:provisionedBy ;\n        sh:hasValue <urn:bpn:legal:BPNL00000003COJN> ;\n    ] ;\n")
                 .property("cx:isFederated","true")
                 .build();
-        Policy policy = Policy.Builder.newInstance().build();
-        ContractOffer offer = ContractOffer.Builder.newInstance().id("urn:cx:test:Contract").policy(policy).contractStart(ZonedDateTime.now()).contractEnd(ZonedDateTime.now().plusDays(1)).asset(asset).build();
+        Policy policy = Policy.Builder.newInstance()
+                .type(PolicyType.OFFER)
+                .extensibleProperties(asset.getProperties())
+                .assignee("urn:cx-common#BusinessPartner?test:TestConsumer")
+                .assigner("urn:cx-common#BusinessPartner?test:TestProvider")
+                .target(asset.getId())
+                .build();
+        ContractOffer offer = ContractOffer.Builder.newInstance().id(String.valueOf(asset.getProperty("asset:prop:contract")))
+                .policy(policy)
+                .assetId(asset.getId())
+                .providerId("urn:cx-common#BusinessPartner?test:TestProvider")
+                .build();
         Collection<Quad> result=synchronizer.convertToQuads(graph, connector, offer);
-        assertEquals(12,result.size(),"Got correct number of quads (1 connector subject and 11 asset subjects).");
+        assertEquals(19,result.size(),"Got correct number of quads (1 connector subject and 18 asset subjects).");
     }
 
 }

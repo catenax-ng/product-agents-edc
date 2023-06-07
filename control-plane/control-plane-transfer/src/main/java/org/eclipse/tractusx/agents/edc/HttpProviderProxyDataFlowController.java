@@ -7,7 +7,6 @@
 package org.eclipse.tractusx.agents.edc;
 
 import org.eclipse.edc.connector.transfer.dataplane.flow.ConsumerPullTransferDataFlowController;
-import org.eclipse.edc.spi.message.RemoteMessageDispatcherRegistry;
 import org.eclipse.edc.connector.transfer.dataplane.proxy.ConsumerPullTransferProxyResolver;
 import org.eclipse.edc.connector.transfer.dataplane.spi.proxy.ConsumerPullTransferEndpointDataReferenceService;
 import org.eclipse.edc.connector.transfer.spi.types.DataRequest;
@@ -21,16 +20,12 @@ public class HttpProviderProxyDataFlowController extends ConsumerPullTransferDat
     
     /**
      * constructor
-     * @param connectorId of the source connector
      * @param proxyResolver helping to find sinks and sources
-     * @param dispatcherRegistry where to register dispatch messages
      * @param proxyReferenceService helping to build proxy reference addresses
      */
-    public HttpProviderProxyDataFlowController(String connectorId,
-                                               ConsumerPullTransferProxyResolver proxyResolver,
-                                               RemoteMessageDispatcherRegistry dispatcherRegistry,
+    public HttpProviderProxyDataFlowController(ConsumerPullTransferProxyResolver proxyResolver,
                                                ConsumerPullTransferEndpointDataReferenceService proxyReferenceService) {
-        super(connectorId,proxyResolver,proxyReferenceService,dispatcherRegistry);
+        super(proxyResolver,proxyReferenceService);
     }
 
     /**

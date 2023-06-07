@@ -82,7 +82,7 @@ public class DataManagement {
         ).build();
         Catalog catalog = getCatalog(remoteControlPlaneIdsUrl,findAsset);
         return catalog.getContractOffers().stream()
-                .filter(it -> it.getAsset().getId().equals(assetId))
+                .filter(it -> it.getAssetId().equals(assetId))
                 .collect(Collectors.toList());
     }
 

@@ -13,7 +13,6 @@ import org.eclipse.edc.connector.transfer.spi.flow.DataFlowManager;
 import org.eclipse.edc.jwt.TokenGenerationServiceImpl;
 import org.eclipse.edc.runtime.metamodel.annotation.Extension;
 import org.eclipse.edc.runtime.metamodel.annotation.Inject;
-import org.eclipse.edc.spi.message.RemoteMessageDispatcherRegistry;
 import org.eclipse.edc.spi.system.ServiceExtension;
 import org.eclipse.edc.spi.system.ServiceExtensionContext;
 import org.eclipse.edc.spi.types.TypeManager;
@@ -34,9 +33,6 @@ import static org.eclipse.edc.connector.transfer.dataplane.TransferDataPlaneConf
 public class HttpProtocolsExtension implements ServiceExtension {
     
     public static final String NAME = "Knowledge Agents Http Protocols Extension";
-
-    @Inject
-    private RemoteMessageDispatcherRegistry dispatcherRegistry;
 
     @Inject
     private DataFlowManager dataFlowManager;
@@ -68,7 +64,7 @@ public class HttpProtocolsExtension implements ServiceExtension {
     public void initialize(ServiceExtensionContext context) {
         var proxyReferenceService = createProxyReferenceService(context, typeManager);
         DataFlowControllerRegistry prioControllerReg=new DataFlowControllerRegistry(context.getMonitor());
-        var flowController = new HttpProviderProxyDataFlowController(context.getConnectorId(), proxyResolver, dispatcherRegistry, proxyReferenceService);
+        var flowController = new HttpProviderProxyDataFlowController(proxyResolver, proxyReferenceService);
         prioControllerReg.registerWithPriority(dataFlowManager,flowController);
 
         EndpointTransformerRegistry prioTransformerReg=new EndpointTransformerRegistry(context.getMonitor());

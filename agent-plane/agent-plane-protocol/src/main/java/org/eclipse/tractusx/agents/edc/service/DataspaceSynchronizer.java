@@ -29,16 +29,23 @@ public class DataspaceSynchronizer implements Runnable {
     protected final static QuerySpec federatedAssetQuery = QuerySpec.Builder.newInstance().filter(List.of(new Criterion("cx:isFederated","=","true"))).build();
 
     static {
-        assetPropertyMap.put("asset:prop:id",NodeFactory.createURI("https://github.com/catenax-ng/product-knowledge/ontology/common_ontology.ttl#id"));
-        assetPropertyMap.put("asset:prop:name",NodeFactory.createURI("https://github.com/catenax-ng/product-knowledge/ontology/common_ontology.ttl#name"));
-        assetPropertyMap.put("asset:prop:description",NodeFactory.createURI("https://github.com/catenax-ng/product-knowledge/ontology/common_ontology.ttl#description"));
-        assetPropertyMap.put("asset:prop:version",NodeFactory.createURI("https://github.com/catenax-ng/product-knowledge/ontology/common_ontology.ttl#version"));
-        assetPropertyMap.put("asset:prop:contenttype",NodeFactory.createURI("https://github.com/catenax-ng/product-knowledge/ontology/common_ontology.ttl#contentType"));
+        assetPropertyMap.put("https://w3id.org/edc/v0.0.1/ns/id",NodeFactory.createURI("urn:cx-common#id"));
+        assetPropertyMap.put("https://w3id.org/edc/v0.0.1/ns/name",NodeFactory.createURI("urn:cx-common#name"));
+        assetPropertyMap.put("https://w3id.org/edc/v0.0.1/ns/description",NodeFactory.createURI("urn:cx-common#description"));
+        assetPropertyMap.put("https://w3id.org/edc/v0.0.1/ns/version",NodeFactory.createURI("urn:cx-common#version"));
+        assetPropertyMap.put("https://w3id.org/edc/v0.0.1/ns/contenttype",NodeFactory.createURI("urn:cx-common#contentType"));
         assetPropertyMap.put("rdf:type",NodeFactory.createURI("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"));
         assetPropertyMap.put("rdfs:isDefinedBy",NodeFactory.createURI("http://www.w3.org/2000/01/rdf-schema#isDefinedBy"));
-        assetPropertyMap.put("cx:protocol",NodeFactory.createURI("https://github.com/catenax-ng/product-knowledge/ontology/common_ontology.ttl#protocol"));
-        assetPropertyMap.put("cx:shape",NodeFactory.createURI("https://github.com/catenax-ng/product-knowledge/ontology/cx.ttl#shape"));
-        assetPropertyMap.put("cx:isFederated",NodeFactory.createURI("https://github.com/catenax-ng/product-knowledge/ontology/cx.ttl#isFederated"));
+        assetPropertyMap.put("cx:protocol",NodeFactory.createURI("urn:cx-common#protocol"));
+        assetPropertyMap.put("sh:shapeGraph",NodeFactory.createURI("http://www.w3.org/ns/shacl#shapeGraph"));
+        assetPropertyMap.put("cx:isFederated",NodeFactory.createURI("urn:cx-common#isFederated"));
+        assetPropertyMap.put("asset:prop:contract",NodeFactory.createURI("urn:cx-common#contract"));
+        assetPropertyMap.put("asset:prop:provider",NodeFactory.createURI("urn:cx-common#provider"));
+        assetPropertyMap.put("policy:type",NodeFactory.createURI("urn:cx-common#policyType"));
+        assetPropertyMap.put("policy:assignee",NodeFactory.createURI("urn:cx-common#policyAssignee"));
+        assetPropertyMap.put("policy:assigner",NodeFactory.createURI("urn:cx-common#policyAssigner"));
+        assetPropertyMap.put("policy:target",NodeFactory.createURI("urn:cx-common#policyTarget"));
+        assetPropertyMap.put("offer:id",NodeFactory.createURI("urn:cx-common#offer"));
     }
 
     /**
@@ -157,6 +164,32 @@ public class DataspaceSynchronizer implements Runnable {
     }
 
     /**
+     * Workaround the castration of the IDS catalogue
+     * @param offer being made
+     * @return default props
+     */
+    public static Map<String,String> getProperties(ContractOffer offer) {
+        Map<String,String> assetProperties = new HashMap<>();
+        offer.getPolicy().getExtensibleProperties().forEach( (key,value) -> assetProperties.put(key,String.valueOf(value)));
+        assetProperties.put("offer:id",offer.getId());
+        assetProperties.put("asset:prop:id",offer.getAssetId());
+        assetProperties.put("asset:prop:provider",offer.getProviderId());
+        assetProperties.put("policy:type",offer.getPolicy().getType().name());
+        assetProperties.put("policy:target",offer.getPolicy().getTarget());
+        assetProperties.put("policy:assignee",offer.getPolicy().getAssignee());
+        assetProperties.put("policy:assigner",offer.getPolicy().getAssigner());
+        if(!assetProperties.containsKey("rdf:type")) {
+            String assetType=offer.getAssetId();
+            int indexOfQuestion = assetType.indexOf("?");
+            if (indexOfQuestion > 0) {
+                assetType = assetType.substring(0, indexOfQuestion - 1);
+            }
+            assetProperties.put("rdf:type","<"+assetType+">");
+        }
+        return assetProperties;
+    }
+
+    /**
      * convert a given contract offer into quads
      * @param graph default graph
      * @param connector parent connector hosting the offer
@@ -164,48 +197,52 @@ public class DataspaceSynchronizer implements Runnable {
      * @return a collection of quads
      */
     public Collection<Quad> convertToQuads(Node graph, Node connector, ContractOffer offer) {
-        if(!"true".equals(String.valueOf(offer.getAsset().getProperties().getOrDefault("cx:isFederated","false")))) {
+        Map<String,String> assetProperties=getProperties(offer);
+
+        if(!"true".equals(String.valueOf(assetProperties.getOrDefault("cx:isFederated","false")))) {
             return List.of();
         }
         List<Quad> quads=new ArrayList<>();
-        Node assetNode=NodeFactory.createURI(offer.getAsset().getId());
+        Node assetNode=NodeFactory.createURI(offer.getAssetId());
         quads.add(Quad.create(graph,
                 connector,
                 CX_ASSET,
                 assetNode));
-        for(Map.Entry<String,Object> assetProp : offer.getAsset().getProperties().entrySet()) {
+        for(Map.Entry<String,String> assetProp : assetProperties.entrySet()) {
             String key=assetProp.getKey();
             Node node=assetPropertyMap.get(key);
             while(node==null && key.indexOf('.')>=0) {
-                key=key.substring(key.lastIndexOf(".")-1);
+                key=key.substring(key.lastIndexOf(".")+1);
                 node=assetPropertyMap.get(key);
             }
             if(node!=null) {
-                String pureProperty=String.valueOf(assetProp.getValue());
-                switch(key) {
-                    case "asset:prop:contract":
-                    case "rdfs:isDefinedBy":
-                    case "rdf:type":
-                    case "cx:protocol":
-                        String[] urls=pureProperty.split(",");
-                        for(String url : urls) {
-                            Node o;
-                            url=url.trim();
-                            if(url.startsWith("<") && url.endsWith(">")) {
-                                url=url.substring(1,url.length()-1);
-                                o=NodeFactory.createURI(url);
-                            } else if(url.startsWith("\"") && url.endsWith("\"")) {
-                                // TODO parse ^^literalType annotations
-                                url=url.substring(1,url.length()-1);
-                                o=NodeFactory.createLiteral(url);
-                            } else {
-                                o=NodeFactory.createLiteral(url);
+                String pureProperty=assetProp.getValue();
+                if(pureProperty!=null) {
+                    switch (key) {
+                        case "asset:prop:contract":
+                        case "rdfs:isDefinedBy":
+                        case "rdf:type":
+                        case "cx:protocol":
+                            String[] urls = pureProperty.split(",");
+                            for (String url : urls) {
+                                Node o;
+                                url = url.trim();
+                                if (url.startsWith("<") && url.endsWith(">")) {
+                                    url = url.substring(1, url.length() - 1);
+                                    o = NodeFactory.createURI(url);
+                                } else if (url.startsWith("\"") && url.endsWith("\"")) {
+                                    // TODO parse ^^literalType annotations
+                                    url = url.substring(1, url.length() - 1);
+                                    o = NodeFactory.createLiteral(url);
+                                } else {
+                                    o = NodeFactory.createLiteral(url);
+                                }
+                                quads.add(Quad.create(graph, assetNode, node, o));
                             }
-                            quads.add(Quad.create(graph,assetNode,node,o));
-                        }
-                        break;
-                    default:
-                        quads.add(Quad.create(graph,assetNode,node,NodeFactory.createLiteral(pureProperty)));
+                            break;
+                        default:
+                            quads.add(Quad.create(graph, assetNode, node, NodeFactory.createLiteral(pureProperty)));
+                    }
                 }
             }
         }
