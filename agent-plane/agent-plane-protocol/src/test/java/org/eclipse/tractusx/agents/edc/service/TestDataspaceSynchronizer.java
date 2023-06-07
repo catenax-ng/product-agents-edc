@@ -83,7 +83,32 @@ public class TestDataspaceSynchronizer {
                 .property("rdf:type","<urn:cx-common#GraphAsset>")
                 .property("rdfs:isDefinedBy","<urn:cx-diagnosis>,<urn:cx-part>")
                 .property("cx:protocol","<urn:cx-common#Protocol?w3c:Http#SPARQL>")
-                .property("sh:shapeGraph","@prefix : <urn:cx-common#GraphAsset?test:ExampleAsset&> .\n@prefix cx: <urn:cx#> .\n@prefix cx-diag: <urn:cx-diagnosis#> .\n@prefix owl: <http://www.w3.org/2002/07/owl#> .\n@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\\n@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n@prefix sh: <http://www.w3.org/ns/shacl#> .\n\n:OemDTC rdf:type sh:NodeShape ;\n  sh:targetClass cx:DTC ;\n  sh:property [\n        sh:path cx:provisionedBy ;\n        sh:hasValue <urn:bpn:legal:BPNL00000003COJN> ;\n    ] ;\n  sh:property [\n        sh:path cx:Version ;\n        sh:hasValue \"0\"^^xsd:long ;\n    ] ;\n  sh:property [\n        sh:path cx:affects ;\n        sh:class :OemDiagnosedParts ;\n    ] ;\n\n:OemDiagnosedParts rdf:type sh:NodeShape ;\n  sh:targetClass cx:DiagnosedPart ;\n  sh:property [\n        sh:path cx:provisionedBy ;\n        sh:hasValue <urn:bpn:legal:BPNL00000003COJN> ;\n    ] ;\n")
+                .property("sh:shapesGraph",
+                        "@prefix : <urn:cx:common#GraphAsset?test=ExampleAsset&> .\n"+
+                        "@prefix cx-part: <urn:cx:part#> .\n"+
+                        "@prefix cx-diag: <urn:cx:diagnosis#> .\n"+
+                        "@prefix owl: <http://www.w3.org/2002/07/owl#> .\n"+
+                        "@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n"+
+                        "@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n"+
+                        "@prefix sh: <http://www.w3.org/ns/shacl#> .\n"+
+                        ":OemDTC rdf:type sh:NodeShape ;\n"+
+                        "  sh:targetClass cx-diag:DTC ;\n"+
+                        "  sh:property [\n"+
+                        "        sh:path cx-diag:provisionedBy ;\n"+
+                        "        sh:hasValue <urn:bpn:legal:BPNL00000003COJN> ;\n"+
+                        "    ] ;\n"+
+                        "  sh:property [\n"+
+                        "        sh:path cx-diag:version ;\n"+
+                        "        sh:hasValue \"0\"^^xsd:long ;\n    ] ;\n"+
+                        "  sh:property [\n"+
+                        "        sh:path cx-diag:affects ;\n"+
+                        "        sh:class :OemDiagnosedParts ;\n    ] .\n"+
+                        ":OemDiagnosedParts rdf:type sh:NodeShape ;\n"+
+                        "  sh:targetClass cx-part:Part ;\n"+
+                        "  sh:property [\n"+
+                        "        sh:path cx-part:provisionedBy ;\n"+
+                        "        sh:hasValue <urn:bpn:legal:BPNL00000003COJN> ;\n"+
+                        "    ] .\n")
                 .property("cx:isFederated","true")
                 .build();
         Policy policy = Policy.Builder.newInstance()
@@ -99,7 +124,7 @@ public class TestDataspaceSynchronizer {
                 .providerId("urn:cx-common#BusinessPartner?test:TestProvider")
                 .build();
         Collection<Quad> result=synchronizer.convertToQuads(graph, connector, offer);
-        assertEquals(19,result.size(),"Got correct number of quads (1 connector subject and 18 asset subjects).");
+        assertEquals(1+18+16,result.size(),"Got correct number of quads (1 connector subject and 18 asset subjects + 16 shape triples).");
     }
 
 }

@@ -1,6 +1,15 @@
 package org.eclipse.tractusx.agents.edc.service;
 
+import org.apache.jena.atlas.lib.Sink;
+import org.apache.jena.riot.Lang;
+import org.apache.jena.riot.RDFParser;
+import org.apache.jena.riot.lang.StreamRDFCounting;
+import org.apache.jena.riot.system.ErrorHandler;
+import org.apache.jena.riot.system.ErrorHandlerFactory;
+import org.apache.jena.riot.system.StreamRDF;
+import org.apache.jena.riot.system.StreamRDFLib;
 import org.eclipse.tractusx.agents.edc.AgentConfig;
+import org.eclipse.tractusx.agents.edc.MonitorWrapper;
 import org.eclipse.tractusx.agents.edc.rdf.RDFStore;
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
@@ -11,6 +20,7 @@ import org.eclipse.edc.connector.contract.spi.types.offer.ContractOffer;
 import org.eclipse.edc.spi.query.Criterion;
 import org.eclipse.edc.spi.query.QuerySpec;
 
+import java.io.StringReader;
 import java.util.*;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -28,6 +38,8 @@ public class DataspaceSynchronizer implements Runnable {
     protected final static Map<String,Node> assetPropertyMap=new HashMap<>();
     protected final static QuerySpec federatedAssetQuery = QuerySpec.Builder.newInstance().filter(List.of(new Criterion("cx:isFederated","=","true"))).build();
 
+    protected MonitorWrapper monitorWrapper;
+
     static {
         assetPropertyMap.put("https://w3id.org/edc/v0.0.1/ns/id",NodeFactory.createURI("urn:cx-common#id"));
         assetPropertyMap.put("https://w3id.org/edc/v0.0.1/ns/name",NodeFactory.createURI("urn:cx-common#name"));
@@ -37,7 +49,7 @@ public class DataspaceSynchronizer implements Runnable {
         assetPropertyMap.put("rdf:type",NodeFactory.createURI("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"));
         assetPropertyMap.put("rdfs:isDefinedBy",NodeFactory.createURI("http://www.w3.org/2000/01/rdf-schema#isDefinedBy"));
         assetPropertyMap.put("cx:protocol",NodeFactory.createURI("urn:cx-common#protocol"));
-        assetPropertyMap.put("sh:shapeGraph",NodeFactory.createURI("http://www.w3.org/ns/shacl#shapeGraph"));
+        assetPropertyMap.put("sh:shapesGraph",NodeFactory.createURI("http://www.w3.org/ns/shacl#shapeGraph"));
         assetPropertyMap.put("cx:isFederated",NodeFactory.createURI("urn:cx-common#isFederated"));
         assetPropertyMap.put("asset:prop:contract",NodeFactory.createURI("urn:cx-common#contract"));
         assetPropertyMap.put("asset:prop:provider",NodeFactory.createURI("urn:cx-common#provider"));
@@ -76,6 +88,7 @@ public class DataspaceSynchronizer implements Runnable {
         this.dataManagement=dataManagement;
         this.rdfStore=rdfStore;
         this.monitor=monitor;
+        this.monitorWrapper=new MonitorWrapper(getClass().getName(),monitor);
     }
 
     /**
@@ -129,6 +142,14 @@ public class DataspaceSynchronizer implements Runnable {
                             Iterator<Quad> propQuads=rdfStore.getDataSet().find(findAssetProps);
                             while(propQuads.hasNext()) {
                                 Quad quadProp=propQuads.next();
+                                if(quadProp.getObject().isURI()) {
+                                    Quad findSubGraphsProps = Quad.create(quadProp.getObject(), Node.ANY, Node.ANY, Node.ANY);
+                                    Iterator<Quad> subGraphQuads = rdfStore.getDataSet().find(findSubGraphsProps);
+                                    while (subGraphQuads.hasNext()) {
+                                        rdfStore.getDataSet().delete(quadProp);
+                                        tupleCount++;
+                                    }
+                                }
                                 rdfStore.getDataSet().delete(quadProp);
                                 tupleCount++;
                             }
@@ -239,6 +260,35 @@ public class DataspaceSynchronizer implements Runnable {
                                 }
                                 quads.add(Quad.create(graph, assetNode, node, o));
                             }
+                            break;
+                        case "sh:shapesGraph":
+                            Node newGraph = NodeFactory.createURI("urn:cx-common#GraphShape?id="+offer.getAssetId().hashCode());
+                            quads.add(Quad.create(graph,assetNode,node,newGraph));
+                            Sink<Quad> quadSink=new Sink<>() {
+
+                                @Override
+                                public void close() {
+                                }
+
+                                @Override
+                                public void send(Quad quad) {
+                                    quads.add(quad);
+                                }
+
+                                @Override
+                                public void flush() {
+                                }
+                            };
+                            StreamRDF dest = StreamRDFLib.sinkQuads(quadSink);
+                            StreamRDF graphDest = StreamRDFLib.extendTriplesToQuads(newGraph,dest);
+                            StreamRDFCounting countingDest = StreamRDFLib.count(graphDest);
+                            ErrorHandler errorHandler = ErrorHandlerFactory.errorHandlerStd(monitorWrapper);
+                            RDFParser.create()
+                                .errorHandler(errorHandler)
+                                .source(new StringReader(pureProperty))
+                                .lang(Lang.TTL)
+                                .parse(countingDest);
+                                monitor.debug(String.format("Added shapes subgraph %s with %d triples",newGraph,countingDest.countTriples()));
                             break;
                         default:
                             quads.add(Quad.create(graph, assetNode, node, NodeFactory.createLiteral(pureProperty)));
