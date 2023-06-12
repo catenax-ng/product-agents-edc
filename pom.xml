@@ -13,15 +13,16 @@
         <maven.compiler.target>11</maven.compiler.target>
         <skipTests>false</skipTests>
 
-        <com.azure.sdk.bom.version>1.2.2</com.azure.sdk.bom.version>
         <junit.version>5.9.0</junit.version>
-        <mockito.version>4.6.1</mockito.version>
+        <mockito.version>5.2.0</mockito.version>
         <tx.edc.version>0.4.1</tx.edc.version>
         <edc.version>0.1.0</edc.version>
-        <failsafe.version>3.2.4</failsafe.version>
-        <okhttp.version>4.9.3</okhttp.version>
+        <failsafe.version>3.3.1</failsafe.version>
+        <okhttp.version>4.11.0</okhttp.version>
         <rdf4j.version>4.2.0</rdf4j.version>
-        <slf4j.version>2.0.3</slf4j.version>
+        <slf4j.version>2.0.7</slf4j.version>
+        <com.azure.azure-identity.version>1.9.0</com.azure.azure-identity.version>
+        <com.azure.azure-security-keyvault-secrets.version>4.6.2</com.azure.azure-security-keyvault-secrets.version>
 
         <!-- Source characteristics -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -37,14 +38,18 @@
     </modules>
     <dependencyManagement>
         <dependencies>
-            <!-- BOMs -->
+            <!-- Packages -->
             <dependency>
                 <groupId>com.azure</groupId>
-                <artifactId>azure-sdk-bom</artifactId>
-                <version>${com.azure.sdk.bom.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
+                <artifactId>azure-identity</artifactId>
+                <version>${com.azure.azure-identity.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.azure</groupId>
+                <artifactId>azure-security-keyvault-secrets</artifactId>
+                <version>${com.azure.azure-security-keyvault-secrets.version}</version>
+            </dependency>
+            <!-- BOMs -->
             <dependency>
                 <groupId>org.junit</groupId>
                 <artifactId>junit-bom</artifactId>
@@ -69,7 +74,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.1.0</version>
+                    <version>3.1.2</version>
                     <!-- unfortunately you have to repeat that in all relevant sub-modules -->
                     <configuration>
                         <groups>!online</groups>
