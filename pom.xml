@@ -19,8 +19,13 @@
         <edc.version>0.1.0</edc.version>
         <failsafe.version>3.3.1</failsafe.version>
         <okhttp.version>4.11.0</okhttp.version>
-        <rdf4j.version>4.2.0</rdf4j.version>
         <slf4j.version>2.0.7</slf4j.version>
+        <jakarta.ws.rs-api.version>3.1.0</jakarta.ws.rs-api.version>
+        <jakarta.validation.version>3.0.2</jakarta.validation.version>
+        <com.nimbusds.version>9.31</com.nimbusds.version>
+        <javax.servlet-api.version>4.0.1</javax.servlet-api.version>
+        <jetty-jakarta-servlet-api.version>5.0.2</jetty-jakarta-servlet-api.version>
+        <org.apache.jena.version>4.6.0</org.apache.jena.version>
         <com.azure.azure-identity.version>1.9.0</com.azure.azure-identity.version>
         <com.azure.azure-security-keyvault-secrets.version>4.6.2</com.azure.azure-security-keyvault-secrets.version>
 
