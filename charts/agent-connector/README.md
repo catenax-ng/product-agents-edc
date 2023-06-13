@@ -219,10 +219,7 @@ helm install my-release tractusx-edc/tractusx-connector --version 1.9.1
 | fullnameOverride | string | `""` |  |
 | imagePullSecrets | list | `[]` | Existing image pull secret to use to [obtain the container image from private registries](https://kubernetes.io/docs/concepts/containers/images/#using-a-private-registry) |
 | nameOverride | string | `""` |  |
-| postgresql.enabled | bool | `false` |  |
-| postgresql.jdbcUrl | string | `""` |  |
-| postgresql.password | string | `""` |  |
-| postgresql.username | string | `""` |  |
+| postgresql | object | `{"enabled":false,"jdbcUrl":null,"username":null}` | Standard settings for persistence, "jdbcUrl", "username" and "password" need to be overridden |
 | serviceAccount.annotations | object | `{}` |  |
 | serviceAccount.create | bool | `true` |  |
 | serviceAccount.imagePullSecrets | list | `[]` | Existing image pull secret bound to the service account to use to [obtain the container image from private registries](https://kubernetes.io/docs/concepts/containers/images/#using-a-private-registry) |

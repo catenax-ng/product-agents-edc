@@ -39,7 +39,6 @@
     <modules>
         <module>common/auth-jwt</module>
         <module>agent-plane</module>
-        <module>control-plane</module>
     </modules>
     <dependencyManagement>
         <dependencies>

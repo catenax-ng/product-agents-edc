@@ -84,9 +84,6 @@ jobs:
       fail-fast: false # continue scanning other images although if the other has been vulnerable
       matrix:
         image:
-          - controlplane-memory
-          - controlplane-memory-hashicorp
-          - controlplane-postgresql-hashicorp
           - agentplane-azure-vault
           - agentplane-hashicorp
     steps:

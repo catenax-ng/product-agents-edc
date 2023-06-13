@@ -36,7 +36,7 @@ public class AgreementController implements IAgreementController {
     /**
      * which transfer to use
      */
-    public static String TRANSFER_TYPE="HttpProtocol";
+    public static String TRANSFER_TYPE="HttpProxy";
 
     /**
      * EDC service references

@@ -46,33 +46,6 @@ updates:
   -
     package-ecosystem: "docker"
     target-branch: main
-    directory: ./control-plane/controlplane-memory/src/main/docker/
-    labels:
-      - "dependabot"
-      - "docker"
-    schedule:
-      interval: "daily"
-  -
-    package-ecosystem: "docker"
-    target-branch: main
-    directory: ./control-plane/controlplane-memory-hashicorp/src/main/docker/
-    labels:
-      - "dependabot"
-      - "docker"
-    schedule:
-      interval: "daily"
-  -
-    package-ecosystem: "docker"
-    target-branch: main
-    directory: ./control-plane/controlplane-postgresql-hashicorp/src/main/docker/
-    labels:
-      - "dependabot"
-      - "docker"
-    schedule:
-      interval: "daily"
-  -
-    package-ecosystem: "docker"
-    target-branch: main
     directory: ./agent-plane/agentplane-azurevault/src/main/docker/
     labels:
       - "dependabot"
