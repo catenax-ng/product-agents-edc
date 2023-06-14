@@ -292,7 +292,7 @@ dataplanes:
     # the name of the dataplane (as it appears in the descriptors)
     name: "dataplane"
     # -- a comma-separated list of supported asset types
-    sourceFiles: "HttpData,urn:cx:Protocol:w3c:Http#SPARQL"
+    sourceTypes: "HttpData,urn:cx:Protocol:w3c:Http#SPARQL"
     # -- a comma-separated list of supported transfer types
     destinationTypes: "HttpProxy,HttpProtocol"
     image:

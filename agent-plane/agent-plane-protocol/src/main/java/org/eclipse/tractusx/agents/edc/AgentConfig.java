@@ -28,8 +28,8 @@ public class AgentConfig {
     public static String CONTROL_PLANE_URL = "cx.agent.controlplane.url";
     public static String CONTROL_PLANE_MANAGEMENT = "cx.agent.controlplane.management";
     public static String CONTROL_PLANE_IDS = "cx.agent.controlplane.ids";
-    public static String CONTROL_PLANE_AUTH_HEADER = "edc.api.control.auth.apikey.key";
-    public static String CONTROL_PLANE_AUTH_VALUE = "edc.api.control.auth.apikey.value";
+    public static String CONTROL_PLANE_AUTH_HEADER = "edc.api.auth.header";
+    public static String CONTROL_PLANE_AUTH_VALUE = "edc.api.auth.key";
     public static String NEGOTIATION_TIMEOUT_PROPERTY = "cx.agent.negotiation.timeout";
     public static long DEFAULT_NEGOTIATION_TIMEOUT = 30000;
     public static String NEGOTIATION_POLLINTERVAL_PROPERTY = "cx.agent.negotiation.poll";
@@ -119,8 +119,8 @@ public class AgentConfig {
      * @return a map of key/value paris to be used when interacting with the control plane management endpoint
      */
     public Map<String, String> getControlPlaneManagementHeaders() {
-        String key = config.getString(CONTROL_PLANE_AUTH_HEADER);
-        String value = config.getString(CONTROL_PLANE_AUTH_VALUE);
+        String key = config.getString(CONTROL_PLANE_AUTH_HEADER,"X-Api-Key");
+        String value = config.getString(CONTROL_PLANE_AUTH_VALUE,null);
         if (key != null && value != null) {
             return Map.of(key, value);
         }

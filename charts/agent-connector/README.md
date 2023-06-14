@@ -211,7 +211,7 @@ helm install my-release tractusx-edc/tractusx-connector --version 1.9.1
 | dataplanes.dataplane.securityContext.runAsUser | int | `10001` | The container's process will run with the specified uid |
 | dataplanes.dataplane.service.port | int | `80` |  |
 | dataplanes.dataplane.service.type | string | `"ClusterIP"` | [Service type](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types) to expose the running application on a set of Pods as a network service. |
-| dataplanes.dataplane.sourceFiles | string | `"HttpData,urn:cx:Protocol:w3c:Http#SPARQL"` | a comma-separated list of supported asset types |
+| dataplanes.dataplane.sourceTypes | string | `"HttpData,urn:cx:Protocol:w3c:Http#SPARQL"` | a comma-separated list of supported asset types |
 | dataplanes.dataplane.tolerations | list | `[]` |  |
 | dataplanes.dataplane.url.public | string | `""` | Explicitly declared url for reaching the public api (e.g. if ingresses not used) |
 | dataplanes.dataplane.volumeMounts | list | `[]` | declare where to mount [volumes](https://kubernetes.io/docs/concepts/storage/volumes/) into the container |
@@ -219,10 +219,7 @@ helm install my-release tractusx-edc/tractusx-connector --version 1.9.1
 | fullnameOverride | string | `""` |  |
 | imagePullSecrets | list | `[]` | Existing image pull secret to use to [obtain the container image from private registries](https://kubernetes.io/docs/concepts/containers/images/#using-a-private-registry) |
 | nameOverride | string | `""` |  |
-| postgresql.enabled | bool | `false` |  |
-| postgresql.jdbcUrl | string | `""` |  |
-| postgresql.password | string | `""` |  |
-| postgresql.username | string | `""` |  |
+| postgresql | object | `{"enabled":false,"jdbcUrl":null,"username":null}` | Standard settings for persistence, "jdbcUrl", "username" and "password" need to be overridden |
 | serviceAccount.annotations | object | `{}` |  |
 | serviceAccount.create | bool | `true` |  |
 | serviceAccount.imagePullSecrets | list | `[]` | Existing image pull secret bound to the service account to use to [obtain the container image from private registries](https://kubernetes.io/docs/concepts/containers/images/#using-a-private-registry) |
