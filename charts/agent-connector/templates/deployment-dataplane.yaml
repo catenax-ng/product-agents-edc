@@ -63,10 +63,10 @@ spec:
             {{- toYaml $dataplane.securityContext | nindent 12 }}
           {{- if $dataplane.image.repository }}
           image: "{{ $dataplane.image.repository }}:{{ $dataplane.image.tag | default $root.Chart.AppVersion }}"
-          {{- else if and .Values.vault.hashicorp }}
-          image: "ghcr.io/catenax-ng/product-agents-edc/dataplane-hashicorp:{{ $dataplane.image.tag | default $root.Chart.AppVersion }}"
-          {{- else if .Values.vault.azure }}
-          image: "ghcr.io/catenax-ng/product-agents-edc/dataplane-azure-vault:{{ $dataplane.image.tag | default $root.Chart.AppVersion }}"
+          {{- else if and $root.Values.vault.hashicorp }}
+          image: "ghcr.io/catenax-ng/product-agents-edc/agentplane-hashicorp:{{ $dataplane.image.tag | default $root.Chart.AppVersion }}"
+          {{- else if $root.Values.vault.azure }}
+          image: "ghcr.io/catenax-ng/product-agents-edc/agentplane-azure-vault:{{ $dataplane.image.tag | default $root.Chart.AppVersion }}"
           {{- else }}
           {{- fail "cannot choose data-plane image automatically based on configuration" }}
           {{- end }}
