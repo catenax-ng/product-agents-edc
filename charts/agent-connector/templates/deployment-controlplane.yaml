@@ -252,9 +252,9 @@ spec:
             - name: {{ printf "EDC_DATAPLANE_SELECTOR_%s_URL" (upper $dataplane.name) | quote }}
               value: {{ include "txdc.dataplane.url.control" (dict "dataplane" $dataplane "root" $) }}
             - name: {{ printf "EDC_DATAPLANE_SELECTOR_%s_SOURCETYPES" (upper $dataplane.name) | quote }}
-              value: $dataplane.sourceTypes
+              value: {{ $dataplane.sourceTypes }}
             - name: {{ printf "EDC_DATAPLANE_SELECTOR_%s_DESTINATIONTYPES" (upper $dataplane.name) | quote }}
-              value: $dataplane.destinationTypes
+              value: {{ $dataplane.destinationTypes }}
             - name: {{ printf "EDC_DATAPLANE_SELECTOR_%s_PROPERTIES" (upper $dataplane.name) | quote }}
               value: |-
                 {{ printf "{ \"publicApiUrl\": \"%s\" }" (include "txdc.dataplane.url.public" (dict "dataplane" $dataplane "root" $)) }}
