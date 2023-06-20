@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.eclipse.tractusx.agents</groupId>
     <artifactId>edc</artifactId>
-    <version>1.9.2-SNAPSHOT</version>
+    <version>1.9.3-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Tractus-X Knowledge Agents Dataspace EDC Extensions</name>
     <description>EDC-Related Artifacts for Federated Procedure Calls</description>
@@ -25,7 +25,7 @@
         <com.nimbusds.version>9.31</com.nimbusds.version>
         <javax.servlet-api.version>4.0.1</javax.servlet-api.version>
         <jetty-jakarta-servlet-api.version>5.0.2</jetty-jakarta-servlet-api.version>
-        <org.apache.jena.version>4.6.0</org.apache.jena.version>
+        <org.apache.jena.version>4.8.0</org.apache.jena.version>
         <com.azure.azure-identity.version>1.9.0</com.azure.azure-identity.version>
         <com.azure.azure-security-keyvault-secrets.version>4.6.2</com.azure.azure-security-keyvault-secrets.version>
 

@@ -4,7 +4,7 @@
 // See authors file in the top folder
 // See license file in the top folder
 //
-package org.eclipse.tractusx.agents.edc.service;
+package org.eclipse.tractusx.agents.edc.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -16,8 +16,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static org.eclipse.edc.spi.CoreConstants.EDC_NAMESPACE;
 
 @JsonDeserialize(builder = TransferRequest.Builder.class)
 public class TransferRequest {

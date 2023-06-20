@@ -47,7 +47,8 @@ public class AgentExtension implements ServiceExtension {
      */
     protected static final String DEFAULT_CONTEXT_ALIAS = "default";
     protected static final String CALLBACK_CONTEXT_ALIAS = "callback";
-    public static Pattern GRAPH_PATTERN=Pattern.compile("((?<url>[^#]+)#)?(?<graph>(urn:(cx|artifact):)?Graph:.*)");
+    public static Pattern GRAPH_PATTERN=Pattern.compile("((?<url>[^#]+)#)?(?<graph>.*Graph(Asset)?.*)");
+    public static Pattern SKILL_PATTERN=Pattern.compile("((?<url>[^#]+)#)?(?<graph>.*Skill(Asset)?.*)");
 
 
     /**

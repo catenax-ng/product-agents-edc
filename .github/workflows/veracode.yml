@@ -57,8 +57,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [ { dir: agent-plane, name: agent-plane-protocol-uber },
-                   { dir: agent-plane, name: agentplane-azure-vault },
+        variant: [ { dir: agent-plane, name: agentplane-azure-vault },
                    { dir: agent-plane, name: agentplane-hashicorp } ]
     steps:
       # Set-Up

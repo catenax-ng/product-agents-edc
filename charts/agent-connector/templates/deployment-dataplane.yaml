@@ -150,10 +150,12 @@ spec:
               value: {{ printf "http://%s-%s:%v%s/endpoint-data-reference" ( include "txdc.fullname" $root ) $dataplane.name $dataplane.endpoints.callback.port $dataplane.endpoints.callback.path | quote }}
             - name: "EDC_API_AUTH_KEY"
               value: {{ $root.Values.controlplane.endpoints.management.authKey | required ".Values.controlplane.endpoints.mangement.authKey is required" | quote }}
+            - name: "EDC_PARTICIPANT_ID"
+              value: {{ $root.Values.partnerid | quote }}
             - name: "CX_AGENT_CONTROLPLANE_URL"
               value: {{ printf "http://%s-controlplane:%v" ( include "txdc.fullname" $root ) $root.Values.controlplane.endpoints.protocol.port | quote }}
             - name: "CX_AGENT_CONTROLPLANE_MANAGEMENT"
-              value: {{ printf "http://%s-controlplane:%v%s" ( include "txdc.fullname" $root ) $root.Values.controlplane.endpoints.management.port $root.Values.controlplane.endpoints.management.path  | quote }}
+              value: {{ printf "http://%s-controlplane:%v%s%s" ( include "txdc.fullname" $root ) $root.Values.controlplane.endpoints.management.port $root.Values.controlplane.endpoints.management.path "/v2" | quote }}
           {{- end }}
 
           {{- if $dataplane.agent.default }}

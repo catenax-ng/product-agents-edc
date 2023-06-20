@@ -1,5 +1,7 @@
 package org.eclipse.tractusx.agents.edc.service;
 
+import jakarta.json.Json;
+import jakarta.json.JsonValue;
 import org.apache.jena.atlas.lib.Sink;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFParser;
@@ -10,13 +12,14 @@ import org.apache.jena.riot.system.StreamRDF;
 import org.apache.jena.riot.system.StreamRDFLib;
 import org.eclipse.tractusx.agents.edc.AgentConfig;
 import org.eclipse.tractusx.agents.edc.MonitorWrapper;
+import org.eclipse.tractusx.agents.edc.jsonld.JsonLd;
+import org.eclipse.tractusx.agents.edc.model.DcatCatalog;
+import org.eclipse.tractusx.agents.edc.model.DcatDataset;
 import org.eclipse.tractusx.agents.edc.rdf.RDFStore;
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.sparql.core.Quad;
 import org.eclipse.edc.spi.monitor.Monitor;
-import org.eclipse.edc.catalog.spi.Catalog;
-import org.eclipse.edc.connector.contract.spi.types.offer.ContractOffer;
 import org.eclipse.edc.spi.query.Criterion;
 import org.eclipse.edc.spi.query.QuerySpec;
 
@@ -34,30 +37,25 @@ public class DataspaceSynchronizer implements Runnable {
     /**
      * constants
      */
-    protected final static Node CX_ASSET=NodeFactory.createURI("https://github.com/catenax-ng/product-knowledge/ontology/cx.ttl#offersAsset");
+    protected final static Node CX_ASSET=NodeFactory.createURI("https://w3id.org/catenax/ontology/common#offers");
     protected final static Map<String,Node> assetPropertyMap=new HashMap<>();
-    protected final static QuerySpec federatedAssetQuery = QuerySpec.Builder.newInstance().filter(List.of(new Criterion("cx:isFederated","=","true"))).build();
+    protected final static QuerySpec federatedAssetQuery = QuerySpec.Builder.newInstance().
+            filter(List.of(new Criterion("https://w3id.org/catenax/ontology/common#isFederated","=","true"))).build();
 
     protected MonitorWrapper monitorWrapper;
 
     static {
-        assetPropertyMap.put("https://w3id.org/edc/v0.0.1/ns/id",NodeFactory.createURI("urn:cx-common#id"));
-        assetPropertyMap.put("https://w3id.org/edc/v0.0.1/ns/name",NodeFactory.createURI("urn:cx-common#name"));
-        assetPropertyMap.put("https://w3id.org/edc/v0.0.1/ns/description",NodeFactory.createURI("urn:cx-common#description"));
-        assetPropertyMap.put("https://w3id.org/edc/v0.0.1/ns/version",NodeFactory.createURI("urn:cx-common#version"));
-        assetPropertyMap.put("https://w3id.org/edc/v0.0.1/ns/contenttype",NodeFactory.createURI("urn:cx-common#contentType"));
-        assetPropertyMap.put("rdf:type",NodeFactory.createURI("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"));
-        assetPropertyMap.put("rdfs:isDefinedBy",NodeFactory.createURI("http://www.w3.org/2000/01/rdf-schema#isDefinedBy"));
-        assetPropertyMap.put("cx:protocol",NodeFactory.createURI("urn:cx-common#protocol"));
-        assetPropertyMap.put("sh:shapesGraph",NodeFactory.createURI("http://www.w3.org/ns/shacl#shapeGraph"));
-        assetPropertyMap.put("cx:isFederated",NodeFactory.createURI("urn:cx-common#isFederated"));
-        assetPropertyMap.put("asset:prop:contract",NodeFactory.createURI("urn:cx-common#contract"));
-        assetPropertyMap.put("asset:prop:provider",NodeFactory.createURI("urn:cx-common#provider"));
-        assetPropertyMap.put("policy:type",NodeFactory.createURI("urn:cx-common#policyType"));
-        assetPropertyMap.put("policy:assignee",NodeFactory.createURI("urn:cx-common#policyAssignee"));
-        assetPropertyMap.put("policy:assigner",NodeFactory.createURI("urn:cx-common#policyAssigner"));
-        assetPropertyMap.put("policy:target",NodeFactory.createURI("urn:cx-common#policyTarget"));
-        assetPropertyMap.put("offer:id",NodeFactory.createURI("urn:cx-common#offer"));
+        assetPropertyMap.put("https://w3id.org/edc/v0.0.1/ns/id",NodeFactory.createURI("https://w3id.org/catenax/ontology/common#id"));
+        assetPropertyMap.put("https://w3id.org/edc/v0.0.1/ns/name",NodeFactory.createURI("https://w3id.org/catenax/ontology/common#name"));
+        assetPropertyMap.put("https://w3id.org/edc/v0.0.1/ns/description",NodeFactory.createURI("https://w3id.org/catenax/ontology/common#description"));
+        assetPropertyMap.put("https://w3id.org/edc/v0.0.1/ns/version",NodeFactory.createURI("https://w3id.org/catenax/ontology/common#version"));
+        assetPropertyMap.put("https://w3id.org/edc/v0.0.1/ns/contenttype",NodeFactory.createURI("https://w3id.org/catenax/ontology/common#contentType"));
+        assetPropertyMap.put("http://www.w3.org/1999/02/22-rdf-syntax-ns#type",NodeFactory.createURI("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"));
+        assetPropertyMap.put("http://www.w3.org/2000/01/rdf-schema#isDefinedBy",NodeFactory.createURI("http://www.w3.org/2000/01/rdf-schema#isDefinedBy"));
+        assetPropertyMap.put("https://w3id.org/catenax/ontology/common#implementsProtocol",NodeFactory.createURI("https://w3id.org/catenax/ontology/common#implementsProtocol"));
+        assetPropertyMap.put("http://www.w3.org/ns/shacl#shapesGraph",NodeFactory.createURI("http://www.w3.org/ns/shacl#shapeGraph"));
+        assetPropertyMap.put("https://w3id.org/catenax/ontology/common#isFederated",NodeFactory.createURI("https://w3id.org/catenax/ontology/common#isFederated"));
+        assetPropertyMap.put("https://w3id.org/catenax/ontology/common#publishedUnderContract",NodeFactory.createURI("https://w3id.org/catenax/ontology/common#publishedUnderContract"));
     }
 
     /**
@@ -129,8 +127,7 @@ public class DataspaceSynchronizer implements Runnable {
                     monitor.debug(String.format("About to synchronize remote connector %s", remote));
                     rdfStore.startTx();
                     try {
-                        Catalog catalog = dataManagement.getCatalog(remote,federatedAssetQuery);
-                        monitor.debug(String.format("Found a catalog with %d entries for remote connector %s", catalog.getContractOffers().size(), remote));
+                        DcatCatalog catalog = dataManagement.getCatalog(remote,federatedAssetQuery);
                         Node graph = rdfStore.getDefaultGraph();
                         Node connector = NodeFactory.createURI(remote.replace("https", "edcs").replace("http", "edc"));
                         Quad findAssets = Quad.create(graph,connector,CX_ASSET,Node.ANY);
@@ -157,12 +154,18 @@ public class DataspaceSynchronizer implements Runnable {
                             tupleCount++;
                         }
                         monitor.debug(String.format("About to delete %d old tuples.", tupleCount));
+                        List<DcatDataset> offers=catalog.getDatasets();
                         tupleCount=0;
-                        for (ContractOffer offer : catalog.getContractOffers()) {
-                            for(Quad quad : convertToQuads(graph,connector,offer)) {
-                                tupleCount++;
-                                rdfStore.getDataSet().add(quad);
+                        if(offers!=null) {
+                            monitor.debug(String.format("Found a catalog with %d entries for remote connector %s", offers.size(), remote));
+                            for (DcatDataset offer : catalog.getDatasets()) {
+                                for(Quad quad : convertToQuads(graph,connector,offer)) {
+                                    tupleCount++;
+                                    rdfStore.getDataSet().add(quad);
+                                }
                             }
+                        } else {
+                            monitor.warning(String.format("Found an empty catalog for remote connector %s", remote));
                         }
                         monitor.debug(String.format("About to add %d new tuples.", tupleCount));
                         rdfStore.commit();
@@ -189,23 +192,18 @@ public class DataspaceSynchronizer implements Runnable {
      * @param offer being made
      * @return default props
      */
-    public static Map<String,String> getProperties(ContractOffer offer) {
-        Map<String,String> assetProperties = new HashMap<>();
-        offer.getPolicy().getExtensibleProperties().forEach( (key,value) -> assetProperties.put(key,String.valueOf(value)));
-        assetProperties.put("offer:id",offer.getId());
-        assetProperties.put("asset:prop:id",offer.getAssetId());
-        assetProperties.put("asset:prop:provider",offer.getProviderId());
-        assetProperties.put("policy:type",offer.getPolicy().getType().name());
-        assetProperties.put("policy:target",offer.getPolicy().getTarget());
-        assetProperties.put("policy:assignee",offer.getPolicy().getAssignee());
-        assetProperties.put("policy:assigner",offer.getPolicy().getAssigner());
-        if(!assetProperties.containsKey("rdf:type")) {
-            String assetType=offer.getAssetId();
+    public static Map<String,JsonValue> getProperties(DcatDataset offer) {
+        Map<String, JsonValue> assetProperties = new HashMap<>(offer.getProperties());
+        if(!assetProperties.containsKey("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")) {
+            String assetType= JsonLd.asString(assetProperties.getOrDefault("@id", Json.createValue("http://www.w3.org/2002/07/owl#Thing")));
             int indexOfQuestion = assetType.indexOf("?");
             if (indexOfQuestion > 0) {
                 assetType = assetType.substring(0, indexOfQuestion - 1);
             }
-            assetProperties.put("rdf:type","<"+assetType+">");
+            assetProperties.put("http://www.w3.org/1999/02/22-rdf-syntax-ns#type",Json.createValue(assetType));
+        }
+        if(!assetProperties.containsKey("@id")) {
+            assetProperties.put("@id",Json.createValue(UUID.randomUUID().toString()));
         }
         return assetProperties;
     }
@@ -217,19 +215,21 @@ public class DataspaceSynchronizer implements Runnable {
      * @param offer the contract offer
      * @return a collection of quads
      */
-    public Collection<Quad> convertToQuads(Node graph, Node connector, ContractOffer offer) {
-        Map<String,String> assetProperties=getProperties(offer);
+    public Collection<Quad> convertToQuads(Node graph, Node connector, DcatDataset offer) {
+        Map<String,JsonValue> assetProperties=getProperties(offer);
 
-        if(!"true".equals(String.valueOf(assetProperties.getOrDefault("cx:isFederated","false")))) {
+        if(!"true".equals(JsonLd.asString(assetProperties.getOrDefault("https://w3id.org/catenax/ontology/common#isFederated",Json.createValue("false"))))) {
             return List.of();
         }
+
         List<Quad> quads=new ArrayList<>();
-        Node assetNode=NodeFactory.createURI(offer.getAssetId());
+        String offerId=assetProperties.get("@id").toString();
+        Node assetNode=NodeFactory.createURI(offerId);
         quads.add(Quad.create(graph,
                 connector,
                 CX_ASSET,
                 assetNode));
-        for(Map.Entry<String,String> assetProp : assetProperties.entrySet()) {
+        for(Map.Entry<String,JsonValue> assetProp : assetProperties.entrySet()) {
             String key=assetProp.getKey();
             Node node=assetPropertyMap.get(key);
             while(node==null && key.indexOf('.')>=0) {
@@ -237,13 +237,13 @@ public class DataspaceSynchronizer implements Runnable {
                 node=assetPropertyMap.get(key);
             }
             if(node!=null) {
-                String pureProperty=assetProp.getValue();
+                String pureProperty=JsonLd.asString(assetProp.getValue());
                 if(pureProperty!=null) {
                     switch (key) {
-                        case "asset:prop:contract":
-                        case "rdfs:isDefinedBy":
-                        case "rdf:type":
-                        case "cx:protocol":
+                        case "https://w3id.org/catenax/ontology/common#publishedUnderContract":
+                        case "http://www.w3.org/2000/01/rdf-schema#isDefinedBy":
+                        case "http://www.w3.org/1999/02/22-rdf-syntax-ns#type":
+                        case "https://w3id.org/catenax/ontology/common#implementsProtocol":
                             String[] urls = pureProperty.split(",");
                             for (String url : urls) {
                                 Node o;
@@ -261,8 +261,8 @@ public class DataspaceSynchronizer implements Runnable {
                                 quads.add(Quad.create(graph, assetNode, node, o));
                             }
                             break;
-                        case "sh:shapesGraph":
-                            Node newGraph = NodeFactory.createURI("urn:cx-common#GraphShape?id="+offer.getAssetId().hashCode());
+                        case "http://www.w3.org/ns/shacl#shapesGraph":
+                            Node newGraph = NodeFactory.createURI("https://w3id.org/catenax/ontology/common#GraphShape?id="+offerId.hashCode());
                             quads.add(Quad.create(graph,assetNode,node,newGraph));
                             Sink<Quad> quadSink=new Sink<>() {
 

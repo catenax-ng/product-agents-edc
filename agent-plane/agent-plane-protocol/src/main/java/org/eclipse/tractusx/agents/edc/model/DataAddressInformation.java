@@ -4,7 +4,7 @@
 // See authors file in the top folder
 // See license file in the top folder
 //
-package org.eclipse.tractusx.agents.edc.service;
+package org.eclipse.tractusx.agents.edc.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;

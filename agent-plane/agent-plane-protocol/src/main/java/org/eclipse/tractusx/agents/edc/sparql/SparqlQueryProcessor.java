@@ -18,7 +18,6 @@ import okhttp3.Request;
 import okhttp3.Response;
 import org.apache.http.HttpStatus;
 import org.apache.jena.fuseki.Fuseki;
-import org.apache.jena.fuseki.metrics.MetricsProviderRegistry;
 import org.apache.jena.fuseki.server.DataAccessPointRegistry;
 import org.apache.jena.fuseki.server.OperationRegistry;
 import org.apache.jena.fuseki.servlets.*;
@@ -65,7 +64,7 @@ public class SparqlQueryProcessor extends SPARQL_QueryGeneral.SPARQL_QueryProc {
      * state
      */
     protected final OperationRegistry operationRegistry= OperationRegistry.createEmpty();
-    protected final DataAccessPointRegistry dataAccessPointRegistry=new DataAccessPointRegistry(MetricsProviderRegistry.get().getMeterRegistry());
+    protected final DataAccessPointRegistry dataAccessPointRegistry=new DataAccessPointRegistry();
     protected final RewriteFactory optimizerFactory=new OptimizerFactory();
 
     // map EDC monitor to SLF4J (better than the builtin MonitorProvider)

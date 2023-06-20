@@ -4,17 +4,22 @@
 // See authors file in the top folder
 // See license file in the top folder
 //
-package org.eclipse.tractusx.agents.edc.service;
+package org.eclipse.tractusx.agents.edc.model;
 
 public class ContractNegotiationRequest {
 
     private String connectorAddress;
-    private String protocol = "ids-multipart";
+    private String protocol = "dataspace-protocol-http";
     private String connectorId;
+
+    public String getBusinessPartnerNumber() {
+        return businessPartnerNumber;
+    }
+
+    private String businessPartnerNumber;
     private ContractOfferDescription offer;
 
     private ContractNegotiationRequest() {
-
     }
 
     public String getConnectorAddress() {
@@ -62,6 +67,11 @@ public class ContractNegotiationRequest {
 
         public Builder offerId(ContractOfferDescription offerId) {
             dto.offer = offerId;
+            return this;
+        }
+
+        public Builder businessPartnerNumber(String bpn) {
+            dto.businessPartnerNumber=bpn;
             return this;
         }
 

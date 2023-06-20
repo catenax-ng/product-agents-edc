@@ -17,13 +17,13 @@ import org.eclipse.edc.spi.monitor.Monitor;
 import org.eclipse.edc.spi.query.Criterion;
 import org.eclipse.edc.spi.query.QuerySpec;
 import org.eclipse.edc.spi.types.TypeManager;
-import org.eclipse.edc.catalog.spi.Catalog;
-import org.eclipse.edc.connector.contract.spi.types.offer.ContractOffer;
+import org.eclipse.tractusx.agents.edc.jsonld.JsonLd;
+import org.eclipse.tractusx.agents.edc.model.*;
 
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
@@ -36,13 +36,55 @@ public class DataManagement {
     /**
      * some constants when interacting with control plane
      */
-    public static final String IDS_PATH="%s/api/v1/ids/data";
+    public static final String DSP_PATH="%s/api/v1/dsp";
     public static final String CATALOG_CALL = "%s/catalog/request";
-    public static final String CATALOG_REQUEST_BODY="{ \"providerUrl\": \"%s\", \"querySpec\": %s }";
+    public static final String CATALOG_REQUEST_BODY="{" +
+            "\"@context\": {}," +
+            "\"protocol\": \"dataspace-protocol-http\"," +
+            "\"providerUrl\": \"%s\", " +
+            "\"querySpec\": %s }";
+
+    public static final String NEGOTIATION_REQUEST_BODY="{\n" +
+            "\"@context\": { \"odrl\": \"http://www.w3.org/ns/odrl/2/\"},\n" +
+            "\"@type\": \"NegotiationInitiateRequestDto\",\n" +
+            "\"connectorAddress\": \"%1$s\",\n" +
+            "\"protocol\": \"dataspace-protocol-http\",\n" +
+            "\"connectorId\": \"%2$s\",\n" +
+            "\"providerId\": \"%2$s\",\n" +
+            "\"offer\": {\n" +
+            "  \"offerId\": \"%3$s\",\n" +
+            "  \"assetId\": \"%4$s\",\n" +
+            "  \"policy\": %5$s\n" +
+            "}\n" +
+            "}";
+
     public static final String NEGOTIATION_INITIATE_CALL = "%s/contractnegotiations";
     public static final String NEGOTIATION_CHECK_CALL = "%s/contractnegotiations/%s";
-    public static final String TRANSFER_INITIATE_CALL = "%s/transferprocess";
-    public static final String TRANSFER_CHECK_CALL = "%s/transferprocess/%s";
+    public static final String TRANSFER_INITIATE_CALL = "%s/transferprocesses";
+
+    public static final String TRANSFER_REQUEST_BODY="{\n" +
+            "    \"@context\": {\n" +
+            "        \"odrl\": \"http://www.w3.org/ns/odrl/2/\"\n" +
+            "    },\n" +
+            "    \"assetId\": \"%1$s\",\n" +
+            "    \"connectorAddress\": \"%2$s\",\n" +
+            "    \"contractId\": \"%3$s\",\n" +
+            "    \"dataDestination\": {\n" +
+            "        \"properties\": {\n" +
+            "            \"type\": \"HttpProxy\"\n" +
+            "        }\n" +
+            "    },\n" +
+            "    \"managedResources\": false,\n" +
+            "    \"privateProperties\": {\n" +
+            "        \"receiverHttpEndpoint\": \"%4$s\"\n" +
+            "    },\n" +
+            "    \"protocol\": \"dataspace-protocol-http\",\n" +
+            "    \"transferType\": {\n" +
+            "        \"contentType\": \"application/octet-stream\",\n" +
+            "        \"isFinite\": true\n" +
+            "    }\n" +
+            "}";
+    public static final String TRANSFER_CHECK_CALL = "%s/transferprocesses/%s";
     public static final String AGREEMENT_CHECK_CALL = "%s/contractagreements/%s";
 
     /**
@@ -76,14 +118,12 @@ public class DataManagement {
      * @return a collection of contract options to access the given asset
      * @throws IOException in case that the remote call did not succeed
      */
-    public Collection<ContractOffer> findContractOffers(String remoteControlPlaneIdsUrl, String assetId) throws IOException {
+    public Collection<DcatDataset> findContractOffers(String remoteControlPlaneIdsUrl, String assetId) throws IOException {
         QuerySpec findAsset=QuerySpec.Builder.newInstance().filter(
-                List.of(new Criterion("asset:prop:id","=",assetId))
+                List.of(new Criterion("https://w3id.org/edc/v0.0.1/ns/id","=",assetId))
         ).build();
-        Catalog catalog = getCatalog(remoteControlPlaneIdsUrl,findAsset);
-        return catalog.getContractOffers().stream()
-                .filter(it -> it.getAssetId().equals(assetId))
-                .collect(Collectors.toList());
+        DcatCatalog catalog = getCatalog(remoteControlPlaneIdsUrl,findAsset);
+        return catalog.getDatasets();
     }
 
     /**
@@ -93,10 +133,10 @@ public class DataManagement {
      * @return catalog object
      * @throws IOException in case something went wrong
      */
-    public Catalog getCatalog(String remoteControlPlaneIdsUrl, QuerySpec spec) throws IOException {
+    public DcatCatalog getCatalog(String remoteControlPlaneIdsUrl, QuerySpec spec) throws IOException {
 
         var url = String.format(CATALOG_CALL,config.getControlPlaneManagementUrl());
-        var catalogSpec =String.format(CATALOG_REQUEST_BODY,String.format(IDS_PATH,remoteControlPlaneIdsUrl),objectMapper.writeValueAsString(spec));
+        var catalogSpec =String.format(CATALOG_REQUEST_BODY,String.format(DSP_PATH,remoteControlPlaneIdsUrl),objectMapper.writeValueAsString(spec));
 
         var request = new Request.Builder().url(url).post(RequestBody.create(catalogSpec,MediaType.parse("application/json")));
         config.getControlPlaneManagementHeaders().forEach(request::addHeader);
@@ -108,7 +148,7 @@ public class DataManagement {
                 throw new InternalServerErrorException(format("Control plane responded with: %s %s", response.code(), body != null ? body.string() : ""));
             }
 
-            return objectMapper.readValue(body.string(), Catalog.class);
+            return JsonLd.processCatalog(body.string());
         } catch (Exception e) {
             monitor.severe(format("Error in calling the control plane at %s", url), e);
             throw e;
@@ -123,10 +163,15 @@ public class DataManagement {
      */
     public String initiateNegotiation(ContractNegotiationRequest negotiationRequest) throws IOException {
         var url = String.format(NEGOTIATION_INITIATE_CALL,config.getControlPlaneManagementUrl());
-        var requestBody = RequestBody.create(
-                objectMapper.writeValueAsString(negotiationRequest),
-                MediaType.parse(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
-        );
+
+        var negotiateSpec =String.format(NEGOTIATION_REQUEST_BODY,
+                negotiationRequest.getConnectorAddress(),
+                negotiationRequest.getBusinessPartnerNumber(),
+                negotiationRequest.getOffer().getOfferId(),
+                negotiationRequest.getOffer().getAssetId(),
+                negotiationRequest.getOffer().getPolicy().asString());
+
+        var requestBody = RequestBody.create(negotiateSpec,MediaType.parse("application/json"));
 
         var request = new Request.Builder()
                 .url(url)
@@ -140,7 +185,8 @@ public class DataManagement {
                 throw new InternalServerErrorException(format("Control plane responded with: %s %s", response.code(), body != null ? body.string() : ""));
             }
 
-            var negotiationId = objectMapper.readTree(body.string()).get("id").textValue();
+
+            var negotiationId = JsonLd.processIdResponse(body.string()).getId();
 
             monitor.debug("Started negotiation with ID: " + negotiationId);
 
@@ -170,7 +216,7 @@ public class DataManagement {
                 throw new InternalServerErrorException(format("Control plane responded with: %s %s", response.code(), body != null ? body.string() : ""));
             }
 
-            var negotiation = objectMapper.readValue(body.string(), ContractNegotiation.class);
+            var negotiation = JsonLd.processContractNegotiation(body.string());
             monitor.debug(format("Negotiation %s is in state '%s' (agreementId: %s)", negotiationId, negotiation.getState(), negotiation.getContractAgreementId()));
 
             return negotiation;
@@ -186,7 +232,7 @@ public class DataManagement {
      * @throws IOException something wild happens
      */
     public ContractAgreement getAgreement(String agreementId) throws IOException {
-        var url = String.format(AGREEMENT_CHECK_CALL,config.getControlPlaneManagementUrl(),agreementId);
+        var url = String.format(AGREEMENT_CHECK_CALL,config.getControlPlaneManagementUrl(), URLEncoder.encode(agreementId,"UTF-8"));
         var request = new Request.Builder()
                 .url(url);
         config.getControlPlaneManagementHeaders().forEach(request::addHeader);
@@ -198,7 +244,7 @@ public class DataManagement {
                 throw new InternalServerErrorException(format("Control plane responded with: %s %s", response.code(), body != null ? body.string() : ""));
             }
 
-            var agreement = objectMapper.readValue(body.string(), ContractAgreement.class);
+            var agreement = JsonLd.processContractAgreement(body.string());
             monitor.debug(format("Agreement %s found for asset %s", agreementId, agreement.getAssetId()));
 
             return agreement;
@@ -217,10 +263,13 @@ public class DataManagement {
     public String initiateHttpProxyTransferProcess(TransferRequest transferRequest) throws IOException {
         var url = String.format(TRANSFER_INITIATE_CALL,config.getControlPlaneManagementUrl());
 
-        var requestBody = RequestBody.create(
-                objectMapper.writeValueAsString(transferRequest),
-                MediaType.parse(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
-        );
+        var transferSpec =String.format(TRANSFER_REQUEST_BODY,
+                transferRequest.getAssetId(),
+                transferRequest.getConnectorAddress(),
+                transferRequest.getContractId(),
+                transferRequest.getCallbackAddresses().get(0).getUri());
+
+        var requestBody = RequestBody.create(transferSpec,MediaType.parse("application/json"));
 
         var request = new Request.Builder()
                 .url(url)
@@ -236,7 +285,7 @@ public class DataManagement {
 
             // For debugging purposes:
             // var transferProcessId = TransferId.Builder.newInstance().id(body.string()).build();
-            var transferProcessId = objectMapper.readTree(body.string()).get("id").textValue();
+            var transferProcessId = JsonLd.processIdResponse(body.string()).getId();
 
             monitor.debug(format("Transfer process (%s) initiated", transferProcessId));
 
@@ -266,7 +315,7 @@ public class DataManagement {
                 throw new InternalServerErrorException(format("Control plane responded with: %s %s", response.code(), body != null ? body.string() : ""));
             }
 
-            var process = objectMapper.readValue(body.string(), TransferProcess.class);
+            var process = JsonLd.processTransferProcess(body.string());
             monitor.info(format("Transfer %s is in state '%s'", transferProcessId, process.getState()));
 
             return process;

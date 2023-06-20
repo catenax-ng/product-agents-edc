@@ -66,7 +66,6 @@ public class AgentSourceFactory extends org.eclipse.edc.connector.dataplane.http
      */
     @Override
     public DataSource createSource(DataFlowRequest request) {
-        boolean isTransfer= AgentSourceHttpParamsDecorator.isTransferRequest(request);
         var dataAddress = HttpDataAddress.Builder.newInstance()
                 .copyFrom(request.getSourceDataAddress())
                 .build();
@@ -76,13 +75,13 @@ public class AgentSourceFactory extends org.eclipse.edc.connector.dataplane.http
                 .name(dataAddress.getName())
                 .params(supplier.provideSourceParams(request))
                 .requestFactory(requestFactory)
-                .isTransfer(isTransfer)
+                .isTransfer(false)
                 .skillStore(skillStore)
                 .processor(processor)
                 .request(request)
                 .build();
-        monitor.debug(String.format("Created a new agent source %s in transfer mode %b for destination type %s",
-                dataSource,isTransfer,
+        monitor.debug(String.format("Created a new agent source %s for destination type %s",
+                dataSource,
                 request.getDestinationDataAddress().getType()));
         return dataSource;
     }

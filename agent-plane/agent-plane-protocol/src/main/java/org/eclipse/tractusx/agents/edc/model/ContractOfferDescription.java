@@ -4,18 +4,18 @@
 // See authors file in the top folder
 // See license file in the top folder
 //
-package org.eclipse.tractusx.agents.edc.service;
+package org.eclipse.tractusx.agents.edc.model;
 
 import org.eclipse.edc.policy.model.Policy;
 
 public class ContractOfferDescription {
     private final String offerId;
     private final String assetId;
-    private final Policy policy;
+    private final OdrlPolicy policy;
 
     public ContractOfferDescription(String offerId,
                                     String assetId,
-                                    Policy policy) {
+                                    OdrlPolicy policy) {
         this.offerId = offerId;
         this.assetId = assetId;
         this.policy = policy;
@@ -29,7 +29,7 @@ public class ContractOfferDescription {
         return this.assetId;
     }
 
-    public Policy getPolicy() {
+    public OdrlPolicy getPolicy() {
         return this.policy;
     }
 }
