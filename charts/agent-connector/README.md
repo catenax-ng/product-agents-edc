@@ -1,6 +1,6 @@
 # agent-connector
 
-![Version: 1.9.1](https://img.shields.io/badge/Version-1.9.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.9.1](https://img.shields.io/badge/AppVersion-1.9.1-informational?style=flat-square)
+![Version: 1.9.2](https://img.shields.io/badge/Version-1.9.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.9.2](https://img.shields.io/badge/AppVersion-1.9.2-informational?style=flat-square)
 
 A Helm chart for Tractus-X Agent-Enabled Eclipse Data Space Connector
 
@@ -10,7 +10,7 @@ A Helm chart for Tractus-X Agent-Enabled Eclipse Data Space Connector
 
 ```shell
 helm repo add tractusx-edc https://eclipse-tractusx.github.io/charts/dev
-helm install my-release tractusx-edc/tractusx-connector --version 1.9.1
+helm install my-release tractusx-edc/tractusx-connector --version 1.9.2
 ```
 
 ## Source Code
@@ -32,7 +32,7 @@ helm install my-release tractusx-edc/tractusx-connector --version 1.9.1
 | controlplane.debug.enabled | bool | `false` |  |
 | controlplane.debug.port | int | `1044` |  |
 | controlplane.debug.suspendOnStart | bool | `false` |  |
-| controlplane.endpoints | object | `{"control":{"path":"/control","port":8083},"default":{"path":"/api","port":8080},"management":{"authKey":"","path":"/management","port":8081},"metrics":{"path":"/metrics","port":9090},"observability":{"insecure":true,"path":"/observability","port":8085},"protocol":{"path":"/api/v1/ids","port":8084}}` | endpoints of the control plane |
+| controlplane.endpoints | object | `{"control":{"path":"/control","port":8083},"default":{"path":"/api","port":8080},"management":{"authKey":"","path":"/management","port":8081},"metrics":{"path":"/metrics","port":9090},"observability":{"insecure":true,"path":"/observability","port":8085},"protocol":{"path":"/api/v1/dsp","port":8084}}` | endpoints of the control plane |
 | controlplane.endpoints.control | object | `{"path":"/control","port":8083}` | control api, used for internal control calls. can be added to the internal ingress, but should probably not |
 | controlplane.endpoints.control.path | string | `"/control"` | path for incoming api calls |
 | controlplane.endpoints.control.port | int | `8083` | port for incoming api calls |
@@ -50,8 +50,8 @@ helm install my-release tractusx-edc/tractusx-connector --version 1.9.1
 | controlplane.endpoints.observability.insecure | bool | `true` | allow or disallow insecure access, i.e. access without authentication |
 | controlplane.endpoints.observability.path | string | `"/observability"` | observability api, provides /health /readiness and /liveness endpoints |
 | controlplane.endpoints.observability.port | int | `8085` | port for incoming API calls |
-| controlplane.endpoints.protocol | object | `{"path":"/api/v1/ids","port":8084}` | ids api, used for inter connector communication and must be internet facing |
-| controlplane.endpoints.protocol.path | string | `"/api/v1/ids"` | path for incoming api calls |
+| controlplane.endpoints.protocol | object | `{"path":"/api/v1/dsp","port":8084}` | ids api, used for inter connector communication and must be internet facing |
+| controlplane.endpoints.protocol.path | string | `"/api/v1/dsp"` | path for incoming api calls |
 | controlplane.endpoints.protocol.port | int | `8084` | port for incoming api calls |
 | controlplane.env | object | `{}` |  |
 | controlplane.envConfigMapNames | list | `[]` |  |
@@ -59,7 +59,7 @@ helm install my-release tractusx-edc/tractusx-connector --version 1.9.1
 | controlplane.envValueFrom | object | `{}` |  |
 | controlplane.image.pullPolicy | string | `"IfNotPresent"` | [Kubernetes image pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) to use |
 | controlplane.image.repository | string | `""` | Which derivate of the control plane to use. when left empty the deployment will select the correct image automatically |
-| controlplane.image.tag | string | `""` | Overrides the image tag whose default is the chart appVersion |
+| controlplane.image.tag | string | `"0.4.1"` | Overrides the image tag whose default is the chart appVersion |
 | controlplane.ingresses[0].annotations | object | `{}` | Additional ingress annotations to add |
 | controlplane.ingresses[0].certManager.clusterIssuer | string | `""` | If preset enables certificate generation via cert-manager cluster-wide issuer |
 | controlplane.ingresses[0].certManager.issuer | string | `""` | If preset enables certificate generation via cert-manager namespace scoped issuer |
@@ -146,9 +146,9 @@ helm install my-release tractusx-edc/tractusx-connector --version 1.9.1
 | dataplanes.dataplane.debug.enabled | bool | `false` |  |
 | dataplanes.dataplane.debug.port | int | `1044` |  |
 | dataplanes.dataplane.debug.suspendOnStart | bool | `false` |  |
-| dataplanes.dataplane.destinationTypes | string | `"HttpProxy,HttpProtocol"` | a comma-separated list of supported transfer types |
+| dataplanes.dataplane.destinationTypes | string | `"HttpProxy"` | a comma-separated list of supported transfer types |
 | dataplanes.dataplane.endpoints.callback.path | string | `"/callback"` |  |
-| dataplanes.dataplane.endpoints.callback.port | int | `8086` |  |
+| dataplanes.dataplane.endpoints.callback.port | int | `8087` |  |
 | dataplanes.dataplane.endpoints.control.path | string | `"/api/dataplane/control"` |  |
 | dataplanes.dataplane.endpoints.control.port | int | `8083` |  |
 | dataplanes.dataplane.endpoints.default.path | string | `"/api"` |  |
@@ -211,7 +211,7 @@ helm install my-release tractusx-edc/tractusx-connector --version 1.9.1
 | dataplanes.dataplane.securityContext.runAsUser | int | `10001` | The container's process will run with the specified uid |
 | dataplanes.dataplane.service.port | int | `80` |  |
 | dataplanes.dataplane.service.type | string | `"ClusterIP"` | [Service type](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types) to expose the running application on a set of Pods as a network service. |
-| dataplanes.dataplane.sourceTypes | string | `"HttpData,urn:cx:Protocol:w3c:Http#SPARQL"` | a comma-separated list of supported asset types |
+| dataplanes.dataplane.sourceTypes | string | `"cx-common:Protocol?w3c:http:SPARQL,HttpData"` | a comma-separated list of supported asset types |
 | dataplanes.dataplane.tolerations | list | `[]` |  |
 | dataplanes.dataplane.url.public | string | `""` | Explicitly declared url for reaching the public api (e.g. if ingresses not used) |
 | dataplanes.dataplane.volumeMounts | list | `[]` | declare where to mount [volumes](https://kubernetes.io/docs/concepts/storage/volumes/) into the container |
@@ -219,6 +219,7 @@ helm install my-release tractusx-edc/tractusx-connector --version 1.9.1
 | fullnameOverride | string | `""` |  |
 | imagePullSecrets | list | `[]` | Existing image pull secret to use to [obtain the container image from private registries](https://kubernetes.io/docs/concepts/containers/images/#using-a-private-registry) |
 | nameOverride | string | `""` |  |
+| partnerid | string | `"anonymous"` | Determines the business partner id |
 | postgresql | object | `{"enabled":false,"jdbcUrl":null,"username":null}` | Standard settings for persistence, "jdbcUrl", "username" and "password" need to be overridden |
 | serviceAccount.annotations | object | `{}` |  |
 | serviceAccount.create | bool | `true` |  |
