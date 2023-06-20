@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.eclipse.tractusx.agents</groupId>
     <artifactId>edc</artifactId>
-    <version>1.9.1-SNAPSHOT</version>
+    <version>1.9.3-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Tractus-X Knowledge Agents Dataspace EDC Extensions</name>
     <description>EDC-Related Artifacts for Federated Procedure Calls</description>
@@ -13,15 +13,21 @@
         <maven.compiler.target>11</maven.compiler.target>
         <skipTests>false</skipTests>
 
-        <com.azure.sdk.bom.version>1.2.2</com.azure.sdk.bom.version>
         <junit.version>5.9.0</junit.version>
-        <mockito.version>4.6.1</mockito.version>
-        <tx.edc.version>0.3.3</tx.edc.version>
-        <edc.version>0.0.1-20230220.patch1</edc.version>
-        <failsafe.version>3.2.4</failsafe.version>
-        <okhttp.version>4.9.3</okhttp.version>
-        <rdf4j.version>4.2.0</rdf4j.version>
-        <slf4j.version>2.0.3</slf4j.version>
+        <mockito.version>5.2.0</mockito.version>
+        <tx.edc.version>0.4.1</tx.edc.version>
+        <edc.version>0.1.0</edc.version>
+        <failsafe.version>3.3.1</failsafe.version>
+        <okhttp.version>4.11.0</okhttp.version>
+        <slf4j.version>2.0.7</slf4j.version>
+        <jakarta.ws.rs-api.version>3.1.0</jakarta.ws.rs-api.version>
+        <jakarta.validation.version>3.0.2</jakarta.validation.version>
+        <com.nimbusds.version>9.31</com.nimbusds.version>
+        <javax.servlet-api.version>4.0.1</javax.servlet-api.version>
+        <jetty-jakarta-servlet-api.version>5.0.2</jetty-jakarta-servlet-api.version>
+        <org.apache.jena.version>4.8.0</org.apache.jena.version>
+        <com.azure.azure-identity.version>1.9.0</com.azure.azure-identity.version>
+        <com.azure.azure-security-keyvault-secrets.version>4.6.2</com.azure.azure-security-keyvault-secrets.version>
 
         <!-- Source characteristics -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -33,18 +39,21 @@
     <modules>
         <module>common/auth-jwt</module>
         <module>agent-plane</module>
-        <module>control-plane</module>
     </modules>
     <dependencyManagement>
         <dependencies>
-            <!-- BOMs -->
+            <!-- Packages -->
             <dependency>
                 <groupId>com.azure</groupId>
-                <artifactId>azure-sdk-bom</artifactId>
-                <version>${com.azure.sdk.bom.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
+                <artifactId>azure-identity</artifactId>
+                <version>${com.azure.azure-identity.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.azure</groupId>
+                <artifactId>azure-security-keyvault-secrets</artifactId>
+                <version>${com.azure.azure-security-keyvault-secrets.version}</version>
+            </dependency>
+            <!-- BOMs -->
             <dependency>
                 <groupId>org.junit</groupId>
                 <artifactId>junit-bom</artifactId>
@@ -69,7 +78,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.1.0</version>
+                    <version>3.1.2</version>
                     <!-- unfortunately you have to repeat that in all relevant sub-modules -->
                     <configuration>
                         <groups>!online</groups>
@@ -78,7 +87,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
-                    <version>3.4.1</version>
+                    <version>3.5.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -175,10 +184,6 @@
             <id>central</id>
             <name>Maven Central</name>
             <url>https://repo1.maven.org/maven2</url>
-        </repository>
-        <repository> <!-- To be able to use edc patch "releases" -->
-            <id>ka-dsc-snapshots</id>
-            <url>https://drcgjung.github.io/DataSpaceConnector</url>
         </repository>
         <repository> <!-- To be able to use product edc releases -->
             <id>edc</id>

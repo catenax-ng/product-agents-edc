@@ -28,6 +28,7 @@ public class AgentConfig {
     public static String CONTROL_PLANE_URL = "cx.agent.controlplane.url";
     public static String CONTROL_PLANE_MANAGEMENT = "cx.agent.controlplane.management";
     public static String CONTROL_PLANE_IDS = "cx.agent.controlplane.ids";
+    public static String BUSINESS_PARTNER_NUMBER = "edc.participant.id";
     public static String CONTROL_PLANE_AUTH_HEADER = "edc.api.auth.header";
     public static String CONTROL_PLANE_AUTH_VALUE = "edc.api.auth.key";
     public static String NEGOTIATION_TIMEOUT_PROPERTY = "cx.agent.negotiation.timeout";
@@ -81,6 +82,10 @@ public class AgentConfig {
      */
     public String getDefaultAsset() {
         return config.getString(DEFAULT_ASSET_PROPERTY, DEFAULT_ASSET_NAME);
+    }
+
+    public String getBusinessPartnerNumber() {
+        return config.getString(BUSINESS_PARTNER_NUMBER, "anonymous");
     }
 
     /**

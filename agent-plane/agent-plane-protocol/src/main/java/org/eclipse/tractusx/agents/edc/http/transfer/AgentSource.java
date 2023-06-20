@@ -6,6 +6,7 @@
 //
 package org.eclipse.tractusx.agents.edc.http.transfer;
 
+import org.eclipse.edc.connector.dataplane.spi.pipeline.StreamResult;
 import org.eclipse.tractusx.agents.edc.AgentExtension;
 import org.eclipse.tractusx.agents.edc.SkillStore;
 import org.eclipse.tractusx.agents.edc.sparql.SparqlQueryProcessor;
@@ -13,9 +14,9 @@ import okhttp3.Response;
 import org.eclipse.edc.connector.dataplane.http.params.HttpRequestFactory;
 import org.eclipse.edc.connector.dataplane.http.spi.HttpRequestParams;
 import org.eclipse.edc.connector.dataplane.spi.pipeline.DataSource;
-import org.eclipse.edc.spi.EdcException;
 import org.eclipse.edc.spi.http.EdcHttpClient;
 import org.eclipse.edc.spi.types.domain.transfer.DataFlowRequest;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -60,86 +61,104 @@ public class AgentSource implements DataSource {
     }
 
     @Override
-    public Stream<Part> openPartStream() {
+    public StreamResult<Stream<Part>> openPartStream() {
         // check whether this is a cross-plane call or a final agent call
         if(!isTransfer) {
-            // Agent call, we translate from KA-MATCH to KA-TRANSFER
-            String skill=null;
-            String graph=null;
-            String asset= request.getSourceDataAddress().getProperties().get("asset:prop:id");
-            if(asset!=null && asset.length() > 0) {
-                Matcher graphMatcher= AgentExtension.GRAPH_PATTERN.matcher(asset);
-                if(graphMatcher.matches()) {
-                    graph=asset;
-                }
-                Matcher skillMatcher=SkillStore.SKILL_PATTERN.matcher(asset);
-                if(skillMatcher.matches()) {
-                    skill=asset;
-                }
-            }
-            String authKey=request.getSourceDataAddress().getProperties().getOrDefault("authKey",null);
-            String authCode=request.getSourceDataAddress().getProperties().getOrDefault("authCode",null);
-            try (Response response = processor.execute(this.requestFactory.toRequest(params),skill,graph,authKey,authCode)) {
-                if(!response.isSuccessful()) {
-                    throw new EdcException(format("Received code transferring HTTP data for request %s: %s - %s.", requestId, response.code(), response.message()));
-                }
-                List<Part> results=new ArrayList<>();
-                if(response.body()!=null) {
-                    results.add(new AgentPart(response.body().contentType().toString(),response.body().bytes()));
-                }
-                if(response.header("cx_warnings")!=null) {
-                    results.add(new AgentPart("application/cx-warnings+json",response.header("cx_warnings").getBytes()));
-                }
-                return results.stream();
-            } catch (IOException e) {
-                throw new EdcException(e);
-            }
+            return openTransfer();
         } else {
-            try (var response = httpClient.execute(this.requestFactory.toRequest(params))) {
-                if(!response.isSuccessful()) {
-                    throw new EdcException(format("Received code transferring HTTP data for request %s: %s - %s.", requestId, response.code(), response.message()));
-                }
-                List<Part> results=new ArrayList<>();
-                if(response.body()!=null) {
-                    try(BufferedInputStream bis = new BufferedInputStream(response.body().byteStream())) {
-                        bis.mark(AGENT_BOUNDARY.length());
-                        byte[] boundary = new byte[AGENT_BOUNDARY.length()];
-                        int all = bis.read(boundary);
-                        bis.reset();
-                        if (all==boundary.length && AGENT_BOUNDARY.equals(new String(boundary))) {
-                            StringBuilder nextPart = null;
-                            String embeddedContentType = null;
-                            try (BufferedReader reader = new BufferedReader(new InputStreamReader(bis))) {
-                                for (String line = reader.readLine(); line != null; line = reader.readLine()) {
-                                    if (AGENT_BOUNDARY.equals(line)) {
-                                        if (nextPart != null && embeddedContentType != null) {
-                                            results.add(new AgentPart(embeddedContentType, nextPart.toString().getBytes()));
-                                        }
-                                        nextPart = new StringBuilder();
-                                        String contentLine = reader.readLine();
-                                        if (contentLine != null && contentLine.startsWith("Content-Type: ")) {
-                                            embeddedContentType = contentLine.substring(14);
-                                        } else {
-                                            embeddedContentType = null;
-                                        }
-                                    } else if(nextPart!=null) {
-                                        nextPart.append(line);
-                                        nextPart.append("\n");
+            return openMatchmaking();
+        }
+    }
+
+    /**
+     * delegates/tunnels a KA-TRANSFER call
+     * @return multipart body containing result and warnings
+     */
+    @NotNull
+    protected StreamResult<Stream<Part>> openTransfer() {
+        // Agent call, we translate from KA-MATCH to KA-TRANSFER
+        String skill=null;
+        String graph=null;
+        String asset= request.getSourceDataAddress().getProperties().get("asset:prop:id");
+        if(asset!=null && asset.length() > 0) {
+            Matcher graphMatcher= AgentExtension.GRAPH_PATTERN.matcher(asset);
+            if(graphMatcher.matches()) {
+                graph=asset;
+            }
+            Matcher skillMatcher=SkillStore.SKILL_PATTERN.matcher(asset);
+            if(skillMatcher.matches()) {
+                skill=asset;
+            }
+        }
+        String authKey=request.getSourceDataAddress().getProperties().getOrDefault("authKey",null);
+        String authCode=request.getSourceDataAddress().getProperties().getOrDefault("authCode",null);
+        try (Response response = processor.execute(this.requestFactory.toRequest(params),skill,graph,authKey,authCode)) {
+            if(!response.isSuccessful()) {
+                return StreamResult.error(format("Received code transferring HTTP data for request %s: %s - %s.", requestId, response.code(), response.message()));
+            }
+            List<Part> results=new ArrayList<>();
+            if(response.body()!=null) {
+                results.add(new AgentPart(response.body().contentType().toString(),response.body().bytes()));
+            }
+            if(response.header("cx_warnings")!=null) {
+                results.add(new AgentPart("application/cx-warnings+json",response.header("cx_warnings").getBytes()));
+            }
+            return StreamResult.success(results.stream());
+        } catch (IOException e) {
+            return StreamResult.error(e.getMessage());
+        }
+    }
+
+    /**
+     * executes a KA-MATCHMAKING call and pipes the results into KA-TRANSFER
+     * @return multipart body containing result and warnings
+     */
+    @NotNull
+    protected StreamResult<Stream<Part>> openMatchmaking() {
+        try (var response = httpClient.execute(this.requestFactory.toRequest(params))) {
+            if(!response.isSuccessful()) {
+                return StreamResult.error(format("Received code transferring HTTP data for request %s: %s - %s.", requestId, response.code(), response.message()));
+            }
+            List<Part> results=new ArrayList<>();
+            if(response.body()!=null) {
+                try(BufferedInputStream bis = new BufferedInputStream(response.body().byteStream())) {
+                    bis.mark(AGENT_BOUNDARY.length());
+                    byte[] boundary = new byte[AGENT_BOUNDARY.length()];
+                    int all = bis.read(boundary);
+                    bis.reset();
+                    if (all==boundary.length && AGENT_BOUNDARY.equals(new String(boundary))) {
+                        StringBuilder nextPart = null;
+                        String embeddedContentType = null;
+                        try (BufferedReader reader = new BufferedReader(new InputStreamReader(bis))) {
+                            for (String line = reader.readLine(); line != null; line = reader.readLine()) {
+                                if (AGENT_BOUNDARY.equals(line)) {
+                                    if (nextPart != null && embeddedContentType != null) {
+                                        results.add(new AgentPart(embeddedContentType, nextPart.toString().getBytes()));
                                     }
+                                    nextPart = new StringBuilder();
+                                    String contentLine = reader.readLine();
+                                    if (contentLine != null && contentLine.startsWith("Content-Type: ")) {
+                                        embeddedContentType = contentLine.substring(14);
+                                    } else {
+                                        embeddedContentType = null;
+                                    }
+                                } else if(nextPart!=null) {
+                                    nextPart.append(line);
+                                    nextPart.append("\n");
                                 }
                             }
-                            if (nextPart != null && embeddedContentType != null) {
-                                results.add(new AgentPart(embeddedContentType, nextPart.toString().getBytes()));
-                            }
-                        } else {
-                            results.add(new AgentPart(name, response.body().bytes()));
                         }
+                        if (nextPart != null && embeddedContentType != null) {
+                            results.add(new AgentPart(embeddedContentType, nextPart.toString().getBytes()));
+                        }
+                    } else {
+                        results.add(new AgentPart(name, response.body().bytes()));
                     }
                 }
-                return results.stream();
-            } catch (IOException e) {
-                throw new EdcException(e);
             }
+            return StreamResult.success(results.stream());
+        } catch (IOException e) {
+            return StreamResult.error(e.getMessage());
         }
     }
 

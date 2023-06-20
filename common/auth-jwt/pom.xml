@@ -10,7 +10,7 @@
     <parent>
         <groupId>org.eclipse.tractusx.agents</groupId>
         <artifactId>edc</artifactId>
-        <version>1.9.1-SNAPSHOT</version>
+        <version>1.9.3-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -82,7 +82,7 @@
         <dependency>
             <groupId>com.nimbusds</groupId>
             <artifactId>nimbus-jose-jwt</artifactId>
-            <version>9.31</version>
+            <version>${com.nimbusds.version}</version>
         </dependency>
 
         <!-- Compile Only -->

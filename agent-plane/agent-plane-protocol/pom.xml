@@ -10,7 +10,7 @@
     <parent>
         <groupId>org.eclipse.tractusx.agents.edc</groupId>
         <artifactId>agent-plane</artifactId>
-        <version>1.9.1-SNAPSHOT</version>
+        <version>1.9.3-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -128,37 +128,37 @@
             <version>${edc.version}</version>
         </dependency>
 
-        <!-- Fuseki is a server-in-server -->
+        <!-- Controller Annotations -->
         <dependency>
             <groupId>jakarta.ws.rs</groupId>
             <artifactId>jakarta.ws.rs-api</artifactId>
-            <version>3.1.0</version>
+            <version>${jakarta.ws.rs-api.version}</version>
         </dependency>
 
         <!-- JWT code -->
         <dependency>
             <groupId>com.nimbusds</groupId>
             <artifactId>nimbus-jose-jwt</artifactId>
-            <version>9.31</version>
+            <version>${com.nimbusds.version}</version>
         </dependency>
 
         <!-- we need both version of the servlet api, one for jetty, one for jakarta -->
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
-            <version>4.0.1</version>
+            <version>${javax.servlet-api.version}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jetty.toolchain</groupId>
             <artifactId>jetty-jakarta-servlet-api</artifactId>
-            <version>5.0.2</version>
+            <version>${jetty-jakarta-servlet-api.version}</version>
         </dependency>
 
         <!-- everything for SparQL protocol -->
         <dependency>
           <groupId>org.apache.jena</groupId>
           <artifactId>jena-fuseki-core</artifactId>
-          <version>4.6.0</version>
+          <version>${org.apache.jena.version}</version>
           <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -202,7 +202,7 @@
         <!-- maybe we need advanced storage capacities <dependency>
           <groupId>org.apache.jena</groupId>
           <artifactId>jena-fuseki-arq</artifactId>
-          <version>4.6.0</version>
+          <version>${org.apache.jena.version}</version>
           <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -249,7 +249,7 @@
         <dependency>
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>
-            <version>3.0.2</version>
+            <version>${jakarta.validation.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

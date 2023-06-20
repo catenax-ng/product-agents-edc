@@ -34,6 +34,9 @@ imagePullSecrets: []
 
 customLabels: {}
 
+# -- Determines the business partner id
+partnerid: "anonymous"
+
 controlplane:
   image:
     # -- Which derivate of the control plane to use. when left empty the deployment will select the correct image automatically
@@ -41,7 +44,7 @@ controlplane:
   # -- [Kubernetes image pull policy](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy) to use
     pullPolicy: IfNotPresent
     # -- Overrides the image tag whose default is the chart appVersion
-    tag: ""
+    tag: "0.4.1"
   initContainers: []
   debug:
     enabled: false
@@ -107,7 +110,7 @@ controlplane:
       # -- port for incoming api calls
       port: 8084
       # -- path for incoming api calls
-      path: /api/v1/ids
+      path: /api/v1/dsp
     # -- metrics api, used for application metrics, must not be internet facing
     metrics:
       # -- port for incoming api calls
@@ -292,9 +295,9 @@ dataplanes:
     # the name of the dataplane (as it appears in the descriptors)
     name: "dataplane"
     # -- a comma-separated list of supported asset types
-    sourceTypes: "HttpData,urn:cx:Protocol:w3c:Http#SPARQL"
+    sourceTypes: "cx-common:Protocol?w3c:http:SPARQL,HttpData"
     # -- a comma-separated list of supported transfer types
-    destinationTypes: "HttpProxy,HttpProtocol"
+    destinationTypes: "HttpProxy"
     image:
       # -- Which derivate of the data plane to use. when left empty the deployment will select the correct image automatically
       repository: ""
@@ -355,7 +358,7 @@ dataplanes:
         # -- allow or disallow insecure access, i.e. access without authentication
         insecure: true
       callback:
-        port: 8086
+        port: 8087
         path: /callback
       metrics:
         port: 9090

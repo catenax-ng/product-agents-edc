@@ -5,7 +5,8 @@ This folder hosts agent (data) plane extensions and final artifacts to/from the 
 It consists of
 
 - [Agent Http Procotols Layer](agent-plane-protocol)
-- [Agent Plane (In-Memory Persistence against Azure Vault)](agentplane-azurevault)
+- [Agent Plane (Azure Vault)](agentplane-azure-vault)
+- [Agent Plane (Hashicorp Vault)](agentplane-hashicorp)
 
 ## Notice
 

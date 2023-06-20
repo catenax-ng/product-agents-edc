@@ -7,6 +7,7 @@
 package org.eclipse.tractusx.agents.edc;
 
 import com.nimbusds.jose.JWSObject;
+import jakarta.json.JsonValue;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -16,9 +17,10 @@ import org.eclipse.edc.policy.model.Policy;
 import org.eclipse.edc.policy.model.PolicyType;
 import org.eclipse.edc.spi.monitor.Monitor;
 import org.eclipse.edc.spi.types.domain.DataAddress;
-import org.eclipse.edc.connector.contract.spi.types.offer.ContractOffer;
+import org.eclipse.edc.spi.types.domain.callback.CallbackAddress;
 import org.eclipse.edc.spi.types.domain.edr.EndpointDataReference;
-import org.eclipse.edc.connector.transfer.spi.types.TransferType;
+import org.eclipse.tractusx.agents.edc.jsonld.JsonLd;
+import org.eclipse.tractusx.agents.edc.model.*;
 import org.eclipse.tractusx.agents.edc.service.*;
 
 import java.io.IOException;
@@ -36,7 +38,7 @@ public class AgreementController implements IAgreementController {
     /**
      * which transfer to use
      */
-    public static String TRANSFER_TYPE="HttpProtocol";
+    public static String TRANSFER_TYPE="HttpProxy";
 
     /**
      * EDC service references
@@ -89,7 +91,7 @@ public class AgreementController implements IAgreementController {
      */
     @POST
     public void receiveEdcCallback(EndpointDataReference dataReference) {
-        var agreementId = dataReference.getProperties().get("cid");
+        var agreementId = dataReference.getProperties().get("https://w3id.org/edc/v0.0.1/ns/cid");
         monitor.debug(String.format("An endpoint data reference for agreement %s has been posted.", agreementId));
         synchronized (agreementStore) {
             for (Map.Entry<String, ContractAgreement> agreement : agreementStore.entrySet()) {
@@ -143,7 +145,7 @@ public class AgreementController implements IAgreementController {
                     processStore.remove(assetId);
                     synchronized (agreementStore) {
                         ContractAgreement agreement = agreementStore.get(assetId);
-                        if (agreement != null && agreement.getContractEndDate() <= System.currentTimeMillis()) {
+                        if (agreement != null && agreement.getContractSigningDate()+600000L <= System.currentTimeMillis()) {
                             agreementStore.remove(assetId);
                         }
                         activeAssets.remove(assetId);
@@ -219,7 +221,7 @@ public class AgreementController implements IAgreementController {
 
         activate(asset);
 
-        Collection<ContractOffer> contractOffers;
+        Collection<DcatDataset> contractOffers;
 
         try {
             contractOffers=dataManagement.findContractOffers(remoteUrl, asset);
@@ -234,30 +236,25 @@ public class AgreementController implements IAgreementController {
         }
 
         // TODO implement a cost-based offer choice
-        ContractOffer contractOffer = contractOffers.stream().findFirst().get();
-        String assetType=contractOffer.getAsset().getProperties().getOrDefault("rdf:type","<cx_ontology.ttl#Asset>").toString();
-
-        monitor.debug(String.format("About to create an agreement for contract offer %s (for asset %s of type %s at connector %s)",contractOffer.getId(),asset,assetType,remoteUrl));
-
-        // Initiate negotiation
-        var policy = Policy.Builder.newInstance()
-                .permission(Permission.Builder.newInstance()
-                        .target(asset)
-                        .action(Action.Builder.newInstance().type("USE").build())
-                        .build())
-                .type(PolicyType.SET)
-                .build();
+        DcatDataset contractOffer = contractOffers.stream().findFirst().get();
+        Map<String, JsonValue> assetProperties = DataspaceSynchronizer.getProperties(contractOffer);
+        OdrlPolicy policy=contractOffer.hasPolicy();
+        String offerId= policy.getId();
+        JsonValue offerType=assetProperties.get("http://www.w3.org/1999/02/22-rdf-syntax-ns#type");
+        monitor.debug(String.format("About to create an agreement for contract offer %s (for asset %s of type %s at connector %s)",offerId,asset,
+                offerType,remoteUrl));
 
         var contractOfferDescription = new ContractOfferDescription(
-                contractOffer.getId(),
+                offerId,
                 asset,
                 policy
         );
         var contractNegotiationRequest = ContractNegotiationRequest.Builder.newInstance()
                 .offerId(contractOfferDescription)
                 .connectorId("provider")
-                .connectorAddress(String.format(DataManagement.IDS_PATH, remoteUrl))
-                .protocol("ids-multipart")
+                .connectorAddress(String.format(DataManagement.DSP_PATH, remoteUrl))
+                .protocol("dataspace-protocol-http")
+                .businessPartnerNumber(config.getBusinessPartnerNumber())
                 .build();
         String negotiationId;
 
@@ -265,10 +262,10 @@ public class AgreementController implements IAgreementController {
             negotiationId=dataManagement.initiateNegotiation(contractNegotiationRequest);
         } catch(IOException ioe) {
             deactivate(asset);
-            throw new InternalServerErrorException(String.format("Error when initiating negotation for offer %s through data management api.",contractOffer.getId()),ioe);
+            throw new InternalServerErrorException(String.format("Error when initiating negotation for offer %s through data management api.",offerId),ioe);
         }
 
-        monitor.debug(String.format("About to check negotiation %s for contract offer %s (for asset %s at connector %s)",negotiationId,contractOffer.getId(),asset,remoteUrl));
+        monitor.debug(String.format("About to check negotiation %s for contract offer %s (for asset %s at connector %s)",negotiationId,offerId,asset,remoteUrl));
 
         // Check negotiation state
         ContractNegotiation negotiation = null;
@@ -276,7 +273,9 @@ public class AgreementController implements IAgreementController {
         long startTime = System.currentTimeMillis();
 
         try {
-            while ((System.currentTimeMillis() - startTime < config.getNegotiationTimeout()) && (negotiation == null || !negotiation.getState().equals("CONFIRMED"))) {
+            while ((System.currentTimeMillis() - startTime < config.getNegotiationTimeout())
+                    && (negotiation == null ||
+                    (!negotiation.getState().equals("FINALIZED") && !negotiation.getState().equals("TERMINATED")))) {
                 Thread.sleep(config.getNegotiationPollInterval());
                 negotiation = dataManagement.getNegotiation(
                         negotiationId
@@ -288,12 +287,18 @@ public class AgreementController implements IAgreementController {
             monitor.warning(String.format("Negotiation thread for asset %s negotiation %s run into problem. Giving up.", asset, negotiationId),e);
         }
 
-        if (negotiation == null || !negotiation.getState().equals("CONFIRMED")) {
+        if (negotiation == null || !negotiation.getState().equals("FINALIZED")) {
             deactivate(asset);
+            if(negotiation!=null) {
+                String errorDetail=negotiation.getErrorDetail();
+                if(errorDetail!=null) {
+                    monitor.severe(String.format("Contract Negotiation %s failed because of %s",negotiationId,errorDetail));
+                }
+            }
             throw new InternalServerErrorException(String.format("Contract Negotiation %s for asset %s was not successful.", negotiationId, asset));
         }
 
-        monitor.debug(String.format("About to check agreement %s for contract offer %s (for asset %s at connector %s)",negotiation.getContractAgreementId(),contractOffer.getId(),asset,remoteUrl));
+        monitor.debug(String.format("About to check agreement %s for contract offer %s (for asset %s at connector %s)",negotiation.getContractAgreementId(),offerId,asset,remoteUrl));
 
         ContractAgreement agreement;
 
@@ -315,23 +320,18 @@ public class AgreementController implements IAgreementController {
                 .type(TRANSFER_TYPE)
                 .build();
 
-        TransferType transferType = TransferType.Builder.
-                transferType()
-                .contentType("application/octet-stream")
-                // TODO make streaming
-                .isFinite(true)
-                .build();
+        CallbackAddress address=
+                CallbackAddress.Builder.newInstance().uri(config.getCallbackEndpoint()).build();
 
         TransferRequest transferRequest = TransferRequest.Builder.newInstance()
                 .assetId(asset)
                 .contractId(agreement.getId())
                 .connectorId("provider")
-                .connectorAddress(String.format(DataManagement.IDS_PATH, remoteUrl))
-                .protocol("ids-multipart")
+                .connectorAddress(String.format(DataManagement.DSP_PATH, remoteUrl))
+                .protocol("dataspace-protocol-http")
                 .dataDestination(dataDestination)
                 .managedResources(false)
-                .properties(Map.of("receiver.http.endpoint",config.getCallbackEndpoint()))
-                .transferType(transferType)
+                .callbackAddresses(List.of(address))
                 .build();
 
         monitor.debug(String.format("About to initiate transfer for agreement %s (for asset %s at connector %s)",negotiation.getContractAgreementId(),asset,remoteUrl));
@@ -390,7 +390,9 @@ public class AgreementController implements IAgreementController {
 
         // mark the type in the endpoint
         if(reference!=null) {
-            reference.getProperties().put("rdf:type",assetType);
+            for(Map.Entry<String,JsonValue> prop : assetProperties.entrySet()) {
+                reference.getProperties().put(prop.getKey(), JsonLd.asString(prop.getValue()));
+            }
         }
 
         // now delegate to the original getter
