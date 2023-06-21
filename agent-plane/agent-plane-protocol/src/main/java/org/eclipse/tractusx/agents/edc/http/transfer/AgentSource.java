@@ -79,13 +79,13 @@ public class AgentSource implements DataSource {
         // Agent call, we translate from KA-MATCH to KA-TRANSFER
         String skill=null;
         String graph=null;
-        String asset= request.getSourceDataAddress().getProperties().get("asset:prop:id");
+        String asset= request.getSourceDataAddress().getProperties().get("id");
         if(asset!=null && asset.length() > 0) {
             Matcher graphMatcher= AgentExtension.GRAPH_PATTERN.matcher(asset);
             if(graphMatcher.matches()) {
                 graph=asset;
             }
-            Matcher skillMatcher=SkillStore.SKILL_PATTERN.matcher(asset);
+            Matcher skillMatcher=SkillStore.matchSkill(asset);
             if(skillMatcher.matches()) {
                 skill=asset;
             }

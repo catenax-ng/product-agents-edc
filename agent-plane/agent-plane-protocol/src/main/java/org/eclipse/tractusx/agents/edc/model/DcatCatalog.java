@@ -25,6 +25,10 @@ public class DcatCatalog extends JsonLdObject {
         }
     }
 
+    public String getParticipantId() {
+        return object.getString("https://w3id.org/edc/v0.0.1/ns/participantId","anonymous");
+    }
+
     public List<DcatDataset> getDatasets() {
         return datasets;
     }

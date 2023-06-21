@@ -12,14 +12,20 @@ public class ContractNegotiationRequest {
     private String protocol = "dataspace-protocol-http";
     private String connectorId;
 
-    public String getBusinessPartnerNumber() {
-        return businessPartnerNumber;
-    }
-
-    private String businessPartnerNumber;
+    private String localBusinessPartnerNumber;
+    private String remoteBusinessPartnerNumber;
     private ContractOfferDescription offer;
 
     private ContractNegotiationRequest() {
+    }
+
+
+    public String getLocalBusinessPartnerNumber() {
+        return localBusinessPartnerNumber;
+    }
+
+    public String getRemoteBusinessPartnerNumber() {
+        return remoteBusinessPartnerNumber;
     }
 
     public String getConnectorAddress() {
@@ -70,8 +76,13 @@ public class ContractNegotiationRequest {
             return this;
         }
 
-        public Builder businessPartnerNumber(String bpn) {
-            dto.businessPartnerNumber=bpn;
+        public Builder localBusinessPartnerNumber(String bpn) {
+            dto.localBusinessPartnerNumber=bpn;
+            return this;
+        }
+
+        public Builder remoteBusinessPartnerNumber(String bpn) {
+            dto.remoteBusinessPartnerNumber=bpn;
             return this;
         }
 

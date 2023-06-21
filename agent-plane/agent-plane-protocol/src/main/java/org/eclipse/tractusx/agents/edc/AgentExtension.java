@@ -7,6 +7,7 @@
 package org.eclipse.tractusx.agents.edc;
 
 import org.eclipse.tractusx.agents.edc.http.AgentController;
+import org.eclipse.tractusx.agents.edc.http.DelegationService;
 import org.eclipse.tractusx.agents.edc.http.HttpClientFactory;
 import org.eclipse.tractusx.agents.edc.http.transfer.AgentSourceFactory;
 import org.eclipse.tractusx.agents.edc.http.transfer.AgentSourceRequestParamsSupplier;
@@ -48,7 +49,7 @@ public class AgentExtension implements ServiceExtension {
     protected static final String DEFAULT_CONTEXT_ALIAS = "default";
     protected static final String CALLBACK_CONTEXT_ALIAS = "callback";
     public static Pattern GRAPH_PATTERN=Pattern.compile("((?<url>[^#]+)#)?(?<graph>.*Graph(Asset)?.*)");
-    public static Pattern SKILL_PATTERN=Pattern.compile("((?<url>[^#]+)#)?(?<graph>.*Skill(Asset)?.*)");
+    public static Pattern SKILL_PATTERN=Pattern.compile("((?<url>[^#]+)#)?(?<skill>.*Skill(Asset)?.*)");
 
 
     /**
@@ -141,7 +142,8 @@ public class AgentExtension implements ServiceExtension {
 
         // stored procedure store and transport endpoint
         SkillStore skillStore=new SkillStore();
-        AgentController agentController=new AgentController(monitor,agreementController,config,httpClient,processor,skillStore,typeManager);
+        DelegationService delegationService=new DelegationService(agreementController,monitor,httpClient,typeManager);
+        AgentController agentController=new AgentController(monitor,agreementController,config,processor,skillStore,delegationService);
         monitor.debug(String.format("Registering agent controller %s",agentController));
         webService.registerResource(DEFAULT_CONTEXT_ALIAS, agentController);
 

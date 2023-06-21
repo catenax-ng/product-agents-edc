@@ -6,9 +6,7 @@
 //
 package org.eclipse.tractusx.agents.edc.http;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.edc.spi.monitor.Monitor;
 
@@ -22,7 +20,6 @@ import java.nio.charset.StandardCharsets;
  */
 public class HttpUtils {
 
-    public static String DEFAULT_CHARSET= StandardCharsets.US_ASCII.name();
     public static String DEFAULT_ENCODING = System.getProperty("fis.encoding","UTF-8");
 
     /**
@@ -32,9 +29,30 @@ public class HttpUtils {
      * @param parameter maybe undecoded parameter
      * @return a url encoded string which additionally encodes some URL-prefix related symbols
      */
-    public static String urlEncodeParameter(String parameter) throws UnsupportedEncodingException {
+    public static String urlEncodeParameter(String parameter)  {
         if(parameter==null || parameter.length()==0) return "";
-        return encodeParameter(URLEncoder.encode(URLDecoder.decode(parameter,DEFAULT_ENCODING),DEFAULT_ENCODING));
+        try {
+            parameter = urlDecodeParameter(parameter);
+            return encodeParameter(URLEncoder.encode(parameter, DEFAULT_ENCODING));
+        } catch(UnsupportedEncodingException e) {
+            // this should never happen
+            return parameter;
+        }
+    }
+
+    /**
+     * ensure that the given parameter string is correctly decoded
+     * @param parameter maybe encoded parameter
+     * @return a url decoded string
+     */
+    public static String urlDecodeParameter(String parameter)  {
+        if(parameter==null || parameter.length()==0) return "";
+        try {
+            return URLDecoder.decode(parameter,DEFAULT_ENCODING);
+        } catch(UnsupportedEncodingException e) {
+            // this should never happen
+            return parameter;
+        }
     }
 
     /**
@@ -47,6 +65,7 @@ public class HttpUtils {
     public static String encodeParameter(String parameter) throws UnsupportedEncodingException {
         if(parameter==null || parameter.length()==0) return "";
         return parameter.replace("?","%3F")
+                .replace("=","%3D")
                 .replace("{","%7B")
                 .replace("}","%7D")
                 .replace("/","%2F");

@@ -11,10 +11,6 @@ import jakarta.json.JsonValue;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.eclipse.edc.policy.model.Action;
-import org.eclipse.edc.policy.model.Permission;
-import org.eclipse.edc.policy.model.Policy;
-import org.eclipse.edc.policy.model.PolicyType;
 import org.eclipse.edc.spi.monitor.Monitor;
 import org.eclipse.edc.spi.types.domain.DataAddress;
 import org.eclipse.edc.spi.types.domain.callback.CallbackAddress;
@@ -221,7 +217,7 @@ public class AgreementController implements IAgreementController {
 
         activate(asset);
 
-        Collection<DcatDataset> contractOffers;
+        DcatCatalog contractOffers;
 
         try {
             contractOffers=dataManagement.findContractOffers(remoteUrl, asset);
@@ -230,13 +226,13 @@ public class AgreementController implements IAgreementController {
             throw new InternalServerErrorException(String.format("Error when resolving contract offers from %s for asset %s through data management api.",remoteUrl,asset),io);
         }
 
-        if (contractOffers.isEmpty()) {
+        if (contractOffers.getDatasets().isEmpty()) {
             deactivate(asset);
             throw new BadRequestException(String.format("There is no contract offer in remote connector %s related to asset %s.", remoteUrl, asset));
         }
 
         // TODO implement a cost-based offer choice
-        DcatDataset contractOffer = contractOffers.stream().findFirst().get();
+        DcatDataset contractOffer = contractOffers.getDatasets().get(0);
         Map<String, JsonValue> assetProperties = DataspaceSynchronizer.getProperties(contractOffer);
         OdrlPolicy policy=contractOffer.hasPolicy();
         String offerId= policy.getId();
@@ -254,7 +250,8 @@ public class AgreementController implements IAgreementController {
                 .connectorId("provider")
                 .connectorAddress(String.format(DataManagement.DSP_PATH, remoteUrl))
                 .protocol("dataspace-protocol-http")
-                .businessPartnerNumber(config.getBusinessPartnerNumber())
+                .localBusinessPartnerNumber(config.getBusinessPartnerNumber())
+                .remoteBusinessPartnerNumber(contractOffers.getParticipantId())
                 .build();
         String negotiationId;
 

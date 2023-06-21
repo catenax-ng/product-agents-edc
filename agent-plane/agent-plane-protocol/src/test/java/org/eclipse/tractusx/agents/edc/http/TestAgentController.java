@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayOutputStream;
@@ -70,7 +71,8 @@ public class TestAgentController {
     SkillStore skillStore=new SkillStore();
 
 
-    AgentController agentController=new AgentController(monitor,mockController,agentConfig,null,processor,skillStore,typeManager);
+    DelegationService delegationService=new DelegationService(mockController,monitor,null,typeManager);
+    AgentController agentController=new AgentController(monitor,mockController,agentConfig,processor,skillStore,delegationService);
 
     AutoCloseable mocks=null;
 

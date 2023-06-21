@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * An in-memory store for local skills
@@ -19,8 +18,6 @@ public class SkillStore {
 
     // temporary local skill store
     final protected Map<String,String> skills=new HashMap<>();
-
-    public static Pattern SKILL_PATTERN=Pattern.compile("((?<url>[^#]+)#)?(?<skill>(urn:(cx|artifact):)?([Ss])kill:.*)");
 
     /**
      * create the store
@@ -33,8 +30,8 @@ public class SkillStore {
      * @param key asset name
      * @return matcher
      */
-    public Matcher matchSkill(String key) {
-        return SKILL_PATTERN.matcher(key);
+    public static Matcher matchSkill(String key) {
+        return AgentExtension.SKILL_PATTERN.matcher(key);
     }
 
     /**

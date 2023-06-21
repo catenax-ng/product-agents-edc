@@ -40,7 +40,7 @@ public class DataspaceSynchronizer implements Runnable {
     protected final static Node CX_ASSET=NodeFactory.createURI("https://w3id.org/catenax/ontology/common#offers");
     protected final static Map<String,Node> assetPropertyMap=new HashMap<>();
     protected final static QuerySpec federatedAssetQuery = QuerySpec.Builder.newInstance().
-            filter(List.of(new Criterion("https://w3id.org/catenax/ontology/common#isFederated","=","true"))).build();
+            filter(List.of(new Criterion("https://w3id.org/catenax/ontology/common#isFederated","=","true^^xsd:boolean"))).build();
 
     protected MonitorWrapper monitorWrapper;
 
@@ -53,7 +53,7 @@ public class DataspaceSynchronizer implements Runnable {
         assetPropertyMap.put("http://www.w3.org/1999/02/22-rdf-syntax-ns#type",NodeFactory.createURI("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"));
         assetPropertyMap.put("http://www.w3.org/2000/01/rdf-schema#isDefinedBy",NodeFactory.createURI("http://www.w3.org/2000/01/rdf-schema#isDefinedBy"));
         assetPropertyMap.put("https://w3id.org/catenax/ontology/common#implementsProtocol",NodeFactory.createURI("https://w3id.org/catenax/ontology/common#implementsProtocol"));
-        assetPropertyMap.put("http://www.w3.org/ns/shacl#shapesGraph",NodeFactory.createURI("http://www.w3.org/ns/shacl#shapeGraph"));
+        assetPropertyMap.put("http://www.w3.org/ns/shacl#shapesGraph",NodeFactory.createURI("http://www.w3.org/ns/shacl#shapesGraph"));
         assetPropertyMap.put("https://w3id.org/catenax/ontology/common#isFederated",NodeFactory.createURI("https://w3id.org/catenax/ontology/common#isFederated"));
         assetPropertyMap.put("https://w3id.org/catenax/ontology/common#publishedUnderContract",NodeFactory.createURI("https://w3id.org/catenax/ontology/common#publishedUnderContract"));
     }
@@ -139,11 +139,11 @@ public class DataspaceSynchronizer implements Runnable {
                             Iterator<Quad> propQuads=rdfStore.getDataSet().find(findAssetProps);
                             while(propQuads.hasNext()) {
                                 Quad quadProp=propQuads.next();
-                                if(quadProp.getObject().isURI()) {
+                                if(quadProp.getPredicate().isURI() && quadProp.getPredicate().getURI().equals("http://www.w3.org/ns/shacl#shapesGraph") && quadProp.getObject().isURI()) {
                                     Quad findSubGraphsProps = Quad.create(quadProp.getObject(), Node.ANY, Node.ANY, Node.ANY);
                                     Iterator<Quad> subGraphQuads = rdfStore.getDataSet().find(findSubGraphsProps);
                                     while (subGraphQuads.hasNext()) {
-                                        rdfStore.getDataSet().delete(quadProp);
+                                        rdfStore.getDataSet().delete(subGraphQuads.next());
                                         tupleCount++;
                                     }
                                 }
@@ -195,7 +195,7 @@ public class DataspaceSynchronizer implements Runnable {
     public static Map<String,JsonValue> getProperties(DcatDataset offer) {
         Map<String, JsonValue> assetProperties = new HashMap<>(offer.getProperties());
         if(!assetProperties.containsKey("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")) {
-            String assetType= JsonLd.asString(assetProperties.getOrDefault("@id", Json.createValue("http://www.w3.org/2002/07/owl#Thing")));
+            String assetType= JsonLd.asString(assetProperties.getOrDefault("@id", Json.createValue("cx-common:Asset")));
             int indexOfQuestion = assetType.indexOf("?");
             if (indexOfQuestion > 0) {
                 assetType = assetType.substring(0, indexOfQuestion - 1);
@@ -218,10 +218,6 @@ public class DataspaceSynchronizer implements Runnable {
     public Collection<Quad> convertToQuads(Node graph, Node connector, DcatDataset offer) {
         Map<String,JsonValue> assetProperties=getProperties(offer);
 
-        if(!"true".equals(JsonLd.asString(assetProperties.getOrDefault("https://w3id.org/catenax/ontology/common#isFederated",Json.createValue("false"))))) {
-            return List.of();
-        }
-
         List<Quad> quads=new ArrayList<>();
         String offerId=assetProperties.get("@id").toString();
         Node assetNode=NodeFactory.createURI(offerId);
@@ -237,65 +233,77 @@ public class DataspaceSynchronizer implements Runnable {
                 node=assetPropertyMap.get(key);
             }
             if(node!=null) {
-                String pureProperty=JsonLd.asString(assetProp.getValue());
-                if(pureProperty!=null) {
-                    switch (key) {
-                        case "https://w3id.org/catenax/ontology/common#publishedUnderContract":
-                        case "http://www.w3.org/2000/01/rdf-schema#isDefinedBy":
-                        case "http://www.w3.org/1999/02/22-rdf-syntax-ns#type":
-                        case "https://w3id.org/catenax/ontology/common#implementsProtocol":
-                            String[] urls = pureProperty.split(",");
-                            for (String url : urls) {
-                                Node o;
-                                url = url.trim();
-                                if (url.startsWith("<") && url.endsWith(">")) {
-                                    url = url.substring(1, url.length() - 1);
-                                    o = NodeFactory.createURI(url);
-                                } else if (url.startsWith("\"") && url.endsWith("\"")) {
-                                    // TODO parse ^^literalType annotations
-                                    url = url.substring(1, url.length() - 1);
-                                    o = NodeFactory.createLiteral(url);
-                                } else {
-                                    o = NodeFactory.createLiteral(url);
+                String pureProperty = JsonLd.asString(assetProp.getValue());
+                if (pureProperty != null) {
+                    try {
+                        switch (key) {
+                            case "https://w3id.org/catenax/ontology/common#publishedUnderContract":
+                            case "http://www.w3.org/2000/01/rdf-schema#isDefinedBy":
+                            case "http://www.w3.org/1999/02/22-rdf-syntax-ns#type":
+                            case "https://w3id.org/catenax/ontology/common#isFederated":
+                            case "https://w3id.org/catenax/ontology/common#implementsProtocol":
+                                String[] urls = pureProperty.split(",");
+                                for (String url : urls) {
+                                    Node o;
+                                    url = url.trim();
+                                    if (url.startsWith("<") && url.endsWith(">")) {
+                                        url = url.substring(1, url.length() - 1);
+                                        o = NodeFactory.createURI(url);
+                                    } else if (url.startsWith("\"") && url.endsWith("\"")) {
+                                        url = url.substring(1, url.length() - 1);
+                                        o = NodeFactory.createLiteral(url);
+                                    } else if (url.startsWith("cx-common:")) {
+                                        url = url.substring(10);
+                                        o = NodeFactory.createURI("https://w3id.org/catenax/ontology/common#" + url);
+                                    } else if (url.contains("^^")) {
+                                        int typeAnnotation = url.indexOf("^^");
+                                        String type = url.substring(typeAnnotation + 2);
+                                        url = url.substring(0, typeAnnotation);
+                                        o = NodeFactory.createLiteral(url, NodeFactory.getType(type));
+                                    } else {
+                                        o = NodeFactory.createLiteral(url);
+                                    }
+                                    quads.add(Quad.create(graph, assetNode, node, o));
                                 }
-                                quads.add(Quad.create(graph, assetNode, node, o));
-                            }
-                            break;
-                        case "http://www.w3.org/ns/shacl#shapesGraph":
-                            Node newGraph = NodeFactory.createURI("https://w3id.org/catenax/ontology/common#GraphShape?id="+offerId.hashCode());
-                            quads.add(Quad.create(graph,assetNode,node,newGraph));
-                            Sink<Quad> quadSink=new Sink<>() {
+                                break;
+                            case "http://www.w3.org/ns/shacl#shapesGraph":
+                                Node newGraph = NodeFactory.createURI("https://w3id.org/catenax/ontology/common#GraphShape?id=" + offerId.hashCode());
+                                quads.add(Quad.create(graph, assetNode, node, newGraph));
+                                Sink<Quad> quadSink = new Sink<>() {
 
-                                @Override
-                                public void close() {
-                                }
+                                    @Override
+                                    public void close() {
+                                    }
 
-                                @Override
-                                public void send(Quad quad) {
-                                    quads.add(quad);
-                                }
+                                    @Override
+                                    public void send(Quad quad) {
+                                        quads.add(quad);
+                                    }
 
-                                @Override
-                                public void flush() {
-                                }
-                            };
-                            StreamRDF dest = StreamRDFLib.sinkQuads(quadSink);
-                            StreamRDF graphDest = StreamRDFLib.extendTriplesToQuads(newGraph,dest);
-                            StreamRDFCounting countingDest = StreamRDFLib.count(graphDest);
-                            ErrorHandler errorHandler = ErrorHandlerFactory.errorHandlerStd(monitorWrapper);
-                            RDFParser.create()
-                                .errorHandler(errorHandler)
-                                .source(new StringReader(pureProperty))
-                                .lang(Lang.TTL)
-                                .parse(countingDest);
-                                monitor.debug(String.format("Added shapes subgraph %s with %d triples",newGraph,countingDest.countTriples()));
-                            break;
-                        default:
-                            quads.add(Quad.create(graph, assetNode, node, NodeFactory.createLiteral(pureProperty)));
+                                    @Override
+                                    public void flush() {
+                                    }
+                                };
+                                StreamRDF dest = StreamRDFLib.sinkQuads(quadSink);
+                                StreamRDF graphDest = StreamRDFLib.extendTriplesToQuads(newGraph, dest);
+                                StreamRDFCounting countingDest = StreamRDFLib.count(graphDest);
+                                ErrorHandler errorHandler = ErrorHandlerFactory.errorHandlerStd(monitorWrapper);
+                                RDFParser.create()
+                                        .errorHandler(errorHandler)
+                                        .source(new StringReader(pureProperty))
+                                        .lang(Lang.TTL)
+                                        .parse(countingDest);
+                                monitor.debug(String.format("Added shapes subgraph %s with %d triples", newGraph, countingDest.countTriples()));
+                                break;
+                            default:
+                                quads.add(Quad.create(graph, assetNode, node, NodeFactory.createLiteral(pureProperty)));
+                        } //switch
+                    } catch (Throwable t) {
+                        monitor.debug(String.format("Could not correctly add asset triples for predicate %s with original value %s because of %s", node, pureProperty,t.getMessage()));
                     }
-                }
-            }
-        }
+                } // if property!=null
+            } // if node!=null
+        } // for
         return quads;
     }
 

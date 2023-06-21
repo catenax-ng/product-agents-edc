@@ -22,10 +22,8 @@ import org.apache.jena.fuseki.server.DataAccessPointRegistry;
 import org.apache.jena.fuseki.server.OperationRegistry;
 import org.apache.jena.fuseki.servlets.*;
 
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-import java.net.URLDecoder;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -72,6 +70,8 @@ public class SparqlQueryProcessor extends SPARQL_QueryGeneral.SPARQL_QueryProc {
     // some state to set when interacting with Fuseki
     protected final RDFStore rdfStore;
     private long count=-1;
+
+    public static String UNSET_BASE="http://server/unset-base/";
 
     /**
      * create a new sparql processor
@@ -246,9 +246,6 @@ public class SparqlQueryProcessor extends SPARQL_QueryGeneral.SPARQL_QueryProc {
      */
     @Override
     protected void execute(String queryString, HttpAction action) {
-        if (queryString.indexOf("%20") > 0 || queryString.indexOf("%3F") > 0 || queryString.indexOf("%3A")>0) {
-            queryString=URLDecoder.decode(queryString,StandardCharsets.UTF_8);
-        }
         // support for the special www-forms form
         if(action.getRequestContentType() != null && action.getRequestContentType().contains("application/x-www-form-urlencoded")) {
             Map<String,List<String>> parts= AgentSourceHttpParamsDecorator.parseParams(queryString);
@@ -257,7 +254,7 @@ public class SparqlQueryProcessor extends SPARQL_QueryGeneral.SPARQL_QueryProc {
                     action.getResponse().setStatus(HttpStatus.SC_BAD_REQUEST);
                     return;
                 } else {
-                    queryString = URLDecoder.decode(query.get(), StandardCharsets.UTF_8);
+                    queryString = HttpUtils.urlDecodeParameter(query.get());
                 }
         }
         TupleSet ts = ((AgentHttpAction) action).getInputBindings();
@@ -327,7 +324,7 @@ public class SparqlQueryProcessor extends SPARQL_QueryGeneral.SPARQL_QueryProc {
         if(action.getContext().isDefined(DataspaceServiceExecutor.asset)) {
             String targetUrl=action.getContext().get(DataspaceServiceExecutor.targetUrl);
             String asset=action.getContext().get(DataspaceServiceExecutor.asset);
-            String graphPattern=String.format("GRAPH\\s*<%s>",asset);
+            String graphPattern=String.format("GRAPH\\s*<?(%s)?%s>?",UNSET_BASE,asset);
             Matcher graphMatcher=Pattern.compile(graphPattern).matcher(queryString);
             replaceQuery=new StringBuilder();
             lastStart=0;

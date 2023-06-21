@@ -22,7 +22,7 @@ import org.eclipse.tractusx.agents.edc.model.*;
 
 import java.io.IOException;
 import java.net.URLEncoder;
-import java.util.Collection;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static java.lang.String.format;
@@ -49,12 +49,12 @@ public class DataManagement {
             "\"@type\": \"NegotiationInitiateRequestDto\",\n" +
             "\"connectorAddress\": \"%1$s\",\n" +
             "\"protocol\": \"dataspace-protocol-http\",\n" +
-            "\"connectorId\": \"%2$s\",\n" +
             "\"providerId\": \"%2$s\",\n" +
+            "\"connectorId\": \"%3$s\",\n" +
             "\"offer\": {\n" +
-            "  \"offerId\": \"%3$s\",\n" +
-            "  \"assetId\": \"%4$s\",\n" +
-            "  \"policy\": %5$s\n" +
+            "  \"offerId\": \"%4$s\",\n" +
+            "  \"assetId\": \"%5$s\",\n" +
+            "  \"policy\": %6$s\n" +
             "}\n" +
             "}";
 
@@ -118,12 +118,11 @@ public class DataManagement {
      * @return a collection of contract options to access the given asset
      * @throws IOException in case that the remote call did not succeed
      */
-    public Collection<DcatDataset> findContractOffers(String remoteControlPlaneIdsUrl, String assetId) throws IOException {
+    public DcatCatalog findContractOffers(String remoteControlPlaneIdsUrl, String assetId) throws IOException {
         QuerySpec findAsset=QuerySpec.Builder.newInstance().filter(
                 List.of(new Criterion("https://w3id.org/edc/v0.0.1/ns/id","=",assetId))
         ).build();
-        DcatCatalog catalog = getCatalog(remoteControlPlaneIdsUrl,findAsset);
-        return catalog.getDatasets();
+        return getCatalog(remoteControlPlaneIdsUrl,findAsset);
     }
 
     /**
@@ -166,7 +165,8 @@ public class DataManagement {
 
         var negotiateSpec =String.format(NEGOTIATION_REQUEST_BODY,
                 negotiationRequest.getConnectorAddress(),
-                negotiationRequest.getBusinessPartnerNumber(),
+                negotiationRequest.getLocalBusinessPartnerNumber(),
+                negotiationRequest.getRemoteBusinessPartnerNumber(),
                 negotiationRequest.getOffer().getOfferId(),
                 negotiationRequest.getOffer().getAssetId(),
                 negotiationRequest.getOffer().getPolicy().asString());
@@ -232,7 +232,7 @@ public class DataManagement {
      * @throws IOException something wild happens
      */
     public ContractAgreement getAgreement(String agreementId) throws IOException {
-        var url = String.format(AGREEMENT_CHECK_CALL,config.getControlPlaneManagementUrl(), URLEncoder.encode(agreementId,"UTF-8"));
+        var url = String.format(AGREEMENT_CHECK_CALL,config.getControlPlaneManagementUrl(), URLEncoder.encode(agreementId, StandardCharsets.UTF_8));
         var request = new Request.Builder()
                 .url(url);
         config.getControlPlaneManagementHeaders().forEach(request::addHeader);

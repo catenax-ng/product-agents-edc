@@ -8,8 +8,9 @@
 package org.eclipse.tractusx.agents.edc.sparql;
 
 import org.apache.jena.graph.Node;
+import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.sparql.algebra.Op;
-import org.apache.jena.sparql.algebra.TransformCopy;
+import org.apache.jena.sparql.algebra.TransformSingle;
 import org.apache.jena.sparql.algebra.op.OpGraph;
 import org.apache.jena.sparql.core.Var;
 import org.apache.jena.sparql.engine.binding.Binding;
@@ -27,46 +28,60 @@ import java.util.Set;
  * and replace variables for later exchange with the
  * backend service.
  */
-public class GraphRewrite extends TransformCopy {
+public class GraphRewrite extends TransformSingle {
 
     protected final List<Binding> bindings;
     protected final Set<String> graphNames=new HashSet<>();
 
     protected final Monitor monitor;
 
-    public GraphRewrite(Monitor monitor, List<Binding> bindings) {
-        super(false);
+    protected final GraphRewriteVisitor visitor;
+
+    public GraphRewrite(Monitor monitor, List<Binding> bindings, GraphRewriteVisitor visitor) {
         this.bindings=bindings;
         this.monitor=monitor;
+        this.visitor=visitor;
     }
+
 
     @Override
     public OpGraph transform(OpGraph op, Op subOp) {
-        Node graphNode=op.getNode();
-        if(graphNode.isURI()) {
-            graphNames.add(graphNode.getURI());
-        } else if(graphNode.isVariable()) {
-            Var graphVar=(Var) graphNode;
-            if(bindings==null || bindings.isEmpty()) {
-                monitor.warning(String.format("Found a graph node %s which is a variable but no binding. Ignoring.",graphVar));
-            } else {
-                Iterator<Binding> allBindings = bindings.iterator();
-                Node bound = null;
-                while (bound == null && allBindings.hasNext()) {
-                    Binding binding = allBindings.next();
-                    if (binding.contains(graphVar)) {
-                        bound = binding.get(graphVar);
+        if(!visitor.inService) {
+            Node graphNode = op.getNode();
+            if (graphNode.isURI()) {
+                String graphString=graphNode.getURI();
+                if(graphString.startsWith(SparqlQueryProcessor.UNSET_BASE)) {
+                    graphString=graphString.substring(SparqlQueryProcessor.UNSET_BASE.length());
+                    op=new OpGraph(NodeFactory.createURI(graphString),subOp);
+                }
+                graphNames.add(graphString);
+            } else if (graphNode.isVariable()) {
+                Var graphVar = (Var) graphNode;
+                if (bindings == null || bindings.isEmpty()) {
+                    monitor.warning(String.format("Found a graph node %s which is a variable but no binding. Ignoring.", graphVar));
+                } else {
+                    Iterator<Binding> allBindings = bindings.iterator();
+                    Node bound = null;
+                    while (bound == null && allBindings.hasNext()) {
+                        Binding binding = allBindings.next();
+                        if (binding.contains(graphVar)) {
+                            bound = binding.get(graphVar);
+                        }
+                    }
+                    if (bound != null && bound.isURI()) {
+                        String graphString=bound.getURI();
+                        if(graphString.startsWith(SparqlQueryProcessor.UNSET_BASE)) {
+                            graphString = graphString.substring(SparqlQueryProcessor.UNSET_BASE.length());
+                        }
+                        graphNames.add(graphString);
+                        op=new OpGraph(NodeFactory.createURI(graphString), subOp);
+                    } else {
+                        monitor.warning(String.format("Found a graph node binding %s which is no uri. Ignoring.", bound));
                     }
                 }
-                if (bound!=null && bound.isURI()) {
-                    graphNames.add(bound.getURI());
-                    return new OpGraph(bound, subOp);
-                } else {
-                    monitor.warning(String.format("Found a graph node binding %s which is no uri. Ignoring.", bound));
-                }
+            } else {
+                monitor.warning(String.format("Found a graph node %s which is neither uri or variable. Ignoring.", graphNode));
             }
-        } else {
-            monitor.warning(String.format("Found a graph node %s which is neither uri or variable. Ignoring.",graphNode));
         }
         return op;
     }

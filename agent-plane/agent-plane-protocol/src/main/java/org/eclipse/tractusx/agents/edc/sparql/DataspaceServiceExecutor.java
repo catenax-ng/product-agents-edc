@@ -231,7 +231,7 @@ public class DataspaceServiceExecutor implements ServiceExecutor, ChainingServic
         boolean silent = opOriginal.getSilent();
 
         // derive the asset type from the service URL, if possible
-        String assetType= serviceURL.contains("urn:cx:Skill") ? "<{{cxOntologyRoot}}/cx_ontology.ttl#SkillAsset>" : "<{{cxOntologyRoot}}/cx_ontology.ttl#Asset>";
+        String assetType= serviceURL.contains("Skill") ? "cx-common:SkillAsset" : serviceURL.contains("Graph") ? "cx-common:GraphAsset" : "cx-common:Asset";
 
         // in case we have an EDC target, we need to negotiate/proxy the transfer
         Matcher edcMatcher = EDC_TARGET_ADDRESS.matcher(serviceURL);
@@ -254,8 +254,9 @@ public class DataspaceServiceExecutor implements ServiceExecutor, ChainingServic
             }
             String asset = edcMatcher.group("asset");
             if (asset == null || asset.length() == 0) {
-                GraphRewrite gr=new GraphRewrite(monitor,bindings);
-                opOriginal= (OpService) Transformer.transform(gr,opOriginal);
+                GraphRewriteVisitor grv=new GraphRewriteVisitor();
+                GraphRewrite gr=new GraphRewrite(monitor,bindings,grv);
+                opOriginal=new OpService(opOriginal.getService(),Transformer.transform(gr,opOriginal.getSubOp(),grv,null),opOriginal.getSilent());
                 Set<String> graphNames=gr.getGraphNames();
                 if(graphNames.size()>1) {
                     throw new QueryExecException("There are several graph assets (currently not supported due to negotiation strategy, please rewrite your query) under EDC-based service: " + serviceURL);
@@ -302,7 +303,7 @@ public class DataspaceServiceExecutor implements ServiceExecutor, ChainingServic
 
         // Next case distinction: we could either have a query or
         // a direct skill call
-        if(!assetType.endsWith("SkillAsset>")) {
+        if(!assetType.contains("Skill")) {
             // http execute with headers and such
             try {
                 Op opRemote = opOriginal.getSubOp();
