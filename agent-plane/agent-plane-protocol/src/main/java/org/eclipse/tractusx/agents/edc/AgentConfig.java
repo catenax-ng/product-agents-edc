@@ -24,10 +24,9 @@ public class AgentConfig {
     public static String VERBOSE_PROPERTY = "cx.agent.sparql.verbose";
     public static boolean DEFAULT_VERBOSE_PROPERTY = false;
     public static String DEFAULT_ACCESS_POINT = "api";
-    /* deprecated */
-    public static String CONTROL_PLANE_URL = "cx.agent.controlplane.url";
+
     public static String CONTROL_PLANE_MANAGEMENT = "cx.agent.controlplane.management";
-    public static String CONTROL_PLANE_IDS = "cx.agent.controlplane.ids";
+    public static String CONTROL_PLANE_IDS = "cx.agent.controlplane.protocol";
     public static String BUSINESS_PARTNER_NUMBER = "edc.participant.id";
     public static String CONTROL_PLANE_AUTH_HEADER = "edc.api.auth.header";
     public static String CONTROL_PLANE_AUTH_VALUE = "edc.api.auth.key";
@@ -48,7 +47,8 @@ public class AgentConfig {
     public static int DEFAULT_THREAD_POOL_SIZE = 4;
 
     public static String CONNECT_TIMEOUT_PROPERTY = "cx.agent.connect.timeout";
-    public static int DEFAULT_CONNECT_TIMEOUT=30000;
+    public static String WRITE_TIMEOUT_PROPERTY = "cx.agent.write.timeout";
+    public static String CALL_TIMEOUT_PROPERTY = "cx.agent.call.timeout";
     public static String READ_TIMEOUT_PROPERTY = "cx.agent.read.timeout";
     public static int DEFAULT_READ_TIMEOUT=1080000;
 
@@ -110,14 +110,14 @@ public class AgentConfig {
      * @return uri of the control plane management endpoint (without concrete api)
      */
     public String getControlPlaneManagementUrl() {
-        return config.getString(CONTROL_PLANE_MANAGEMENT,config.getString(CONTROL_PLANE_URL,null));
+        return config.getString(CONTROL_PLANE_MANAGEMENT,null);
     }
 
     /**
      * @return uri of the control plane ids endpoint (without concrete api)
      */
     public String getControlPlaneIdsUrl() {
-        return config.getString(CONTROL_PLANE_IDS,config.getString(CONTROL_PLANE_URL,null));
+        return config.getString(CONTROL_PLANE_IDS,null);
     }
 
     /**
@@ -195,15 +195,29 @@ public class AgentConfig {
     /**
      * @return outgoing socket connect timeout
      */
-    public int getConnectTimeout() {
-        return config.getInteger(CONNECT_TIMEOUT_PROPERTY,DEFAULT_CONNECT_TIMEOUT);
+    public Integer getConnectTimeout() {
+        return config.getInteger(CONNECT_TIMEOUT_PROPERTY,null);
     }
 
     /**
      * @return outgoing socket read timeout
      */
-    public int getReadTimeout() {
+    public Integer getReadTimeout() {
         return config.getInteger(READ_TIMEOUT_PROPERTY,DEFAULT_READ_TIMEOUT);
+    }
+
+    /**
+     * @return outgoing socket write timeout
+     */
+    public Integer getWriteTimeout() {
+        return config.getInteger(WRITE_TIMEOUT_PROPERTY,null);
+    }
+
+    /**
+     * @return outgoing socket write timeout
+     */
+    public Integer getCallTimeout() {
+        return config.getInteger(CALL_TIMEOUT_PROPERTY,null);
     }
 
 }

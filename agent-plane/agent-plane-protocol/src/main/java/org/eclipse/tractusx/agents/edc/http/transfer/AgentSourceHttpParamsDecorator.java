@@ -1,6 +1,7 @@
 package org.eclipse.tractusx.agents.edc.http.transfer;
 
 import org.eclipse.tractusx.agents.edc.AgentConfig;
+import org.eclipse.tractusx.agents.edc.http.HttpUtils;
 import org.eclipse.tractusx.agents.edc.sparql.DataspaceServiceExecutor;
 import org.eclipse.edc.connector.dataplane.http.spi.HttpParamsDecorator;
 import org.eclipse.edc.connector.dataplane.http.spi.HttpRequestParams;
@@ -13,8 +14,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,15 +29,14 @@ public class AgentSourceHttpParamsDecorator implements HttpParamsDecorator {
     /**
      * static constants
      */
-    public static String ASSET_PROP_ID="asset:prop:id";
+    public static String ASSET_PROP_ID="https://w3id.org/edc/v0.0.1/ns/id";
+    public static String ACCEPT_HEADER="https://w3id.org/catenax/ontology/common#acceptsContentType";
     public static String QUERY_PARAMS="queryParams";
     public static String QUERY_PARAM="query";
-    public static String ACCEPT_HEADER="Accept";
     public static String METHOD="method";
     public static String DEFAULT_METHOD="GET";
-    public static String HOST_HEADER="Host";
     public static String PATH_SEGMENTS="pathSegments";
-    public static String BASE_URL="baseUrl";
+    public static String BASE_URL="https://w3id.org/edc/v0.0.1/ns/baseUrl";
     public static String BODY="body";
     public static String MEDIA_TYPE="mediaType";
     public static String SLASH="/";
@@ -83,7 +81,7 @@ public class AgentSourceHttpParamsDecorator implements HttpParamsDecorator {
      * @return if this is a transfer request
      */
     public static boolean isTransferRequest(DataFlowRequest dataflowRequest) {
-        return dataflowRequest.getSourceDataAddress().getProperties().getOrDefault(ASSET_PROP_ID, null)==null;
+        return false;
     }
 
     /**
@@ -146,33 +144,19 @@ public class AgentSourceHttpParamsDecorator implements HttpParamsDecorator {
                 if(queries.size()!=1) {
                     throw new EdcException(String.format("DataFlowRequest %s: found %d queries when contentType %s is used", request.getId(),queries.size(),WWW_FORM_ENCODED));
                 }
-                body=URLDecoder.decode(queries.get(0), StandardCharsets.UTF_8);
+                body= HttpUtils.urlDecodeParameter(queries.get(0));
                 bodyParams.remove(QUERY_PARAM);
                 queryParams.remove(QUERY_PARAM);
                 mergeParams(queryParams,bodyParams);
             }
-            boolean fixedHost = address.getProperty(HttpDataAddress.ADDITIONAL_HEADER + HOST_HEADER) != null;
-            if (!fixedHost) {
-                try {
-                    URL controlPlane = new URL(config.getControlPlaneManagementUrl());
-                    String hostPart = controlPlane.getHost();
-                    int portPart = controlPlane.getPort();
-                    String host = String.format("%s:%d", hostPart, portPart);
-                    params.header(HOST_HEADER, host);
-                } catch (MalformedURLException e) {
-                    // TODO log problem
-                }
-            }
-            boolean fixedAccept=address.getProperty(HttpDataAddress.ADDITIONAL_HEADER+HOST_HEADER)!=null;
+            String accept=address.getProperty(ACCEPT_HEADER,null);
             List<String> cxAccepts=queryParams.getOrDefault(CX_ACCEPT_PARAM,List.of());
             queryParams.remove(CX_ACCEPT_PARAM);
-            if(!fixedAccept) {
-                String accept=DEFAULT_ACCEPT;
-                for(String newAccept : cxAccepts) {
-                    accept = newAccept.replace(CONTENT_TYPE_DISPOSITION, "").replace("%2F", "/");
-                }
-                params.header(ACCEPT_HEADER,accept);
+            if(accept==null) {
+                accept=cxAccepts.stream().findFirst().orElse(DEFAULT_ACCEPT);
             }
+            accept = accept.replace(CONTENT_TYPE_DISPOSITION, "").replace("%2F", "/");
+            params.header("Accept",accept);
         }
         Map<String,List<String>> addressParams=parseParams("?"+address.getQueryParams());
         mergeParams(queryParams,addressParams);

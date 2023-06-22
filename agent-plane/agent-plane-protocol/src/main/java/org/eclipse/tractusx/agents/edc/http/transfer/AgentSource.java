@@ -63,7 +63,7 @@ public class AgentSource implements DataSource {
     @Override
     public StreamResult<Stream<Part>> openPartStream() {
         // check whether this is a cross-plane call or a final agent call
-        if(!isTransfer) {
+        if(isTransfer) {
             return openTransfer();
         } else {
             return openMatchmaking();
@@ -71,15 +71,15 @@ public class AgentSource implements DataSource {
     }
 
     /**
-     * delegates/tunnels a KA-TRANSFER call
+     * executes a KA-MATCHMAKING call and pipes the results into KA-TRANSFER
      * @return multipart body containing result and warnings
      */
     @NotNull
-    protected StreamResult<Stream<Part>> openTransfer() {
+    protected StreamResult<Stream<Part>> openMatchmaking() {
         // Agent call, we translate from KA-MATCH to KA-TRANSFER
         String skill=null;
         String graph=null;
-        String asset= request.getSourceDataAddress().getProperties().get("id");
+        String asset= request.getSourceDataAddress().getProperties().get(AgentSourceHttpParamsDecorator.ASSET_PROP_ID);
         if(asset!=null && asset.length() > 0) {
             Matcher graphMatcher= AgentExtension.GRAPH_PATTERN.matcher(asset);
             if(graphMatcher.matches()) {
@@ -110,11 +110,11 @@ public class AgentSource implements DataSource {
     }
 
     /**
-     * executes a KA-MATCHMAKING call and pipes the results into KA-TRANSFER
+     * delegates/tunnels a KA-TRANSFER call
      * @return multipart body containing result and warnings
      */
     @NotNull
-    protected StreamResult<Stream<Part>> openMatchmaking() {
+    protected StreamResult<Stream<Part>> openTransfer() {
         try (var response = httpClient.execute(this.requestFactory.toRequest(params))) {
             if(!response.isSuccessful()) {
                 return StreamResult.error(format("Received code transferring HTTP data for request %s: %s - %s.", requestId, response.code(), response.message()));

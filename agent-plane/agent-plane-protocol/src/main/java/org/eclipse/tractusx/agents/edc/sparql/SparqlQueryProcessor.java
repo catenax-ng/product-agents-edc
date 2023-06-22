@@ -307,7 +307,7 @@ public class SparqlQueryProcessor extends SPARQL_QueryGeneral.SPARQL_QueryProc {
         }
         try {
             Collection<Tuple> tuples=ts.getTuples(variables.toArray(new String[0]));
-            if(tuples.size()<=0 && variables.size()>0) {
+            if(tuples.size() == 0 && variables.size()>0) {
                 throw new BadRequestException(String.format("Error: Got variables %s on top-level but no bindings.",Arrays.toString(variables.toArray())));
             } else if(tuples.size()>1) {
                 System.err.println(String.format("Warning: Got %s tuples for top-level bindings of variables %s. Using only the first one.",tuples.size(),Arrays.toString(variables.toArray())));
@@ -324,7 +324,8 @@ public class SparqlQueryProcessor extends SPARQL_QueryGeneral.SPARQL_QueryProc {
         if(action.getContext().isDefined(DataspaceServiceExecutor.asset)) {
             String targetUrl=action.getContext().get(DataspaceServiceExecutor.targetUrl);
             String asset=action.getContext().get(DataspaceServiceExecutor.asset);
-            String graphPattern=String.format("GRAPH\\s*<?(%s)?%s>?",UNSET_BASE,asset);
+            asset=asset.replace("?","\\?");
+            String graphPattern=String.format("GRAPH\\s*\\<?(%s)?%s\\>?",UNSET_BASE,asset);
             Matcher graphMatcher=Pattern.compile(graphPattern).matcher(queryString);
             replaceQuery=new StringBuilder();
             lastStart=0;

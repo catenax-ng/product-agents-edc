@@ -6,6 +6,8 @@
 //
 package org.eclipse.tractusx.agents.edc;
 
+import org.eclipse.edc.connector.dataplane.http.spi.HttpRequestParamsProvider;
+import org.eclipse.edc.runtime.metamodel.annotation.Requires;
 import org.eclipse.tractusx.agents.edc.http.AgentController;
 import org.eclipse.tractusx.agents.edc.http.DelegationService;
 import org.eclipse.tractusx.agents.edc.http.HttpClientFactory;
@@ -34,6 +36,7 @@ import org.eclipse.tractusx.agents.edc.service.DataManagement;
 import org.eclipse.edc.connector.dataplane.spi.pipeline.PipelineService;
 import org.eclipse.edc.spi.types.TypeManager;
 
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.regex.Pattern;
@@ -41,6 +44,7 @@ import java.util.regex.Pattern;
 /**
  * EDC extension that initializes the Agent subsystem (Agent Sources, Agent Endpoint and Federation Callbacks
  */
+@Requires(HttpRequestParamsProvider.class)
 public class AgentExtension implements ServiceExtension {
 
     /**
@@ -66,9 +70,13 @@ public class AgentExtension implements ServiceExtension {
     protected Vault vault;
 
     @Inject
+    protected TypeManager typeManager;
+
+    // we reuse the http settings of the http transfer
+    @Inject
     protected EdcHttpClient edcHttpClient;
     @Inject
-    protected TypeManager typeManager;
+    protected OkHttpClient httpClient;
 
     /**
      * refers a scheduler
@@ -80,12 +88,6 @@ public class AgentExtension implements ServiceExtension {
      * data synchronization service
      */
     protected DataspaceSynchronizer synchronizer;
-
-    /**
-     * we use our own http client
-     */
-    protected OkHttpClient httpClient;
-
 
     /**
      * @return name of the extension
@@ -106,7 +108,9 @@ public class AgentExtension implements ServiceExtension {
         monitor.debug(String.format("Initializing %s",name()));
 
         AgentConfig config = new AgentConfig(monitor,context.getConfig());
-        httpClient= HttpClientFactory.create(config);
+        Map.Entry<EdcHttpClient,OkHttpClient> instance = HttpClientFactory.create(edcHttpClient,httpClient,pipelineService,config);
+        edcHttpClient=instance.getKey();
+        httpClient=instance.getValue();
 
         DataManagement catalogService=new DataManagement(monitor,typeManager,httpClient,config);
 
