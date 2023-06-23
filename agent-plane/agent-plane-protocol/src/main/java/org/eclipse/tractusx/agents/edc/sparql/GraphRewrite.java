@@ -55,6 +55,13 @@ public class GraphRewrite extends TransformSingle {
                     op=new OpGraph(NodeFactory.createURI(graphString),subOp);
                 }
                 graphNames.add(graphString);
+            } else if (graphNode.isLiteral()) {
+                String graphString=String.valueOf(graphNode.getLiteralValue());
+                if(graphString.startsWith(SparqlQueryProcessor.UNSET_BASE)) {
+                    graphString=graphString.substring(SparqlQueryProcessor.UNSET_BASE.length());
+                    op=new OpGraph(NodeFactory.createURI(graphString),subOp);
+                }
+                graphNames.add(graphString);
             } else if (graphNode.isVariable()) {
                 Var graphVar = (Var) graphNode;
                 if (bindings == null || bindings.isEmpty()) {
@@ -68,19 +75,30 @@ public class GraphRewrite extends TransformSingle {
                             bound = binding.get(graphVar);
                         }
                     }
-                    if (bound != null && bound.isURI()) {
-                        String graphString=bound.getURI();
-                        if(graphString.startsWith(SparqlQueryProcessor.UNSET_BASE)) {
-                            graphString = graphString.substring(SparqlQueryProcessor.UNSET_BASE.length());
+                    if (bound != null) {
+                        if( bound.isURI()) {
+                            String graphString = bound.getURI();
+                            if (graphString.startsWith(SparqlQueryProcessor.UNSET_BASE)) {
+                                graphString = graphString.substring(SparqlQueryProcessor.UNSET_BASE.length());
+                            }
+                            graphNames.add(graphString);
+                            op=new OpGraph(NodeFactory.createURI(graphString), subOp);
+                        } else if(bound.isLiteral()) {
+                            String graphString = String.valueOf(bound.getLiteralValue());
+                            if (graphString.startsWith(SparqlQueryProcessor.UNSET_BASE)) {
+                                graphString = graphString.substring(SparqlQueryProcessor.UNSET_BASE.length());
+                            }
+                            graphNames.add(graphString);
+                            op=new OpGraph(NodeFactory.createURI(graphString), subOp);
+                        } else {
+                            monitor.warning(String.format("Found a graph node binding %s which is no uri or literal. Ignoring.", bound));
                         }
-                        graphNames.add(graphString);
-                        op=new OpGraph(NodeFactory.createURI(graphString), subOp);
                     } else {
-                        monitor.warning(String.format("Found a graph node binding %s which is no uri. Ignoring.", bound));
+                        monitor.warning(String.format("Found a graph node %s that is not bound. Ignoring.", bound));
                     }
                 }
             } else {
-                monitor.warning(String.format("Found a graph node %s which is neither uri or variable. Ignoring.", graphNode));
+                monitor.warning(String.format("Found a graph node %s which is neither uri, literal or variable. Ignoring.", graphNode));
             }
         }
         return op;

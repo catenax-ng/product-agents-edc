@@ -169,7 +169,7 @@ spec:
             - name: "EDC_OAUTH_PROVIDER_AUDIENCE"
               value: "idsc:IDS_CONNECTORS_ALL"
             - name: "EDC_OAUTH_ENDPOINT_AUDIENCE"
-              value: {{ printf "%s%s%s" (include "txdc.controlplane.url.protocol" . ) .Values.controlplane.endpoints.protocol.path "/data" | quote }}
+              value: {{ printf "%s%s%s" (include "txdc.controlplane.url.protocol" . ) .Values.controlplane.endpoints.protocol.path "" | quote }}
 
           {{- if .Values.postgresql.enabled }}
 

@@ -152,7 +152,7 @@ spec:
               value: {{ $root.Values.controlplane.endpoints.management.authKey | required ".Values.controlplane.endpoints.mangement.authKey is required" | quote }}
             - name: "EDC_PARTICIPANT_ID"
               value: {{ $root.Values.partnerid | quote }}
-            - name: "CX_AGENT_CONTROLPLANE_URL"
+            - name: "CX_AGENT_CONTROLPLANE_PROTOCOL"
               value: {{ printf "http://%s-controlplane:%v" ( include "txdc.fullname" $root ) $root.Values.controlplane.endpoints.protocol.port | quote }}
             - name: "CX_AGENT_CONTROLPLANE_MANAGEMENT"
               value: {{ printf "http://%s-controlplane:%v%s%s" ( include "txdc.fullname" $root ) $root.Values.controlplane.endpoints.management.port $root.Values.controlplane.endpoints.management.path "/v2" | quote }}
