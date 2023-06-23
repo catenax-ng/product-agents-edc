@@ -16,7 +16,7 @@
         <junit.version>5.9.3</junit.version>
         <mockito.version>5.4.0</mockito.version>
         <tx.edc.version>0.4.1</tx.edc.version>
-        <edc.version>0.1.0</edc.version>
+        <edc.version>0.1.2</edc.version>
         <failsafe.version>3.3.1</failsafe.version>
         <okhttp.version>4.11.0</okhttp.version>
         <slf4j.version>2.0.7</slf4j.version>
