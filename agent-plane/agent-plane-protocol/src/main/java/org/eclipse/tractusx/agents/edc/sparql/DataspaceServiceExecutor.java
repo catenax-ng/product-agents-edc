@@ -256,7 +256,8 @@ public class DataspaceServiceExecutor implements ServiceExecutor, ChainingServic
             if (asset == null || asset.length() == 0) {
                 GraphRewriteVisitor grv=new GraphRewriteVisitor();
                 GraphRewrite gr=new GraphRewrite(monitor,bindings,grv);
-                opOriginal=new OpService(opOriginal.getService(),Transformer.transform(gr,opOriginal.getSubOp(),grv,null),opOriginal.getSilent());
+                Op transformed=Transformer.transform(gr,opOriginal.getSubOp(),grv,null);
+                opOriginal=new OpService(opOriginal.getService(),transformed,opOriginal.getSilent());
                 Set<String> graphNames=gr.getGraphNames();
                 if(graphNames.size()>1) {
                     throw new QueryExecException("There are several graph assets (currently not supported due to negotiation strategy, please rewrite your query) under EDC-based service: " + serviceURL);

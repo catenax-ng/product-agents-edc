@@ -10,6 +10,7 @@ package org.eclipse.tractusx.agents.edc.sparql;
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.sparql.algebra.Op;
+import org.apache.jena.sparql.algebra.TransformCopy;
 import org.apache.jena.sparql.algebra.TransformSingle;
 import org.apache.jena.sparql.algebra.op.OpGraph;
 import org.apache.jena.sparql.core.Var;
@@ -28,7 +29,7 @@ import java.util.Set;
  * and replace variables for later exchange with the
  * backend service.
  */
-public class GraphRewrite extends TransformSingle {
+public class GraphRewrite extends TransformCopy {
 
     protected final List<Binding> bindings;
     protected final Set<String> graphNames=new HashSet<>();
