@@ -7,6 +7,7 @@
 package org.eclipse.tractusx.agents.edc.http;
 
 import org.eclipse.tractusx.agents.edc.rdf.RDFStore;
+import org.eclipse.tractusx.agents.edc.service.InMemorySkillStore;
 import org.eclipse.tractusx.agents.edc.sparql.DataspaceServiceExecutor;
 import org.eclipse.tractusx.agents.edc.sparql.SparqlQueryProcessor;
 import okhttp3.*;
@@ -68,7 +69,7 @@ public class TestAgentController {
 
 
     SparqlQueryProcessor processor=new SparqlQueryProcessor(serviceExecutorReg,monitor,agentConfig,store, typeManager);
-    SkillStore skillStore=new SkillStore();
+    InMemorySkillStore skillStore=new InMemorySkillStore();
 
 
     DelegationService delegationService=new DelegationService(mockController,monitor,null,typeManager);

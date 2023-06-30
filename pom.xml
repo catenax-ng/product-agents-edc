@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.eclipse.tractusx.agents</groupId>
     <artifactId>edc</artifactId>
-    <version>1.9.3-SNAPSHOT</version>
+    <version>1.9.4-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Tractus-X Knowledge Agents Dataspace EDC Extensions</name>
     <description>EDC-Related Artifacts for Federated Procedure Calls</description>

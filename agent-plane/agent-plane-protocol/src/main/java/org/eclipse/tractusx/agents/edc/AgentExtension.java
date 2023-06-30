@@ -15,6 +15,7 @@ import org.eclipse.tractusx.agents.edc.http.transfer.AgentSourceFactory;
 import org.eclipse.tractusx.agents.edc.http.transfer.AgentSourceRequestParamsSupplier;
 import org.eclipse.tractusx.agents.edc.rdf.RDFStore;
 import org.eclipse.tractusx.agents.edc.service.DataspaceSynchronizer;
+import org.eclipse.tractusx.agents.edc.service.EdcSkillStore;
 import org.eclipse.tractusx.agents.edc.sparql.DataspaceServiceExecutor;
 import org.eclipse.tractusx.agents.edc.sparql.SparqlQueryProcessor;
 import org.eclipse.tractusx.agents.edc.sparql.SparqlQuerySerializerFactory;
@@ -145,7 +146,7 @@ public class AgentExtension implements ServiceExtension {
         SparqlQueryProcessor processor=new SparqlQueryProcessor(reg,monitor,config,rdfStore, typeManager);
 
         // stored procedure store and transport endpoint
-        SkillStore skillStore=new SkillStore();
+        ISkillStore skillStore=new EdcSkillStore(catalogService,typeManager,config);
         DelegationService delegationService=new DelegationService(agreementController,monitor,httpClient,typeManager);
         AgentController agentController=new AgentController(monitor,agreementController,config,processor,skillStore,delegationService);
         monitor.debug(String.format("Registering agent controller %s",agentController));

@@ -7,7 +7,7 @@
 package org.eclipse.tractusx.agents.edc.http.transfer;
 
 import org.eclipse.tractusx.agents.edc.AgentProtocol;
-import org.eclipse.tractusx.agents.edc.SkillStore;
+import org.eclipse.tractusx.agents.edc.ISkillStore;
 import org.eclipse.tractusx.agents.edc.sparql.SparqlQueryProcessor;
 import org.eclipse.edc.connector.dataplane.http.params.HttpRequestFactory;
 import org.eclipse.edc.connector.dataplane.spi.pipeline.DataSource;
@@ -25,7 +25,7 @@ public class AgentSourceFactory extends org.eclipse.edc.connector.dataplane.http
     final Monitor monitor;
     final EdcHttpClient httpClient;
     final SparqlQueryProcessor processor;
-    final SkillStore skillStore;
+    final ISkillStore skillStore;
     final HttpRequestFactory requestFactory;
 
 
@@ -38,7 +38,7 @@ public class AgentSourceFactory extends org.eclipse.edc.connector.dataplane.http
      * @param processor the query processor/sparql engine
      * @param skillStore store for skills
      */
-    public AgentSourceFactory(EdcHttpClient httpClient, AgentSourceRequestParamsSupplier supplier, Monitor monitor, HttpRequestFactory requestFactory, SparqlQueryProcessor processor, SkillStore skillStore) {
+    public AgentSourceFactory(EdcHttpClient httpClient, AgentSourceRequestParamsSupplier supplier, Monitor monitor, HttpRequestFactory requestFactory, SparqlQueryProcessor processor, ISkillStore skillStore) {
         super(httpClient,supplier,monitor,requestFactory);
         this.supplier=supplier;
         this.monitor=monitor;

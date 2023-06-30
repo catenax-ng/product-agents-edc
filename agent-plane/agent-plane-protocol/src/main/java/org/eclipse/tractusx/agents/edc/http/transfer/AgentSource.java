@@ -8,7 +8,7 @@ package org.eclipse.tractusx.agents.edc.http.transfer;
 
 import org.eclipse.edc.connector.dataplane.spi.pipeline.StreamResult;
 import org.eclipse.tractusx.agents.edc.AgentExtension;
-import org.eclipse.tractusx.agents.edc.SkillStore;
+import org.eclipse.tractusx.agents.edc.ISkillStore;
 import org.eclipse.tractusx.agents.edc.sparql.SparqlQueryProcessor;
 import okhttp3.Response;
 import org.eclipse.edc.connector.dataplane.http.params.HttpRequestFactory;
@@ -48,7 +48,7 @@ public class AgentSource implements DataSource {
     protected EdcHttpClient httpClient;
     protected boolean isTransfer;
     protected SparqlQueryProcessor processor;
-    protected SkillStore skillStore;
+    protected ISkillStore skillStore;
 
     protected DataFlowRequest request;
 
@@ -85,7 +85,7 @@ public class AgentSource implements DataSource {
             if(graphMatcher.matches()) {
                 graph=asset;
             }
-            Matcher skillMatcher=SkillStore.matchSkill(asset);
+            Matcher skillMatcher= ISkillStore.matchSkill(asset);
             if(skillMatcher.matches()) {
                 skill=asset;
             }
@@ -212,7 +212,7 @@ public class AgentSource implements DataSource {
             return this;
         }
 
-        public AgentSource.Builder skillStore(SkillStore skillStore) {
+        public AgentSource.Builder skillStore(ISkillStore skillStore) {
             dataSource.skillStore=skillStore;
             return this;
         }

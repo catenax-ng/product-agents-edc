@@ -1,6 +1,6 @@
 # agent-connector
 
-![Version: 1.9.3-SNAPSHOT](https://img.shields.io/badge/Version-1.9.3--SNAPSHOT-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.9.3-SNAPSHOT](https://img.shields.io/badge/AppVersion-1.9.3--SNAPSHOT-informational?style=flat-square)
+![Version: 1.9.4-SNAPSHOT](https://img.shields.io/badge/Version-1.9.3--SNAPSHOT-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.9.4-SNAPSHOT](https://img.shields.io/badge/AppVersion-1.9.3--SNAPSHOT-informational?style=flat-square)
 
 A Helm chart for Tractus-X Agent-Enabled Eclipse Data Space Connector
 
@@ -10,7 +10,7 @@ A Helm chart for Tractus-X Agent-Enabled Eclipse Data Space Connector
 
 ```shell
 helm repo add tractusx-edc https://eclipse-tractusx.github.io/charts/dev
-helm install my-release tractusx-edc/tractusx-connector --version 1.9.3-SNAPSHOT
+helm install my-release tractusx-edc/tractusx-connector --version 1.9.4-SNAPSHOT
 ```
 
 ## Source Code

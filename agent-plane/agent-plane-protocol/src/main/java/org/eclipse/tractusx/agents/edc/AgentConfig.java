@@ -24,7 +24,6 @@ public class AgentConfig {
     public static String VERBOSE_PROPERTY = "cx.agent.sparql.verbose";
     public static boolean DEFAULT_VERBOSE_PROPERTY = false;
     public static String DEFAULT_ACCESS_POINT = "api";
-
     public static String CONTROL_PLANE_MANAGEMENT = "cx.agent.controlplane.management";
     public static String CONTROL_PLANE_IDS = "cx.agent.controlplane.protocol";
     public static String BUSINESS_PARTNER_NUMBER = "edc.participant.id";
@@ -53,6 +52,9 @@ public class AgentConfig {
     public static int DEFAULT_READ_TIMEOUT=1080000;
 
     public static String CALLBACK_ENDPOINT="cx.agent.callback";
+
+    public static String DEFAULT_SKILL_CONTRACT_PROPERTY = "cx.agent.skill.contract.default";
+
 
     /**
      * references to EDC services
@@ -218,6 +220,13 @@ public class AgentConfig {
      */
     public Integer getCallTimeout() {
         return config.getInteger(CALL_TIMEOUT_PROPERTY,null);
+    }
+
+    /**
+     * @return default skill contract
+     */
+    public String getDefaultSkillContract() {
+        return config.getString(DEFAULT_SKILL_CONTRACT_PROPERTY);
     }
 
 }
