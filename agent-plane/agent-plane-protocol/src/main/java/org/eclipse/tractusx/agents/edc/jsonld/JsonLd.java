@@ -1,3 +1,9 @@
+//
+// EDC Data Plane Agent Extension Test
+// See copyright notice in the top folder
+// See authors file in the top folder
+// See license file in the top folder
+//
 package org.eclipse.tractusx.agents.edc.jsonld;
 
 import jakarta.json.*;
@@ -5,8 +11,13 @@ import org.eclipse.tractusx.agents.edc.model.*;
 
 import java.io.StringReader;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+/**
+ * base facility to deal with EDC specific JSONLD structures
+ */
 public class JsonLd {
 
     public static DcatCatalog processCatalog(String cat) {
@@ -47,6 +58,15 @@ public class JsonLd {
 
     public static TransferProcess processTransferProcess(JsonObject response) {
         return new TransferProcess(processJsonLd(response,null));
+    }
+
+    public static List<Asset> processAssetList(String response) {
+        return processAssetList(Json.createReader(new StringReader(response)).readArray());
+    }
+    public static List<Asset> processAssetList(JsonArray response) {
+        return response.stream().map( responseObject ->
+                new Asset(processJsonLd(responseObject.asJsonObject(),null))
+        ).collect(Collectors.toList());
     }
 
     public static String asString(JsonValue value) {

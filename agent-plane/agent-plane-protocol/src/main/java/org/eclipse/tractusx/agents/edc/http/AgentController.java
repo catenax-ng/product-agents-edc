@@ -6,6 +6,7 @@
 //
 package org.eclipse.tractusx.agents.edc.http;
 
+import org.eclipse.tractusx.agents.edc.ISkillStore;
 import org.eclipse.tractusx.agents.edc.sparql.SparqlQueryProcessor;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
@@ -18,7 +19,6 @@ import org.eclipse.edc.spi.monitor.Monitor;
 import org.eclipse.tractusx.agents.edc.AgentConfig;
 import org.eclipse.tractusx.agents.edc.AgentExtension;
 import org.eclipse.tractusx.agents.edc.IAgreementController;
-import org.eclipse.tractusx.agents.edc.SkillStore;
 
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -39,7 +39,7 @@ public class AgentController {
     protected final Monitor monitor;
     protected final IAgreementController agreementController;
     protected final AgentConfig config;
-    protected final SkillStore skillStore;
+    protected final ISkillStore skillStore;
 
     // the actual Matchmaking Agent is a Fuseki engine
     protected final SparqlQueryProcessor processor;
@@ -52,7 +52,7 @@ public class AgentController {
      * @param config configuration
      * @param processor sparql processor
      */
-    public AgentController(Monitor monitor, IAgreementController agreementController, AgentConfig config, SparqlQueryProcessor processor, SkillStore skillStore, IDelegationService delegationService) {
+    public AgentController(Monitor monitor, IAgreementController agreementController, AgentConfig config, SparqlQueryProcessor processor, ISkillStore skillStore, IDelegationService delegationService) {
         this.monitor = monitor;
         this.agreementController = agreementController;
         this.config=config;
@@ -374,7 +374,7 @@ public class AgentController {
                 remoteUrl=matcher.group("url");
                 graph=matcher.group("graph");
             } else {
-                matcher=skillStore.matchSkill(asset);
+                matcher=ISkillStore.matchSkill(asset);
                 if(!matcher.matches()) {
                     return Response.status(Response.Status.BAD_REQUEST).build();
                 }

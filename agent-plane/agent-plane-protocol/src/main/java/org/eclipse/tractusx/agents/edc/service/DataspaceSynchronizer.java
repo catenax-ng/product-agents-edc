@@ -1,3 +1,8 @@
+//
+// EDC Data Plane Agent Extension
+// See copyright notice in the top folder
+// See authors file in the top folder
+// See license file in the top folder
 package org.eclipse.tractusx.agents.edc.service;
 
 import jakarta.json.Json;
@@ -56,6 +61,7 @@ public class DataspaceSynchronizer implements Runnable {
         assetPropertyMap.put("http://www.w3.org/ns/shacl#shapesGraph",NodeFactory.createURI("http://www.w3.org/ns/shacl#shapesGraph"));
         assetPropertyMap.put("https://w3id.org/catenax/ontology/common#isFederated",NodeFactory.createURI("https://w3id.org/catenax/ontology/common#isFederated"));
         assetPropertyMap.put("https://w3id.org/catenax/ontology/common#publishedUnderContract",NodeFactory.createURI("https://w3id.org/catenax/ontology/common#publishedUnderContract"));
+        assetPropertyMap.put("https://w3id.org/catenax/ontology/common#satisfiesRole",NodeFactory.createURI("https://w3id.org/catenax/ontology/common#satisfiesRole"));
     }
 
     /**
@@ -241,6 +247,7 @@ public class DataspaceSynchronizer implements Runnable {
                             case "http://www.w3.org/2000/01/rdf-schema#isDefinedBy":
                             case "http://www.w3.org/1999/02/22-rdf-syntax-ns#type":
                             case "https://w3id.org/catenax/ontology/common#isFederated":
+                            case "https://w3id.org/catenax/ontology/common#satisfiesRole":
                             case "https://w3id.org/catenax/ontology/common#implementsProtocol":
                                 String[] urls = pureProperty.split(",");
                                 for (String url : urls) {

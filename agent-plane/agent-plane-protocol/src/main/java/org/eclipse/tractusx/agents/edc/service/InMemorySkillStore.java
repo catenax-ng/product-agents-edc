@@ -4,17 +4,18 @@
 // See authors file in the top folder
 // See license file in the top folder
 //
-package org.eclipse.tractusx.agents.edc;
+package org.eclipse.tractusx.agents.edc.service;
+
+import org.eclipse.tractusx.agents.edc.ISkillStore;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Matcher;
 
 /**
  * An in-memory store for local skills
  */
-public class SkillStore {
+public class InMemorySkillStore implements ISkillStore {
 
     // temporary local skill store
     final protected Map<String,String> skills=new HashMap<>();
@@ -22,16 +23,7 @@ public class SkillStore {
     /**
      * create the store
      */
-    public SkillStore() {
-    }
-
-    /**
-     * match a given asset
-     * @param key asset name
-     * @return matcher
-     */
-    public static Matcher matchSkill(String key) {
-        return AgentExtension.SKILL_PATTERN.matcher(key);
+    public InMemorySkillStore() {
     }
 
     /**
@@ -40,7 +32,7 @@ public class SkillStore {
      * @return whether the asset encodes a skill
      */
     public boolean isSkill(String key) {
-        return matchSkill(key).matches();
+        return ISkillStore.matchSkill(key).matches();
     }
 
     /**

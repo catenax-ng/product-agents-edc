@@ -1,3 +1,8 @@
+//
+// EDC Data Plane Agent Extension
+// See copyright notice in the top folder
+// See authors file in the top folder
+// See license file in the top folder
 package org.eclipse.tractusx.agents.edc.model;
 
 import jakarta.json.JsonObject;
@@ -7,6 +12,9 @@ import org.eclipse.tractusx.agents.edc.jsonld.JsonLdObject;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * represents a dcat catalogue
+ */
 public class DcatCatalog extends JsonLdObject {
 
     List<DcatDataset> datasets=new ArrayList<>();
