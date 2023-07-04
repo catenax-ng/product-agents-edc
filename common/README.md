@@ -1,6 +1,7 @@
-# Catena-X Knowledge Agents (Hey Catena!) EDC Common Extension
+# Tractus-X Knowledge Agents (Hey Catena!) Common EDC Extension
 
-This folder hosts common extensions to the [Eclipse Dataspace Connector (EDC)](https://projects.eclipse.org/projects/technology.dataspaceconnector).
+This folder hosts common extensions to the [Eclipse Dataspace Connector (EDC)](https://projects.eclipse.org/projects/technology.dataspaceconnector) which
+should enable a secure application access to the EDC infrastructure.
 
 It consists of
 

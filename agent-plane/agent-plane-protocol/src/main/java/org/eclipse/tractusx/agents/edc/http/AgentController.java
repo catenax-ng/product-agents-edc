@@ -7,6 +7,7 @@
 package org.eclipse.tractusx.agents.edc.http;
 
 import org.eclipse.tractusx.agents.edc.ISkillStore;
+import org.eclipse.tractusx.agents.edc.SkillDistribution;
 import org.eclipse.tractusx.agents.edc.sparql.SparqlQueryProcessor;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
@@ -411,16 +412,32 @@ public class AgentController {
     /**
      * endpoint for posting a skill
      * @param query mandatory query
-     * @param asset can be a named graph for executing a query or a skill asset
-     * @return response
+     * @param asset asset key
+     * @param name asset name
+     * @param description asset description
+     * @param version asset version
+     * @param contract asset contract
+     * @param mode asset mode
+     * @param isFederated whether it appears in fed catalogue
+     * @param ontologies list of ontologies
+     * @return only status
      */
     @POST
     @Path("/skill")
     @Consumes({"application/sparql-query"})
-    public Response postSkill(String query, @QueryParam("asset") String asset) {
-        monitor.debug(String.format("Received a POST skill request %s %s ",asset,query));
+    public Response postSkill(String query, 
+        @QueryParam("asset") String asset, 
+        @QueryParam("assetName") String name, 
+        @QueryParam("assetDescription") String description, 
+        @QueryParam("assetVersion") String version,  
+        @QueryParam("contract") String contract,
+        @QueryParam("distributionMode") SkillDistribution mode,
+        @QueryParam("isFederated") boolean isFederated,
+        @QueryParam("ontology") String[] ontologies
+        ) {
+        monitor.debug(String.format("Received a POST skill request %s %s %s %s %s %b %s ",asset,name,description,version,contract,mode.getMode(),isFederated,query));
         Response.ResponseBuilder rb;
-        if(skillStore.put(asset,query)!=null) {
+        if(skillStore.put(asset,query,name,description,version,contract,mode,isFederated,ontologies)!=null) {
             rb=Response.ok();
         } else {
             rb=Response.status(HttpStatus.SC_CREATED);

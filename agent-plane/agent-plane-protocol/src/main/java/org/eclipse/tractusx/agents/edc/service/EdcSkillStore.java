@@ -11,6 +11,7 @@ import org.eclipse.edc.spi.query.QuerySpec;
 import org.eclipse.edc.spi.types.TypeManager;
 import org.eclipse.tractusx.agents.edc.AgentConfig;
 import org.eclipse.tractusx.agents.edc.ISkillStore;
+import org.eclipse.tractusx.agents.edc.SkillDistribution;
 import org.eclipse.tractusx.agents.edc.jsonld.JsonLd;
 
 import java.io.IOException;
@@ -38,17 +39,30 @@ public class EdcSkillStore implements ISkillStore {
     }
 
     @Override
-    public String put(String key, String skill) {
+    public String put(String key, String skill, String name, String description, String version, String contract, SkillDistribution dist, boolean isFederated, String... ontologies) {
+        if(name==null) {
+            name="No name given";
+        }
+        if(description==null) {
+            description="No description given";
+        }
+        if(version==null) {
+            version="unknown version";
+        }
+        if(contract==null) {
+            contract=config.getDefaultSkillContract();
+        }
+        String ontologiesString=String.join(",",ontologies);
         try {
             return management.createOrUpdateSkill(
                     key,
-                    "No name given",
-                    "No description given",
-                    "unknown version",
-                    config.getDefaultSkillContract(),
-                    "<https://w3id.org/catenax/ontology/core>",
-                    "all",
-                    true,
+                    name,
+                    description,
+                    version,
+                    contract,
+                    ontologiesString,
+                    dist.getDistributionMode(),
+                    isFederated,
                     typeManager.getMapper().writeValueAsString(TextNode.valueOf(skill))
             ).getId();
         } catch (IOException e) {
@@ -62,9 +76,13 @@ public class EdcSkillStore implements ISkillStore {
                 List.of(new Criterion("https://w3id.org/edc/v0.0.1/ns/id","=",key),
                         new Criterion("http://www.w3.org/1999/02/22-rdf-syntax-ns#type","=","cx-common:SkillAsset"))).build();
         try {
-            return management.listAssets(findAsset).stream().findFirst().map( asset->
-                    JsonLd.asString(asset.getPrivateProperties().get("https://w3id.org/catenax/ontology/common#query"))
-            );
+            // we need to filter until the criterion really works
+            return management.
+                    listAssets(findAsset).stream().
+                    //filter( asset -> key.equals(asset.getId())).
+                    findFirst().map( asset->
+                        JsonLd.asString(asset.getPrivateProperties().get("https://w3id.org/catenax/ontology/common#query"))
+                    );
         } catch(IOException e) {
             return Optional.empty();
         }

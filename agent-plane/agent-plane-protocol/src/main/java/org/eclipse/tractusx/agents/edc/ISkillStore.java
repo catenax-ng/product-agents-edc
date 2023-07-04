@@ -32,11 +32,18 @@ public interface ISkillStore {
 
     /**
      * register a skill
-     * @param key asset name
-     * @param skill skill text
-     * @return old skill text, if one was registered
+     * @param key asset name required
+     * @param skill query text required
+     * @param name of skill optional
+     * @param description of skill optional
+     * @param version of skill optional
+     * @param contract of skill optional
+     * @param dist of skill required
+     * @param isFederated whether skill maybe synchronized in catalogue
+     * @param ontologies a set of ontologies
+     * @return skill id
      */
-    String put(String key, String skill);
+    String put(String key, String skill, String name, String description, String version, String contract, SkillDistribution dist, boolean isFederated, String... ontologies);
 
     /**
      * return the stored skill text

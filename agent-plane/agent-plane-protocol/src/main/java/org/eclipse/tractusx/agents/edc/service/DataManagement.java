@@ -7,6 +7,7 @@
 package org.eclipse.tractusx.agents.edc.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import okhttp3.*;
 import org.eclipse.tractusx.agents.edc.AgentConfig;
 import jakarta.ws.rs.InternalServerErrorException;
@@ -57,11 +58,11 @@ public class DataManagement {
             "            \"description\": \"%3$s\",\n" +
             "            \"version\": \"%4$s\",\n" +
             "            \"contenttype\": \"application/json, application/xml\",\n" +
-            "            \"cx-common:publishedUnderContract\": \"%5$s\",\n" +
+            "%5$s" +
             "            \"rdf:type\": \"cx-common:SkillAsset\",\n" +
             "            \"rdfs:isDefinedBy\": \"%6$s\",\n" +
             "            \"cx-common:implementsProtocol\": \"cx-common:Protocol?w3c:http:SKILL\",\n" +
-            "            \"cx-common:distributionMode\": \"cx-common:SkillDistribution?run=%7$s\",\n" +
+            "            \"cx-common:distributionMode\": \"%7$s\",\n" +
             "            \"cx-common:isFederated\": \"%8$b^^xsd:boolean\"\n" +
             "        },\n" +
             "        \"privateProperties\": {\n" +
@@ -199,7 +200,9 @@ public class DataManagement {
     public List<Asset> listAssets(QuerySpec spec) throws IOException {
 
         var url = String.format(ASSET_CALL,config.getControlPlaneManagementUrl());
-        var assetSpec =objectMapper.writeValueAsString(spec);
+        var assetObject=(ObjectNode) objectMapper.readTree(objectMapper.writeValueAsString(spec));
+        assetObject.put("@context",objectMapper.createObjectNode());
+        var assetSpec = objectMapper.writeValueAsString(assetObject);
 
         var request = new Request.Builder().url(url).post(RequestBody.create(assetSpec,MediaType.parse("application/json")));
         config.getControlPlaneManagementHeaders().forEach(request::addHeader);
@@ -235,6 +238,11 @@ public class DataManagement {
     public IdResponse createOrUpdateSkill(String assetId, String name, String description, String version, String contract, String ontologies, String distributionMode, boolean isFederated, String query) throws IOException {
 
         var url = String.format(ASSET_CREATE_CALL,config.getControlPlaneManagementUrl());
+        if(contract!=null) {
+            contract=String.format("            \"cx-common:publishedUnderContract\": \"%1$s\",\n",contract);
+        } else {
+            contract="";
+        }
         var assetSpec = String.format(ASSET_CREATE_BODY,assetId,name,description,version,contract,ontologies,distributionMode,isFederated,query);
 
         var request = new Request.Builder().url(url).post(RequestBody.create(assetSpec,MediaType.parse("application/json")));

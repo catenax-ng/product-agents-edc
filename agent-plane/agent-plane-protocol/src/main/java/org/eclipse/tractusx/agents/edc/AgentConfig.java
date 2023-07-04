@@ -226,7 +226,7 @@ public class AgentConfig {
      * @return default skill contract
      */
     public String getDefaultSkillContract() {
-        return config.getString(DEFAULT_SKILL_CONTRACT_PROPERTY);
+        return config.getString(DEFAULT_SKILL_CONTRACT_PROPERTY,null);
     }
 
 }

@@ -7,6 +7,7 @@
 package org.eclipse.tractusx.agents.edc.service;
 
 import org.eclipse.tractusx.agents.edc.ISkillStore;
+import org.eclipse.tractusx.agents.edc.SkillDistribution;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,30 +27,18 @@ public class InMemorySkillStore implements ISkillStore {
     public InMemorySkillStore() {
     }
 
-    /**
-     * check a given asset for being a skill
-     * @param key asset name
-     * @return whether the asset encodes a skill
-     */
+    @Override
     public boolean isSkill(String key) {
         return ISkillStore.matchSkill(key).matches();
     }
 
-    /**
-     * register a skill
-     * @param key asset name
-     * @param skill skill text
-     * @return old skill text, if one was registered
-     */
-    public String put(String key, String skill) {
-        return skills.put(key,skill);
+    @Override
+    public String put(String key, String skill, String name, String description, String version, String contract, SkillDistribution dist, boolean isFederated, String... ontologies) {
+        skills.put(key,skill);
+        return key;
     }
 
-    /**
-     * return the stored skill text
-     * @param key asset name
-     * @return optional skill text if registered
-     */
+    @Override
     public Optional<String> get(String key) {
         if(!skills.containsKey(key)) {
             return Optional.empty();

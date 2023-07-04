@@ -354,7 +354,7 @@ public class TestAgentController {
     public void testParameterizedSkill() throws IOException {
         String query="PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> SELECT ?what WHERE { VALUES (?what) { (\"@input\"^^xsd:int)} }";
         String asset="urn:cx:Skill:cx:Test";
-        agentController.postSkill(query,asset);
+        agentController.postSkill(query,asset,null,null,null,null,SkillDistribution.ALL,false,null);
         String result=testExecute("GET",null,asset,"*/*",List.of(new AbstractMap.SimpleEntry<>("input","84")));
         JsonNode root=mapper.readTree(result);
         JsonNode whatBinding0=root.get("results").get("bindings").get(0).get("what");
@@ -370,7 +370,7 @@ public class TestAgentController {
     public void testRemotingSkill() throws IOException {
         String query="PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> SELECT ?what WHERE { SERVICE<http://localhost:8080/sparql> { VALUES (?what) { (\"@input\"^^xsd:int)} } }";
         String asset="urn:cx:Skill:cx:Test";
-        agentController.postSkill(query,asset);
+        agentController.postSkill(query,asset,null,null,null,null,SkillDistribution.ALL,false,null);
         String result=testExecute("GET",null,asset,"*/*",List.of(new AbstractMap.SimpleEntry<>("input","84")));
         JsonNode root=mapper.readTree(result);
         JsonNode whatBinding0=root.get("results").get("bindings").get(0).get("what");
