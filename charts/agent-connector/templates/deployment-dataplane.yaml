@@ -164,6 +164,9 @@ spec:
             ###############
             - name: "CX_AGENT_ASSET_FILE"
               value: {{ join "," $dataplane.agent.default | quote }} 
+            - name: "CX_AGENT_SKILL_CONTRACT_DEFAULT"
+              value: {{ $dataplane.agent.skillcontract | quote }}
+
           {{- end }}
           
           {{- if $dataplane.agent.connectors }}

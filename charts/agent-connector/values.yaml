@@ -519,6 +519,8 @@ dataplanes:
       synchronization: -1
       # -- The list of remote connector IDS URLs to synchronize with
       connectors: []
+      # -- Names the visible contract under which new skills are published (if not otherwise specified)
+      skillcontract: Contract?partner=Skill
 
 # -- Standard settings for persistence, "jdbcUrl", "username" and "password" need to be overridden
 postgresql:

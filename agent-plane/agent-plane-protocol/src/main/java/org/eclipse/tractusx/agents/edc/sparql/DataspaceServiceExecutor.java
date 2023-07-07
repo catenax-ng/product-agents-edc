@@ -346,9 +346,20 @@ public class DataspaceServiceExecutor implements ServiceExecutor, ChainingServic
                 neededVars.add(idVar);
                 TableData table = new TableData(neededVars, new ArrayList<>(resultingBindings.values()));
                 OpTable opTable = OpTable.create(table);
-                Op join = OpSequence.create(opTable, opRemote);
-                Query query = OpAsQuery.asQuery(join);
-                //query.addProjectVars(List.of(idVar));
+
+                Query query;
+
+                // do we have a "sub-select", then we smuggle our binding into it
+                if(opRemote instanceof OpProject) {
+                    OpProject opRemoteProject=(OpProject) opRemote;
+                    Op join = OpSequence.create(opTable,opRemoteProject.getSubOp());
+                    List<Var> resultVars=opRemoteProject.getVars();
+                    resultVars.add(idVar);
+                    query=OpAsQuery.asQuery(new OpProject(join,resultVars));
+                } else {
+                    Op join = OpSequence.create(opTable, opRemote);
+                    query = OpAsQuery.asQuery(join);
+                }
 
                 monitor.debug(String.format("Prepared target %s for query %s", serviceURL, query));
 
