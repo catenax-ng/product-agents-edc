@@ -521,6 +521,8 @@ dataplanes:
       connectors: []
       # -- Names the visible contract under which new skills are published (if not otherwise specified)
       skillcontract: Contract?partner=Skill
+      # -- Sets the maximal batch size when delegating to agents and services
+      maxbatchsize: '9223372036854775807'
 
 # -- Standard settings for persistence, "jdbcUrl", "username" and "password" need to be overridden
 postgresql:
