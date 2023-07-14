@@ -185,9 +185,7 @@ public class SparqlQueryProcessor extends SPARQL_QueryGeneral.SPARQL_QueryProc {
         action.getContext().set(DataspaceServiceExecutor.authKey,authKey);
         action.getContext().set(DataspaceServiceExecutor.authCode,authCode);
         action.getContext().set(ARQConstants.sysOptimizerFactory,optimizerFactory);
-        if(skill!=null) {
-            action.getContext().set(DataspaceServiceExecutor.asset,skill);
-        } else if(graph!=null) {
+        if(graph!=null) {
             action.getContext().set(DataspaceServiceExecutor.asset,graph);
         }
         List<CatenaxWarning> previous=CatenaxWarning.getWarnings(action.getContext());

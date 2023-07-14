@@ -87,14 +87,14 @@ public class AgreementController implements IAgreementController {
      */
     @POST
     public void receiveEdcCallback(EndpointDataReference dataReference) {
-        var agreementId = dataReference.getProperties().get("https://w3id.org/edc/v0.0.1/ns/cid");
+        var agreementId = dataReference.getId();
         monitor.debug(String.format("An endpoint data reference for agreement %s has been posted.", agreementId));
         synchronized (agreementStore) {
-            for (Map.Entry<String, ContractAgreement> agreement : agreementStore.entrySet()) {
-                if (agreement.getValue().getId().equals(agreementId)) {
+            for (Map.Entry<String, TransferProcess> process : processStore.entrySet()) {
+                if (process.getValue().getId().equals(agreementId)) {
                     synchronized (endpointStore) {
-                        monitor.debug(String.format("Agreement %s belongs to asset %s.", agreementId, agreement.getKey()));
-                        endpointStore.put(agreement.getKey(), dataReference);
+                        monitor.debug(String.format("Agreement %s belongs to asset %s.", agreementId, process.getKey()));
+                        endpointStore.put(process.getKey(), dataReference);
                         return;
                     }
                 }
@@ -323,7 +323,7 @@ public class AgreementController implements IAgreementController {
         TransferRequest transferRequest = TransferRequest.Builder.newInstance()
                 .assetId(asset)
                 .contractId(agreement.getId())
-                .connectorId("provider")
+                .connectorId(config.getBusinessPartnerNumber())
                 .connectorAddress(String.format(DataManagement.DSP_PATH, remoteUrl))
                 .protocol("dataspace-protocol-http")
                 .dataDestination(dataDestination)

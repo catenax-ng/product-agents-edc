@@ -55,7 +55,8 @@ public class AgentSourceFactory extends org.eclipse.edc.connector.dataplane.http
      */
     @Override
     public boolean canHandle(DataFlowRequest request) {
-        return AgentProtocol.SPARQL_HTTP.getProtocolId().equals(request.getSourceDataAddress().getType());
+        return AgentProtocol.SPARQL_HTTP.getProtocolId().equals(request.getSourceDataAddress().getType()) ||
+                AgentProtocol.SKILL_HTTP.getProtocolId().equals(request.getSourceDataAddress().getType());
     }
 
     /**
@@ -75,7 +76,6 @@ public class AgentSourceFactory extends org.eclipse.edc.connector.dataplane.http
                 .name(dataAddress.getName())
                 .params(supplier.provideSourceParams(request))
                 .requestFactory(requestFactory)
-                .isTransfer(false)
                 .skillStore(skillStore)
                 .processor(processor)
                 .request(request)

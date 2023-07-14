@@ -9,6 +9,7 @@ package org.eclipse.tractusx.agents.edc.http.transfer;
 import org.eclipse.edc.connector.dataplane.spi.pipeline.StreamResult;
 import org.eclipse.tractusx.agents.edc.AgentExtension;
 import org.eclipse.tractusx.agents.edc.ISkillStore;
+import org.eclipse.tractusx.agents.edc.SkillDistribution;
 import org.eclipse.tractusx.agents.edc.sparql.SparqlQueryProcessor;
 import okhttp3.Response;
 import org.eclipse.edc.connector.dataplane.http.params.HttpRequestFactory;
@@ -42,11 +43,11 @@ import static java.lang.String.format;
  */
 public class AgentSource implements DataSource {
     protected String name;
+
     protected HttpRequestParams params;
     protected String requestId;
     protected HttpRequestFactory requestFactory;
     protected EdcHttpClient httpClient;
-    protected boolean isTransfer;
     protected SparqlQueryProcessor processor;
     protected ISkillStore skillStore;
 
@@ -62,12 +63,7 @@ public class AgentSource implements DataSource {
 
     @Override
     public StreamResult<Stream<Part>> openPartStream() {
-        // check whether this is a cross-plane call or a final agent call
-        if(isTransfer) {
-            return openTransfer();
-        } else {
-            return openMatchmaking();
-        }
+        return openMatchmaking();
     }
 
     /**
@@ -87,7 +83,27 @@ public class AgentSource implements DataSource {
             }
             Matcher skillMatcher= ISkillStore.matchSkill(asset);
             if(skillMatcher.matches()) {
-                skill=asset;
+                var skillText=skillStore.get(asset);
+                if(skillText.isEmpty()) {
+                    return StreamResult.error(format("Skill %s does not exist.", asset));
+                }
+                SkillDistribution distribution=skillStore.getDistribution(asset);
+                String params=request.getProperties().get(AgentSourceHttpParamsDecorator.QUERY_PARAMS);
+                SkillDistribution runMode=SkillDistribution.ALL;
+                if(params.contains("runMode=provider")) {
+                    runMode=SkillDistribution.PROVIDER;
+                } else if(params.contains("runMode=consumer")) {
+                    runMode=SkillDistribution.CONSUMER;
+                }
+                if(runMode==SkillDistribution.CONSUMER) {
+                    if(distribution==SkillDistribution.PROVIDER) {
+                        return StreamResult.error(String.format("Run distribution of skill %s should be consumer, but was set to provider only.", skill));
+                    }
+                    return StreamResult.success(Stream.of(new AgentPart("application/sparql-query",skillText.get().getBytes())));
+                } else if(runMode==SkillDistribution.PROVIDER && distribution==SkillDistribution.CONSUMER) {
+                    return StreamResult.error(String.format("Run distribution of skill %s should be provider, but was set to consumer only.", skill));
+                }
+                skill=skillText.get();
             }
         }
         String authKey=request.getSourceDataAddress().getProperties().getOrDefault("authKey",null);
@@ -102,59 +118,6 @@ public class AgentSource implements DataSource {
             }
             if(response.header("cx_warnings")!=null) {
                 results.add(new AgentPart("application/cx-warnings+json",response.header("cx_warnings").getBytes()));
-            }
-            return StreamResult.success(results.stream());
-        } catch (IOException e) {
-            return StreamResult.error(e.getMessage());
-        }
-    }
-
-    /**
-     * delegates/tunnels a KA-TRANSFER call
-     * @return multipart body containing result and warnings
-     */
-    @NotNull
-    protected StreamResult<Stream<Part>> openTransfer() {
-        try (var response = httpClient.execute(this.requestFactory.toRequest(params))) {
-            if(!response.isSuccessful()) {
-                return StreamResult.error(format("Received code transferring HTTP data for request %s: %s - %s.", requestId, response.code(), response.message()));
-            }
-            List<Part> results=new ArrayList<>();
-            if(response.body()!=null) {
-                try(BufferedInputStream bis = new BufferedInputStream(response.body().byteStream())) {
-                    bis.mark(AGENT_BOUNDARY.length());
-                    byte[] boundary = new byte[AGENT_BOUNDARY.length()];
-                    int all = bis.read(boundary);
-                    bis.reset();
-                    if (all==boundary.length && AGENT_BOUNDARY.equals(new String(boundary))) {
-                        StringBuilder nextPart = null;
-                        String embeddedContentType = null;
-                        try (BufferedReader reader = new BufferedReader(new InputStreamReader(bis))) {
-                            for (String line = reader.readLine(); line != null; line = reader.readLine()) {
-                                if (AGENT_BOUNDARY.equals(line)) {
-                                    if (nextPart != null && embeddedContentType != null) {
-                                        results.add(new AgentPart(embeddedContentType, nextPart.toString().getBytes()));
-                                    }
-                                    nextPart = new StringBuilder();
-                                    String contentLine = reader.readLine();
-                                    if (contentLine != null && contentLine.startsWith("Content-Type: ")) {
-                                        embeddedContentType = contentLine.substring(14);
-                                    } else {
-                                        embeddedContentType = null;
-                                    }
-                                } else if(nextPart!=null) {
-                                    nextPart.append(line);
-                                    nextPart.append("\n");
-                                }
-                            }
-                        }
-                        if (nextPart != null && embeddedContentType != null) {
-                            results.add(new AgentPart(embeddedContentType, nextPart.toString().getBytes()));
-                        }
-                    } else {
-                        results.add(new AgentPart(name, response.body().bytes()));
-                    }
-                }
             }
             return StreamResult.success(results.stream());
         } catch (IOException e) {
@@ -199,11 +162,6 @@ public class AgentSource implements DataSource {
 
         public AgentSource.Builder httpClient(EdcHttpClient httpClient) {
             dataSource.httpClient = httpClient;
-            return this;
-        }
-
-        public AgentSource.Builder isTransfer(boolean isTransfer) {
-            dataSource.isTransfer=isTransfer;
             return this;
         }
 

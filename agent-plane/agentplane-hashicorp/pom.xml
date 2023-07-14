@@ -10,7 +10,7 @@
     <parent>
         <groupId>org.eclipse.tractusx.agents.edc</groupId>
         <artifactId>agent-plane</artifactId>
-        <version>1.9.4-SNAPSHOT</version>
+        <version>1.9.5-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -92,16 +92,28 @@
         <!-- Base -->
         <dependency>
             <groupId>org.eclipse.tractusx.edc</groupId>
-            <artifactId>edc-dataplane-base</artifactId>
+            <artifactId>edc-dataplane-hashicorp-vault</artifactId>
             <version>${tx.edc.version}</version>
             <exclusions>
                 <exclusion>
-                    <groupId>org.eclipse.edc</groupId>
-                    <artifactId>data-plane-aws-s3</artifactId>
+                    <groupId>org.jetbrains</groupId>
+                    <artifactId>annotations</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.yaml</groupId>
                     <artifactId>snakeyaml</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>dev.failsafe</groupId>
+                    <artifactId>failsafe</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpclient</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpcore</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -119,13 +131,6 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Vault -->
-        <dependency>
-            <groupId>org.eclipse.tractusx.edc</groupId>
-            <artifactId>hashicorp-vault</artifactId>
-            <version>${tx.edc.version}</version>
-        </dependency>
-        
         <!-- Test -->
         <dependency>
          <groupId>org.junit.jupiter</groupId>
@@ -136,6 +141,12 @@
          <groupId>org.mockito</groupId>
          <artifactId>mockito-core</artifactId>
          <scope>test</scope>
+         <exclusions>
+             <exclusion>
+                 <groupId>net.bytebuddy</groupId>
+                 <artifactId>byte-buddy</artifactId>
+             </exclusion>
+         </exclusions>
        </dependency>
 
     </dependencies>

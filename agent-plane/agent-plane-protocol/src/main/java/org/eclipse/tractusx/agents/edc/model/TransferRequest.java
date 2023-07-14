@@ -31,6 +31,7 @@ public class TransferRequest {
 
     private String protocol;
     private String connectorId;
+    private String providerId;
     private String assetId;
 
     private List<CallbackAddress> callbackAddresses = new ArrayList<>();
@@ -69,6 +70,10 @@ public class TransferRequest {
     }
 
     public String getConnectorId() {
+        return connectorId;
+    }
+
+    public String getProviderId() {
         return connectorId;
     }
 
@@ -135,6 +140,11 @@ public class TransferRequest {
 
         public Builder connectorId(String connectorId) {
             request.connectorId = connectorId;
+            return this;
+        }
+
+        public Builder providerId(String providerId) {
+            request.providerId = providerId;
             return this;
         }
 

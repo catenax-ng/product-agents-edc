@@ -105,11 +105,10 @@ public class DataManagement {
             "    },\n" +
             "    \"assetId\": \"%1$s\",\n" +
             "    \"connectorAddress\": \"%2$s\",\n" +
+            "    \"connectorId\": \"%5$s\",\n" +
             "    \"contractId\": \"%3$s\",\n" +
             "    \"dataDestination\": {\n" +
-            "        \"properties\": {\n" +
-            "            \"type\": \"HttpProxy\"\n" +
-            "        }\n" +
+            "        \"type\": \"HttpProxy\"\n" +
             "    },\n" +
             "    \"managedResources\": false,\n" +
             "    \"privateProperties\": {\n" +
@@ -192,14 +191,14 @@ public class DataManagement {
     }
 
     /**
-     * Access the catalogue
+     * Access the (provider control plane) catalogue
      * @param spec query specification
      * @return catalog object
      * @throws IOException in case something went wrong
      */
     public List<Asset> listAssets(QuerySpec spec) throws IOException {
 
-        var url = String.format(ASSET_CALL,config.getControlPlaneManagementUrl());
+        var url = String.format(ASSET_CALL,config.getControlPlaneManagementProviderUrl());
         var assetObject=(ObjectNode) objectMapper.readTree(objectMapper.writeValueAsString(spec));
         assetObject.put("@context",objectMapper.createObjectNode());
         var assetSpec = objectMapper.writeValueAsString(assetObject);
@@ -237,7 +236,7 @@ public class DataManagement {
      */
     public IdResponse createOrUpdateSkill(String assetId, String name, String description, String version, String contract, String ontologies, String distributionMode, boolean isFederated, String query) throws IOException {
 
-        var url = String.format(ASSET_CREATE_CALL,config.getControlPlaneManagementUrl());
+        var url = String.format(ASSET_CREATE_CALL,config.getControlPlaneManagementProviderUrl());
         if(contract!=null) {
             contract=String.format("            \"cx-common:publishedUnderContract\": \"%1$s\",\n",contract);
         } else {
@@ -388,7 +387,8 @@ public class DataManagement {
                 transferRequest.getAssetId(),
                 transferRequest.getConnectorAddress(),
                 transferRequest.getContractId(),
-                transferRequest.getCallbackAddresses().get(0).getUri());
+                transferRequest.getCallbackAddresses().get(0).getUri(),
+                transferRequest.getConnectorAddress());
 
         var requestBody = RequestBody.create(transferSpec,MediaType.parse("application/json"));
 

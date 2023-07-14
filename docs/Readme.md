@@ -1,8 +1,21 @@
-# Tractus-X Knowledge Agents EDC Extensions
+# Tractus-X Knowledge Agents EDC Extensions (KA-EDC)
 
-The Tractus-X Knowledge Agents EDC Extensions repository creates runnable applications out of EDC extensions from
+The Tractus-X Knowledge Agents EDC Extensions (KA-EDC) repository creates runnable applications out of EDC extensions from
 the [Eclipse DataSpace Connector](https://github.com/eclipse-edc/Connector) and [Tractus-X EDC](https://github.com/eclipse-tractusx/tractusx-edc) 
 repositories.
+
+## How it works
+
+![KA-Enabled EDC Setup](edc_http_0.3.3.drawio.svg)
+
+KA-EDC works as a kind of tunnel/dispatched for federated Semantic Web queries:
+- An Agent (a REST endpoint controller) is headed towards a consuming parties intranet applications and speaks a standard query protocol (here: SPARQL in a federated profile called KA-MATCH).
+- The Agent talks to the (standard) EDC Control Plane to negotiate/initiate an HttpProxy transfer to a target asset (Graph). It also overtakes the role of the application to manage any resulting Endpoint Data References (EDR).
+- On the data provider side, any backend data sources (speaking a simpler, non-federated SPARQL profile called KA-BIND) will be registered using a dedicated asset type (cx-common:Protocol?w3c:http:SPARQL).
+- When a graph asset is requested by the Agent, the Control Plane will produce an EDR to the KA-EDC Agent plane which has been registered to handle the corresponding asset types.
+- Using the EDR's, the Agent will tunnel the SPARQL request (using the KA-TRANSFER profile) through the Agent Plane(s) where it will not directly hit its final destination.
+- Instead, the consumer-side Agent engine will become active to validate, perform preprocessing and finally delegate the simpler KA-BIND calls to the actual endpoints. 
+- The scheme is also used to store special query assets (called Skills using the asset type cx-common:Protocol?w3c:http:SKILL) which operate as a kind of stored procedures.
 
 When running an EDC connector from the Tractus-X Knowledge Agents EDC Extensions repository there are three setups to choose from. They only vary by
 using different extensions for
@@ -15,31 +28,106 @@ using different extensions for
 
 The three supported setups are.
 
-- Setup 1: Pure in Memory & Azure Vault **Not intended for production use!**
-    - [Agent-Enabled Control Plane](../control-plane/controlplane-memory/README.md)
-        - [Control Plane](https://github.com/eclipse-tractusx/edc-controlplane/edc-runtime-memory/README.md)
+- Setup 1: Pure in Memory & Hashicorp Vault **Not intended for production use!**
+  - [Control Plane](https://github.com/eclipse-tractusx/edc-controlplane/edc-controlplane-memory-hashicorp-vault/README.md)
+  - [Agent Plane](../agent-plane/agentplane-hashicorp/README.md)
+      - [Data Plane](https://github.com/eclipse-tractusx/edc-dataplane/edc-dataplane-hashicorp-vault/README.md)
+      - [JWT Auth Extension](../common/jwt-auth/README.md)
+- Setup 2: PostgreSQL & Azure Vault 
+    - [Control Plane](https://github.com/eclipse-tractusx/edc-controlplane/edc-controlplane-postgresql-azure-vault/README.md)
     - [Agent Plane](../agent-plane/agentplane-azure-vault/README.md)
         - [Data Plane](https://github.com/eclipse-tractusx/edc-dataplane/edc-dataplane-azure-vault/README.md)
         - [JWT Auth Extension](../common/jwt-auth/README.md)
-- Setup 2: Pure in Memory & Hashicorp Vault **Not intended for production use!**
-    - [Agent-Enabled Control Plane](../control-plane/controlplane-memory-hashicorp/README.md)
-        - [Control Plane](https://github.com/eclipse-tractusx/edc-controlplane/edc-runtime-memory/README.md)
-    - [Agent Plane](../agent-plane/agentplane-hashicorp/README.md)
-        - [Data Plane](https://github.com/eclipse-tractusx/edc-dataplane/edc-dataplane-hashicorp-vault/README.md)
-        - [JWT Auth Extension](../common/jwt-auth/README.md)
 - Setup 3: PostgreSQL & HashiCorp Vault
-    - [Agent-Enabled Control Plane](../control-plane/controlplane-postgresql-hashicorp/README.md)
-        - [Control Plane](https://github.com/eclipse-tractusx/dc-controlplane/edc-controlplane-postgresql-hashicorp-vault/README.md)
+    - [Control Plane](https://github.com/eclipse-tractusx/edc-controlplane/README.md)
     - [Agent Plane](../agent-plane/agentplane-hashicorp/README.md)
         - [Data Plane](https://github.com/eclipse-tractusx/edc-dataplane/edc-dataplane-hashicorp-vault/README.md)
         - [JWT Auth Extension](../common/jwt-auth/README.md)
+
+## Helm Deployment
+
+To install a KA-enabled EDC, add the following lines to the dependency section of your Charts.yaml
+
+```yaml
+dependencies:
+  
+    - name: agent-connector
+      repository: https://catenax-ng.github.io/product-knowledge/infrastructure
+      version: 1.9.5-SNAPSHOT
+      alias: my-connector
+```
+
+The configuration in your values.yaml follows the [Tractux-X EDC Helm Chart](https://github.com/eclipse-tractusx/tractusx-edc/blob/main/charts/tractusx-connector/README.md), but provides for several data planes with different source type profiles including special settings for an Agent Plane.
+The agent-connector chart is documented [here](charts/agent-connector/README.md).
+
+```yaml
+my-connector:
+  partnerid: BPNL0000000DUMMY
+  nameOverride: my-connector
+  fullnameOverride: "my-connector"
+  daps:
+    url: *dapsUrl 
+    clientId: *dapsClientId
+    paths: 
+      jwks: /.well-known/jwks.json
+  vault: *vaultSettings
+  controlplane:
+    internationalDataSpaces:
+      id: MYTXDC
+      description: Tractus-X Agent-Enabled Eclipse IDS Data Space Connector
+      title: "MY TX DC"
+      catalogId: MYTXDC-Catalog
+    ## Ingress declaration to expose the network service.
+    ingresses:
+      - enabled: true
+        # -- The hostname to be used to precisely map incoming traffic onto the underlying network service
+        hostname: "myconnector.public.ip"
+        # -- EDC endpoints exposed by this ingress resource
+        endpoints:
+          - protocol
+          - management
+          - control
+        # -- Enables TLS on the ingress resource
+        tls:
+          enabled: true
+  dataplanes:
+    dataplane:
+      configs: 
+        dataspace.ttl: |-
+          ################################################
+          # Agent Bootstrap Graph
+          ################################################
+          @prefix cx-common: <https://w3id.org/catenax/ontology/common#> .
+          @prefix bpnl: <bpn:legal:> .
+          @prefix : <GraphAsset?local=Dataspace> .
+          @base <GraphAsset?local=Dataspace> .
+
+          bpnl:BPNL0000000DUMMY cx-common:hasConnector <edcs://myconnector.public.ip>.
+          bpnl:BPNL0000000DUMM2 cx-common:hasConnector <edcs://otherconnector.public.ip>.
+      agent:
+        maxbatchsize: 8
+        synchronization: 60000
+        connectors: 
+          - https://otherconnector.public.ip
+      ## Ingress declaration to expose the network service.
+      ingresses:
+        - enabled: true
+          hostname: "myagent.public.ip"
+          # -- EDC endpoints exposed by this ingress resource
+          endpoints:
+            - public
+            - default
+            - control
+            - callback
+          # -- Enables TLS on the ingress resource
+          tls:
+            enabled: true
+```
 
 ## Recommended Documentation
 
 ### This Repository
 
-- [Update EDC Version from 0.0.x - 0.1.x](migration/Version_0.0.x_0.1.x.md)
-- [Application: Agent-Enabled Control Plane](../control-plane)
 - [Application: Agent Plane](../agent-plane)
 - [Extension: JWT Authentication](../common/auth-jwt/README.md)
 

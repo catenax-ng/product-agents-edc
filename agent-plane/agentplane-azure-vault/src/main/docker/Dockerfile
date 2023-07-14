@@ -1,12 +1,8 @@
-##
-##  Docker Image of the EDC Agent Dataplane
-##  See copyright notice in the top folder
-##  See authors file in the top folder
-##  See license file in the top folder
-##
 #
-#  Copyright (c) 2022 Mercedes-Benz Tech Innovation GmbH
-#  Copyright (c) 2021,2022 Contributors to the Eclipse Foundation
+#  Copyright (c) 2023 T-Systems International GmbH
+#  Copyright (c) 2023 ZF Friedrichshafen AG
+#  Copyright (c) 2022,2023 Mercedes-Benz Tech Innovation GmbH
+#  Copyright (c) 2021,2023 Contributors to the Eclipse Foundation
 #
 #  See the NOTICE file(s) distributed with this work for additional
 #  information regarding copyright ownership.
@@ -23,26 +19,22 @@
 #
 #  SPDX-License-Identifier: Apache-2.0
 #
-FROM alpine:3.18.2 as otel
+FROM alpine:3.18.2 AS otel
 
 ENV OTEL_AGENT_LOCATION "https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v1.12.1/opentelemetry-javaagent.jar"
 
 HEALTHCHECK NONE
 
-RUN wget ${OTEL_AGENT_LOCATION} -O /tmp/opentelemetry-javaagent.jar
+RUN apk update && apk add curl=8.1.2-r0 --no-cache
+RUN curl -L --proto "=https" -sSf ${OTEL_AGENT_LOCATION} --output /tmp/opentelemetry-javaagent.jar
 
-FROM alpine:3.18.2
-
+FROM eclipse-temurin:17.0.6_10-jre-alpine
 ARG JAR
 ARG LIB
 
 ARG APP_USER=docker
 ARG APP_UID=10100
 ARG APP_GID=30000
-
-RUN apk update && \
-    apk add openjdk17-jre-headless=17.0.7_p7-r1 --no-cache && \
-    rm -rf /var/cache/apk/*
 
 RUN addgroup --gid "$APP_GID" --system "$APP_USER"
 
@@ -71,6 +63,6 @@ CMD ["java", \
      "-Dotel.javaagent.configuration-file=/app/opentelemetry.properties", \
      "-Dotel.metrics.exporter=prometheus", \
      "-Dotel.exporter.prometheus.port=9090", \
-     "-Djava.security.edg=file:/dev/.urandom", \
+     "-Djava.security.egd=file:/dev/urandom", \
      "-jar", \
      "edc-dataplane.jar"]

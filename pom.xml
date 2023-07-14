@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.eclipse.tractusx.agents</groupId>
     <artifactId>edc</artifactId>
-    <version>1.9.4-SNAPSHOT</version>
+    <version>1.9.5-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Tractus-X Knowledge Agents Dataspace EDC Extensions</name>
     <description>EDC-Related Artifacts for Federated Procedure Calls</description>
@@ -15,9 +15,9 @@
 
         <junit.version>5.9.3</junit.version>
         <mockito.version>5.4.0</mockito.version>
-        <tx.edc.version>0.4.1</tx.edc.version>
-        <edc.version>0.1.0</edc.version>
-        <failsafe.version>3.3.1</failsafe.version>
+        <tx.edc.version>0.5.0-rc5</tx.edc.version>
+        <edc.version>0.1.3</edc.version>
+        <failsafe.version>3.3.2</failsafe.version>
         <okhttp.version>4.11.0</okhttp.version>
         <slf4j.version>2.0.7</slf4j.version>
         <jakarta.ws.rs-api.version>3.1.0</jakarta.ws.rs-api.version>

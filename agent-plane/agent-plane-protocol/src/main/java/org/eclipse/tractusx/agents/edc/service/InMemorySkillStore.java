@@ -39,6 +39,11 @@ public class InMemorySkillStore implements ISkillStore {
     }
 
     @Override
+    public SkillDistribution getDistribution(String key) {
+        return SkillDistribution.ALL;
+    }
+
+    @Override
     public Optional<String> get(String key) {
         if(!skills.containsKey(key)) {
             return Optional.empty();

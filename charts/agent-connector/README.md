@@ -1,6 +1,6 @@
 # agent-connector
 
-![Version: 1.9.4-SNAPSHOT](https://img.shields.io/badge/Version-1.9.4--SNAPSHOT-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.9.4-SNAPSHOT](https://img.shields.io/badge/AppVersion-1.9.4--SNAPSHOT-informational?style=flat-square)
+![Version: 1.9.5-SNAPSHOT](https://img.shields.io/badge/Version-1.9.5--SNAPSHOT-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.9.5-SNAPSHOT](https://img.shields.io/badge/AppVersion-1.9.5--SNAPSHOT-informational?style=flat-square)
 
 A Helm chart for Tractus-X Agent-Enabled Eclipse Data Space Connector
 
@@ -10,7 +10,7 @@ A Helm chart for Tractus-X Agent-Enabled Eclipse Data Space Connector
 
 ```shell
 helm repo add tractusx-edc https://eclipse-tractusx.github.io/charts/dev
-helm install my-release tractusx-edc/tractusx-connector --version 1.9.4-SNAPSHOT
+helm install my-release tractusx-edc/tractusx-connector --version 1.9.5-SNAPSHOT
 ```
 
 ## Source Code
@@ -129,10 +129,10 @@ helm install my-release tractusx-edc/tractusx-connector --version 1.9.4-SNAPSHOT
 | daps.paths.token | string | `"/token"` |  |
 | daps.url | string | `""` |  |
 | dataplanes.dataplane.affinity | object | `{}` |  |
-| dataplanes.dataplane.agent | object | `{"connectors":[],"default":["dataspace.ttl","https://raw.githubusercontent.com/catenax-ng/product-ontology/main/ontology.ttl"],"maxbatchsize":9223372036854775807,"skillcontract":"Contract?partner=Skill","synchronization":-1}` | Agent-Specific Settings |
+| dataplanes.dataplane.agent | object | `{"connectors":[],"default":["dataspace.ttl","https://raw.githubusercontent.com/catenax-ng/product-ontology/main/ontology.ttl"],"maxbatchsize":"9223372036854775807","skillcontract":"Contract?partner=Skill","synchronization":-1}` | Agent-Specific Settings |
 | dataplanes.dataplane.agent.connectors | list | `[]` | The list of remote connector IDS URLs to synchronize with |
 | dataplanes.dataplane.agent.default | list | `["dataspace.ttl","https://raw.githubusercontent.com/catenax-ng/product-ontology/main/ontology.ttl"]` | A list of local or remote graph descriptions to build the default meta-graph/federated data catalogue |
-| dataplanes.dataplane.agent.maxbatchsize | int | `9223372036854775807` | Sets the maximal batch size when delegating to agents and services |
+| dataplanes.dataplane.agent.maxbatchsize | string | `"9223372036854775807"` | Sets the maximal batch size when delegating to agents and services |
 | dataplanes.dataplane.agent.skillcontract | string | `"Contract?partner=Skill"` | Names the visible contract under which new skills are published (if not otherwise specified) |
 | dataplanes.dataplane.agent.synchronization | int | `-1` | The synchronization interval in ms to update the federated data catalogue |
 | dataplanes.dataplane.autoscaling.enabled | bool | `false` | Enables [horizontal pod autoscaling](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) |
