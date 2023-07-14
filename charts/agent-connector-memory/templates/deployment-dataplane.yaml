@@ -188,20 +188,6 @@ spec:
               value: {{ $dataplane.aws.accessKeyId | quote }}
             {{- end }}
 
-            ###############
-            ## EDR CACHE ##
-            ###############
-
-            # see extension https://github.com/eclipse-tractusx/tractusx-edc/tree/main/edc-extensions/edr-cache-sql
-            - name: "EDC_DATASOURCE_EDR_NAME"
-              value: "edr"
-            - name: "EDC_DATASOURCE_EDR_USER"
-              value: {{ $root.Values.postgresql.auth.username | required ".Values.postgresql.auth.username is required" | quote }}
-            - name: "EDC_DATASOURCE_EDR_PASSWORD"
-              value: {{ $root.Values.postgresql.auth.password | required ".Values.postgresql.auth.password is required" | quote }}
-            - name: "EDC_DATASOURCE_EDR_URL"
-              value: {{ tpl $root.Values.postgresql.jdbcUrl . | quote }}
-
             ###########
             ## VAULT ##
             ###########

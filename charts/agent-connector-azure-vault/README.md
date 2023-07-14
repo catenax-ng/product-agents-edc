@@ -1,11 +1,11 @@
-# agent-connector
+# agent-connector-azure-vault
 
 ![Version: 1.9.5-SNAPSHOT](https://img.shields.io/badge/Version-1.9.5--SNAPSHOT-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.9.5-SNAPSHOT](https://img.shields.io/badge/AppVersion-1.9.5--SNAPSHOT-informational?style=flat-square)
 
 A Helm chart for an Agent-Enabled Tractus-X Eclipse Data Space Connector. The connector deployment consists of two runtime consists of a
-Control Plane and a Data Plane. Note that _no_ external dependencies such as a PostgreSQL database and HashiCorp Vault are included.
+Control Plane and a Data Plane. Note that _no_ external dependencies such as a PostgreSQL database and Azure KeyVault are included.
 
-This chart is intended for use with an _existing_ PostgreSQL database and an _existing_ HashiCorp Vault.
+This chart is intended for use with an _existing_ PostgreSQL database and an _existing_ Azure KeyVault.
 
 **Homepage:** <https://github.com/catenax-ng/product-agents-edc/tree/main/charts/agent-connector>
 
@@ -22,8 +22,11 @@ This chart is intended for use with an _existing_ PostgreSQL database and an _ex
 
 ### Preparatory work
 
-- store your KeyCloak client secret in the HashiCorp vault. The exact procedure will depend on your deployment of HashiCorp Vault and
-  is out of scope of this document. But by default, Tractus-X EDC expects to find the secret under `secret/client-secret`.
+- store your KeyCloak client secret in the Azure KeyVault. The exact procedure is as follows:
+ ```bash
+ az keyvault secret set --vault-name <YOUR_VAULT_NAME> --name client-secret --value "$YOUR_CLIENT_SECRET"
+ ```
+ By default, Tractus-X EDC expects to find the secret under `client-secret`.
 
 ### Configure the chart
 
@@ -48,7 +51,12 @@ Combined, run this shell command to start the in-memory Tractus-X EDC runtime:
 
 ```shell
 helm repo add product-knowledge https://catenax-ng.github.io/product-knowledge/infrastructure
-helm install my-release product-knowledge/agent-connector --version 1.9.5-SNAPSHOT
+helm install my-release product-knowledge/agent-connector-azure-vault --version 1.9.5-SNAPSHOT\
+     -f <path-to>/tractusx-connector-azure-vault-test.yaml \
+     --set vault.azure.name=$AZURE_VAULT_NAME \
+     --set vault.azure.client=$AZURE_CLIENT_ID \
+     --set vault.azure.secret=$AZURE_CLIENT_SECRET \
+     --set vault.azure.tenant=$AZURE_TENANT_ID
 ```
 
 ## Source Code
@@ -60,7 +68,6 @@ helm install my-release product-knowledge/agent-connector --version 1.9.5-SNAPSH
 | Repository | Name | Version |
 |------------|------|---------|
 | https://charts.bitnami.com/bitnami | postgresql(postgresql) | 12.1.6 |
-| https://helm.releases.hashicorp.com | vault(vault) | 0.20.0 |
 
 ## Values
 
@@ -255,14 +262,8 @@ helm install my-release product-knowledge/agent-connector --version 1.9.5-SNAPSH
 | dataplanes.dataplane.volumes | list | `[]` | [volume](https://kubernetes.io/docs/concepts/storage/volumes/) directories |
 | fullnameOverride | string | `""` |  |
 | imagePullSecrets | list | `[]` | Existing image pull secret to use to [obtain the container image from private registries](https://kubernetes.io/docs/concepts/containers/images/#using-a-private-registry) |
-| install.postgresql | bool | `false` |  |
-| install.vault | bool | `false` |  |
+| install.postgresql | bool | `true` |  |
 | nameOverride | string | `""` |  |
-| networkPolicy.controlplane | object | `{"from":[{"namespaceSelector":{}}]}` | Configuration of the controlplane component |
-| networkPolicy.controlplane.from | list | `[{"namespaceSelector":{}}]` | Specify from rule network policy for cp (defaults to all namespaces) |
-| networkPolicy.dataplane | object | `{"from":[{"namespaceSelector":{}}]}` | Configuration of the dataplane component |
-| networkPolicy.dataplane.from | list | `[{"namespaceSelector":{}}]` | Specify from rule network policy for dp (defaults to all namespaces) |
-| networkPolicy.enabled | bool | `false` | If `true` network policy will be created to restrict access to control- and dataplane |
 | participant.id | string | `""` | BPN Number |
 | postgresql | object | `{"auth":{"database":"edc","password":"password","username":"user"},"jdbcUrl":"jdbc:postgresql://{{ .Release.Name }}-postgresql:5432/edc","primary":{"persistence":{"enabled":false}},"readReplicas":{"persistence":{"enabled":false}}}` | Standard settings for persistence, "jdbcUrl", "username" and "password" need to be overridden |
 | serviceAccount.annotations | object | `{}` |  |
@@ -271,20 +272,14 @@ helm install my-release product-knowledge/agent-connector --version 1.9.5-SNAPSH
 | serviceAccount.name | string | `""` |  |
 | tests | object | `{"hookDeletePolicy":"before-hook-creation,hook-succeeded"}` | Configurations for Helm tests |
 | tests.hookDeletePolicy | string | `"before-hook-creation,hook-succeeded"` | Configure the hook-delete-policy for Helm tests |
-| vault.hashicorp.healthCheck.enabled | bool | `true` |  |
-| vault.hashicorp.healthCheck.standbyOk | bool | `true` |  |
-| vault.hashicorp.paths.health | string | `"/v1/sys/health"` |  |
-| vault.hashicorp.paths.secret | string | `"/v1/secret"` |  |
-| vault.hashicorp.timeout | int | `30` |  |
-| vault.hashicorp.token | string | `""` |  |
-| vault.hashicorp.url | string | `"http://{{ .Release.Name }}-vault:8200"` |  |
-| vault.injector.enabled | bool | `false` |  |
+| vault.azure.certificate | string | `nil` |  |
+| vault.azure.client | string | `""` |  |
+| vault.azure.name | string | `""` |  |
+| vault.azure.secret | string | `nil` |  |
+| vault.azure.tenant | string | `""` |  |
 | vault.secretNames.transferProxyTokenEncryptionAesKey | string | `"transfer-proxy-token-encryption-aes-key"` |  |
 | vault.secretNames.transferProxyTokenSignerPrivateKey | string | `nil` |  |
 | vault.secretNames.transferProxyTokenSignerPublicKey | string | `nil` |  |
-| vault.server.dev.devRootToken | string | `"root"` |  |
-| vault.server.dev.enabled | bool | `true` |  |
-| vault.server.postStart | string | `nil` |  |
 
 ----------------------------------------------
 Autogenerated from chart metadata using [helm-docs v1.11.0](https://github.com/norwoodj/helm-docs/releases/v1.11.0)

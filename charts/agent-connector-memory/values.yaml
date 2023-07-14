@@ -28,7 +28,6 @@
 # Declare variables to be passed into your templates.
 
 install:
-  postgresql: false
   vault: false
 fullnameOverride: ""
 nameOverride: ""
@@ -521,18 +520,6 @@ dataplanes:
       maxbatchsize: '9223372036854775807'
 
 # -- Standard settings for persistence, "jdbcUrl", "username" and "password" need to be overridden
-postgresql:
-  jdbcUrl: "jdbc:postgresql://{{ .Release.Name }}-postgresql:5432/edc"
-  primary:
-    persistence:
-      enabled: false
-  readReplicas:
-    persistence:
-      enabled: false
-  auth:
-    database: "edc"
-    username: "user"
-    password: "password"
 vault:
   injector:
     enabled: false

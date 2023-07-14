@@ -1,11 +1,11 @@
-# agent-connector
+# agent-connector-memory
 
 ![Version: 1.9.5-SNAPSHOT](https://img.shields.io/badge/Version-1.9.5--SNAPSHOT-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.9.5-SNAPSHOT](https://img.shields.io/badge/AppVersion-1.9.5--SNAPSHOT-informational?style=flat-square)
 
 A Helm chart for an Agent-Enabled Tractus-X Eclipse Data Space Connector. The connector deployment consists of two runtime consists of a
-Control Plane and a Data Plane. Note that _no_ external dependencies such as a PostgreSQL database and HashiCorp Vault are included.
+Control Plane and a Data Plane. Note that _no_ external dependencies such as HashiCorp Vault are included.
 
-This chart is intended for use with an _existing_ PostgreSQL database and an _existing_ HashiCorp Vault.
+This chart is intended for use with an _existing_ HashiCorp Vault.
 
 **Homepage:** <https://github.com/catenax-ng/product-agents-edc/tree/main/charts/agent-connector>
 
@@ -59,7 +59,6 @@ helm install my-release product-knowledge/agent-connector --version 1.9.5-SNAPSH
 
 | Repository | Name | Version |
 |------------|------|---------|
-| https://charts.bitnami.com/bitnami | postgresql(postgresql) | 12.1.6 |
 | https://helm.releases.hashicorp.com | vault(vault) | 0.20.0 |
 
 ## Values
@@ -255,7 +254,6 @@ helm install my-release product-knowledge/agent-connector --version 1.9.5-SNAPSH
 | dataplanes.dataplane.volumes | list | `[]` | [volume](https://kubernetes.io/docs/concepts/storage/volumes/) directories |
 | fullnameOverride | string | `""` |  |
 | imagePullSecrets | list | `[]` | Existing image pull secret to use to [obtain the container image from private registries](https://kubernetes.io/docs/concepts/containers/images/#using-a-private-registry) |
-| install.postgresql | bool | `false` |  |
 | install.vault | bool | `false` |  |
 | nameOverride | string | `""` |  |
 | networkPolicy.controlplane | object | `{"from":[{"namespaceSelector":{}}]}` | Configuration of the controlplane component |
@@ -264,27 +262,13 @@ helm install my-release product-knowledge/agent-connector --version 1.9.5-SNAPSH
 | networkPolicy.dataplane.from | list | `[{"namespaceSelector":{}}]` | Specify from rule network policy for dp (defaults to all namespaces) |
 | networkPolicy.enabled | bool | `false` | If `true` network policy will be created to restrict access to control- and dataplane |
 | participant.id | string | `""` | BPN Number |
-| postgresql | object | `{"auth":{"database":"edc","password":"password","username":"user"},"jdbcUrl":"jdbc:postgresql://{{ .Release.Name }}-postgresql:5432/edc","primary":{"persistence":{"enabled":false}},"readReplicas":{"persistence":{"enabled":false}}}` | Standard settings for persistence, "jdbcUrl", "username" and "password" need to be overridden |
 | serviceAccount.annotations | object | `{}` |  |
 | serviceAccount.create | bool | `true` |  |
 | serviceAccount.imagePullSecrets | list | `[]` | Existing image pull secret bound to the service account to use to [obtain the container image from private registries](https://kubernetes.io/docs/concepts/containers/images/#using-a-private-registry) |
 | serviceAccount.name | string | `""` |  |
 | tests | object | `{"hookDeletePolicy":"before-hook-creation,hook-succeeded"}` | Configurations for Helm tests |
 | tests.hookDeletePolicy | string | `"before-hook-creation,hook-succeeded"` | Configure the hook-delete-policy for Helm tests |
-| vault.hashicorp.healthCheck.enabled | bool | `true` |  |
-| vault.hashicorp.healthCheck.standbyOk | bool | `true` |  |
-| vault.hashicorp.paths.health | string | `"/v1/sys/health"` |  |
-| vault.hashicorp.paths.secret | string | `"/v1/secret"` |  |
-| vault.hashicorp.timeout | int | `30` |  |
-| vault.hashicorp.token | string | `""` |  |
-| vault.hashicorp.url | string | `"http://{{ .Release.Name }}-vault:8200"` |  |
-| vault.injector.enabled | bool | `false` |  |
-| vault.secretNames.transferProxyTokenEncryptionAesKey | string | `"transfer-proxy-token-encryption-aes-key"` |  |
-| vault.secretNames.transferProxyTokenSignerPrivateKey | string | `nil` |  |
-| vault.secretNames.transferProxyTokenSignerPublicKey | string | `nil` |  |
-| vault.server.dev.devRootToken | string | `"root"` |  |
-| vault.server.dev.enabled | bool | `true` |  |
-| vault.server.postStart | string | `nil` |  |
+| vault | object | `{"hashicorp":{"healthCheck":{"enabled":true,"standbyOk":true},"paths":{"health":"/v1/sys/health","secret":"/v1/secret"},"timeout":30,"token":"","url":"http://{{ .Release.Name }}-vault:8200"},"injector":{"enabled":false},"secretNames":{"transferProxyTokenEncryptionAesKey":"transfer-proxy-token-encryption-aes-key","transferProxyTokenSignerPrivateKey":null,"transferProxyTokenSignerPublicKey":null},"server":{"dev":{"devRootToken":"root","enabled":true},"postStart":null}}` | Standard settings for persistence, "jdbcUrl", "username" and "password" need to be overridden |
 
 ----------------------------------------------
 Autogenerated from chart metadata using [helm-docs v1.11.0](https://github.com/norwoodj/helm-docs/releases/v1.11.0)

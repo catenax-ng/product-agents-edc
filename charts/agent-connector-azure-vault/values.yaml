@@ -28,10 +28,10 @@
 # Declare variables to be passed into your templates.
 
 install:
-  postgresql: false
-  vault: false
+  postgresql: true
 fullnameOverride: ""
 nameOverride: ""
+
 # -- Existing image pull secret to use to [obtain the container image from private registries](https://kubernetes.io/docs/concepts/containers/images/#using-a-private-registry)
 imagePullSecrets: []
 # -- To add some custom labels
@@ -250,16 +250,16 @@ controlplane:
   volumes: []
   # -- [resource management](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) for the container
   resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
   replicaCount: 1
   autoscaling:
     # -- Enables [horizontal pod autoscaling](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/)
@@ -284,12 +284,14 @@ controlplane:
     java.util.logging.ConsoleHandler.formatter=java.util.logging.SimpleFormatter
     java.util.logging.ConsoleHandler.level=ALL
     java.util.logging.SimpleFormatter.format=[%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS] [%4$-7s] %5$s%6$s%n
+
   # [node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) to constrain pods to nodes
   nodeSelector: {}
   # [tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) to configure preferred nodes
   tolerations: []
   # [affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) to configure which nodes the pods can be scheduled on
   affinity: {}
+
   url:
     # -- Explicitly declared url for reaching the dsp api (e.g. if ingresses not used)
     protocol: ""
@@ -534,44 +536,20 @@ postgresql:
     username: "user"
     password: "password"
 vault:
-  injector:
-    enabled: false
-  server:
-    dev:
-      enabled: true
-      devRootToken: "root"
-    postStart:    # must be set externally!
-  hashicorp:
-    url: "http://{{ .Release.Name }}-vault:8200"
-    token: ""
-    timeout: 30
-    healthCheck:
-      enabled: true
-      standbyOk: true
-    paths:
-      secret: /v1/secret
-      health: /v1/sys/health
+  azure:
+    name: ""
+    client: ""
+    tenant: ""
+    secret:
+    certificate:
+
   secretNames:
     transferProxyTokenSignerPrivateKey:
     transferProxyTokenSignerPublicKey:
     transferProxyTokenEncryptionAesKey: transfer-proxy-token-encryption-aes-key
+
 backendService:
   httpProxyTokenReceiverUrl: ""
-
-networkPolicy:
-  # -- If `true` network policy will be created to restrict access to control- and dataplane
-  enabled: false
-  # -- Configuration of the controlplane component
-  controlplane:
-    # -- Specify from rule network policy for cp (defaults to all namespaces)
-    from:
-    - namespaceSelector: {}
-  # -- Configuration of the dataplane component
-  dataplane:
-    # -- Specify from rule network policy for dp (defaults to all namespaces)
-    from:
-    - namespaceSelector: {}
-
 serviceAccount:
   # Specifies whether a service account should be created
   create: true
@@ -582,7 +560,6 @@ serviceAccount:
   name: ""
   # -- Existing image pull secret bound to the service account to use to [obtain the container image from private registries](https://kubernetes.io/docs/concepts/containers/images/#using-a-private-registry)
   imagePullSecrets: []
-
 # -- Configurations for Helm tests
 tests:
   # -- Configure the hook-delete-policy for Helm tests

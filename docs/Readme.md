@@ -46,7 +46,29 @@ The three supported setups are.
 
 ## Helm Deployment
 
-To install a KA-enabled EDC, add the following lines to the dependency section of your Charts.yaml
+To install a KA-enabled EDC (Setup 1 - Memory & Hashicorp Vault), add the following lines to the dependency section of your Charts.yaml
+
+```yaml
+dependencies:
+  
+    - name: agent-connector-memory
+      repository: https://catenax-ng.github.io/product-knowledge/infrastructure
+      version: 1.9.5-SNAPSHOT
+      alias: my-connector
+```
+
+To install a KA-enabled EDC (Setup 2 -Postgresql & Azure Vault), add the following lines to the dependency section of your Charts.yaml
+
+```yaml
+dependencies:
+  
+    - name: agent-connector-azure-vault
+      repository: https://catenax-ng.github.io/product-knowledge/infrastructure
+      version: 1.9.5-SNAPSHOT
+      alias: my-connector
+```
+
+To install a KA-enabled EDC (Setup 3 -Postgresql & Hashicorp Vault), add the following lines to the dependency section of your Charts.yaml
 
 ```yaml
 dependencies:
@@ -62,14 +84,24 @@ The agent-connector chart is documented [here](charts/agent-connector/README.md)
 
 ```yaml
 my-connector:
-  partnerid: BPNL0000000DUMMY
+  participant:
+    id: BPNL0000000DUMMY
   nameOverride: my-connector
   fullnameOverride: "my-connector"
-  daps:
-    url: *dapsUrl 
-    clientId: *dapsClientId
-    paths: 
-      jwks: /.well-known/jwks.json
+  ssi:
+    miw:
+      # -- MIW URL
+      url: *miwUrl
+      # -- The BPN of the issuer authority
+      authorityId: *issuerAuthority
+    oauth:
+      # -- The URL (of KeyCloak), where access tokens can be obtained
+      tokenurl: *keyCloakRealm
+      client:
+        # -- The client ID for KeyCloak
+        id: *keyCloakClient
+        # -- The alias under which the client secret is stored in the vault.
+        secretAlias: "client-secret":
   vault: *vaultSettings
   controlplane:
     internationalDataSpaces:

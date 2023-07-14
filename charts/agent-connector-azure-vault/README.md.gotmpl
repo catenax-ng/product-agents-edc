@@ -21,8 +21,11 @@
 
 ### Preparatory work
 
-- store your KeyCloak client secret in the HashiCorp vault. The exact procedure will depend on your deployment of HashiCorp Vault and
-  is out of scope of this document. But by default, Tractus-X EDC expects to find the secret under `secret/client-secret`.
+- store your KeyCloak client secret in the Azure KeyVault. The exact procedure is as follows:
+ ```bash
+ az keyvault secret set --vault-name <YOUR_VAULT_NAME> --name client-secret --value "$YOUR_CLIENT_SECRET"
+ ```
+ By default, Tractus-X EDC expects to find the secret under `client-secret`.
 
 
 ### Configure the chart
@@ -48,8 +51,14 @@ Combined, run this shell command to start the in-memory Tractus-X EDC runtime:
 
 ```shell
 helm repo add product-knowledge https://catenax-ng.github.io/product-knowledge/infrastructure
-helm install my-release product-knowledge/agent-connector --version {{ .Version }}
+helm install my-release product-knowledge/agent-connector-azure-vault --version {{ .Version }}\
+     -f <path-to>/tractusx-connector-azure-vault-test.yaml \
+     --set vault.azure.name=$AZURE_VAULT_NAME \
+     --set vault.azure.client=$AZURE_CLIENT_ID \
+     --set vault.azure.secret=$AZURE_CLIENT_SECRET \
+     --set vault.azure.tenant=$AZURE_TENANT_ID
 ```
+
 
 {{ template "chart.maintainersSection" . }}
 

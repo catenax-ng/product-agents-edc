@@ -23,12 +23,12 @@
 
 ---
 apiVersion: v2
-name: agent-connector
+name: agent-connector-memory
 description: |
   A Helm chart for an Agent-Enabled Tractus-X Eclipse Data Space Connector. The connector deployment consists of two runtime consists of a
-  Control Plane and a Data Plane. Note that _no_ external dependencies such as a PostgreSQL database and HashiCorp Vault are included.
+  Control Plane and a Data Plane. Note that _no_ external dependencies such as HashiCorp Vault are included.
 
-  This chart is intended for use with an _existing_ PostgreSQL database and an _existing_ HashiCorp Vault.
+  This chart is intended for use with an _existing_ HashiCorp Vault.
 # A chart can be either an 'application' or a 'library' chart.
 #
 # Application charts are a collection of templates that can be packaged into versioned archives
@@ -57,9 +57,3 @@ dependencies:
     version: 0.20.0
     repository: https://helm.releases.hashicorp.com
     condition: install.vault
-  # PostgreSQL
-  - name: postgresql
-    alias: postgresql
-    version: 12.1.6
-    repository: https://charts.bitnami.com/bitnami
-    condition: install.postgresql
