@@ -231,6 +231,20 @@
             <groupId>dev.failsafe</groupId>
             <artifactId>failsafe-okhttp</artifactId>
             <version>${failsafe.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.squareup.okhttp3</groupId>
+                    <artifactId>okhttp</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- Runtime Only -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>netty-nio-client</artifactId>
+            <version>2.20.94</version>
+            <scope>runtime</scope>
         </dependency>
 
         <!-- Compile Only -->

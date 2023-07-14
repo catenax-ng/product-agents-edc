@@ -132,7 +132,7 @@ public class AgentExtension implements ServiceExtension {
 
         // EDC Remoting Support
         ServiceExecutorRegistry reg = new ServiceExecutorRegistry();
-        reg.addBulkLink(new DataspaceServiceExecutor(monitor,agreementController,config,httpClient,executorService,typeManager,config));
+        reg.addBulkLink(new DataspaceServiceExecutor(monitor,agreementController,config,httpClient,executorService,typeManager));
         //reg.add(new DataspaceServiceExecutor(monitor,agreementController,config,httpClient));
 
         // Ontop and other deep nesting-afraid providers/optimizers

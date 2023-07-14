@@ -82,7 +82,6 @@ public class DataspaceServiceExecutor implements ServiceExecutor, ChainingServic
     final HttpClient client;
     final ExecutorService executor;
     final ObjectMapper objectMapper;
-    final AgentConfig agentConfig;
 
     /**
      * some constants
@@ -99,14 +98,13 @@ public class DataspaceServiceExecutor implements ServiceExecutor, ChainingServic
      * @param monitor    logging subsystem
      * @param controller dataspace agreement
      */
-    public DataspaceServiceExecutor(Monitor monitor, IAgreementController controller, AgentConfig config, OkHttpClient client, ExecutorService executor, TypeManager typeManager, AgentConfig agentConfig) {
+    public DataspaceServiceExecutor(Monitor monitor, IAgreementController controller, AgentConfig config, OkHttpClient client, ExecutorService executor, TypeManager typeManager) {
         this.monitor = monitor;
         this.agreementController = controller;
         this.config = config;
         this.client=new HttpClientAdapter(client);
         this.executor=executor;
         this.objectMapper=typeManager.getMapper();
-        this.agentConfig=agentConfig;
     }
 
     /**
@@ -383,7 +381,7 @@ public class DataspaceServiceExecutor implements ServiceExecutor, ChainingServic
                         .context(context)
                         .httpClient(httpClient)
                         .objectMapper(objectMapper)
-                        .agentConfig(agentConfig)
+                        .agentConfig(config)
                         .sendMode(querySendMode);
 
                 if (context.isDefined(authKey)) {

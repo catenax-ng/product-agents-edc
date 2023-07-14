@@ -64,7 +64,7 @@ public class TestAgentController {
     IAgreementController mockController = new MockAgreementController();
     ExecutorService threadedExecutor= Executors.newSingleThreadExecutor();
     TypeManager typeManager = new TypeManager();
-    DataspaceServiceExecutor exec=new DataspaceServiceExecutor(monitor,mockController,agentConfig,client,threadedExecutor,typeManager,agentConfig);
+    DataspaceServiceExecutor exec=new DataspaceServiceExecutor(monitor,mockController,agentConfig,client,threadedExecutor,typeManager,);
     RDFStore store = new RDFStore(agentConfig,monitor);
 
 
