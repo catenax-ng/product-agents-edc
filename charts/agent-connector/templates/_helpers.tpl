@@ -136,10 +136,10 @@ Validation URL
 {{- end }}
 
 {{/*
-Data Control URL
+Data Control URL (Expects the Chart Root to be accessible via .root, the current dataplane via .dataplane)
 */}}
 {{- define "txdc.dataplane.url.control" -}}
-{{- printf "http://%s-dataplane:%v%s" (include "txdc.fullname" . ) .Values.dataplane.endpoints.control.port .Values.dataplane.endpoints.control.path -}}
+{{- printf "http://%s-%s:%v%s" (include "txdc.fullname" .root ) .dataplane.name .dataplane.endpoints.control.port .dataplane.endpoints.control.path -}}
 {{- end }}
 
 {{/*

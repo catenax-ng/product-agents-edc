@@ -16,6 +16,11 @@
 #
 #  SPDX-License-Identifier: Apache-2.0
 #
+{{- $root := . -}}
+{{- $allcommands := (dict "commands" (list)) -}}
+{{- range $dataplane_name, $dataplane := .Values.dataplanes -}}
+{{- printf "curl http://%s-%s:%v%s/check/readiness" $dataplane.name (include "txdc.fullname" $root ) $dataplane.endpoints.default.port $dataplane.endpoints.default.path  | append $allcommands.commands | set $allcommands "commands" -}}
+{{- end }}
 
 ---
 apiVersion: v1
@@ -23,7 +28,7 @@ kind: Pod
 metadata:
   name: "{{include "txdc.fullname" .}}test-dataplane-readiness"
   labels:
-    {{- include "txdc.dataplane.labels" . | nindent 4 }}
+    {{- include "txdc.dataplane.labels" (dict "dataplane" .Values.dataplanes.dataplane "root" $root) | nindent 4 }}
   annotations:
     "helm.sh/hook": test
     "helm.sh/hook-delete-policy": {{ .Values.tests.hookDeletePolicy }}
@@ -31,6 +36,6 @@ spec:
   containers:
     - name: wget
       image: curlimages/curl
-      command: [ 'curl' ]
-      args: [ '{{- printf "http://%s-dataplane:%v%s/check/readiness" (include "txdc.fullname" $ ) $.Values.dataplane.endpoints.default.port $.Values.dataplane.endpoints.default.path -}}' ]
+      command: [ '/bin/bash','-c' ]
+      args: [ {{ join "&&" $allcommands.commands | quote }} ]
   restartPolicy: Never

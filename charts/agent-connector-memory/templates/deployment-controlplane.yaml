@@ -63,9 +63,9 @@ spec:
 
           # either use the specified image, or use the default one
           {{- if .Values.controlplane.image.repository }}
-          image: "{{ .Values.controlplane.image.repository }}:{{ .Values.controlplane.image.tag | default 0.5.0 }}"
+          image: "{{ .Values.controlplane.image.repository }}:{{ .Values.controlplane.image.tag | default "0.5.0" }}"
           {{- else }}
-          image: "tractusx/edc-controlplane-memory-hashicorp-vault:{{ .Values.controlplane.image.tag | default 0.5.0 }}"
+          image: "tractusx/edc-controlplane-memory-hashicorp-vault:{{ .Values.controlplane.image.tag | default "0.5.0" }}"
           {{- end }}
           imagePullPolicy: {{ .Values.controlplane.image.pullPolicy }}
           ports:
@@ -184,7 +184,7 @@ spec:
 
             # see extension https://github.com/eclipse-edc/Connector/tree/main/extensions/control-plane/data-plane-transfer
             - name: "EDC_TRANSFER_PROXY_ENDPOINT"
-              value: {{ include "txdc.dataplane.url.public" . }}
+              value: {{ include "txdc.dataplane.url.public" (dict "dataplane" .Values.dataplanes.dataplane "root" $) }}
             {{- if .Values.vault.secretNames.transferProxyTokenSignerPrivateKey }}
             - name: "EDC_TRANSFER_PROXY_TOKEN_SIGNER_PRIVATEKEY_ALIAS"
               value: {{ .Values.vault.secretNames.transferProxyTokenSignerPrivateKey | quote }}
@@ -193,10 +193,12 @@ spec:
             - name: "EDC_TRANSFER_PROXY_TOKEN_VERIFIER_PUBLICKEY_ALIAS"
               value: {{ .Values.vault.secretNames.transferProxyTokenSignerPublicKey | quote }}
             {{- end }}
-            # see extension https://github.com/eclipse-edc/Connector/tree/main/extensions/control-plane/transfer/transfer-pull-http-dynamic-receiver
 
+            # see extension https://github.com/eclipse-edc/Connector/tree/main/extensions/control-plane/transfer/transfer-pull-http-dynamic-receiver
+            {{- if .Values.backendService.httpProxyTokenReceiverUrl }}
             - name: "EDC_RECEIVER_HTTP_DYNAMIC_ENDPOINT"
-              value: {{ .Values.backendService.httpProxyTokenReceiverUrl | required ".Values.backendService.httpProxyTokenReceiverUrl is required" | quote }}
+              value: {{ .Values.backendService.httpProxyTokenReceiverUrl | quote }}
+            {{- end }}
 
             ###########
             ## VAULT ##
