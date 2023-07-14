@@ -42,14 +42,13 @@ public enum SkillDistribution {
      * @return respective enum (or ALL if it does not fir)
      */
     public static SkillDistribution valueOfMode(String mode) {
-        switch(mode) {
-            case "consumer":
+        if(mode!=null) {
+            if (mode.endsWith("consumer"))
                 return CONSUMER;
-            case "provider":
+            if (mode.endsWith("provider"))
                 return PROVIDER;
-            default:
-                return ALL;
         }
+        return ALL;
     }
 
 }

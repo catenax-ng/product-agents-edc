@@ -46,6 +46,13 @@ public interface ISkillStore {
     String put(String key, String skill, String name, String description, String version, String contract, SkillDistribution dist, boolean isFederated, String... ontologies);
 
     /**
+     * return the skill distribution
+     * @param key asset name
+     * @return skill distribution mode
+     */
+    SkillDistribution getDistribution(String key);
+
+    /**
      * return the stored skill text
      * @param key asset name
      * @return optional skill text if registered

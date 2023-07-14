@@ -10,7 +10,7 @@
     <parent>
         <groupId>org.eclipse.tractusx.agents.edc</groupId>
         <artifactId>agent-plane</artifactId>
-        <version>1.9.4-SNAPSHOT</version>
+        <version>1.9.5-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -91,13 +91,9 @@
         <!-- Base Data-Plane -->
         <dependency>
             <groupId>org.eclipse.tractusx.edc</groupId>
-            <artifactId>edc-dataplane-base</artifactId>
+            <artifactId>edc-dataplane-azure-vault</artifactId>
             <version>${tx.edc.version}</version>
             <exclusions>
-                <exclusion>
-                    <groupId>org.eclipse.edc</groupId>
-                    <artifactId>data-plane-aws-s3</artifactId>
-                </exclusion>
                 <exclusion>
                     <groupId>org.jetbrains</groupId>
                     <artifactId>annotations</artifactId>
@@ -105,6 +101,18 @@
                 <exclusion>
                         <groupId>org.yaml</groupId>
                         <artifactId>snakeyaml</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>dev.failsafe</groupId>
+                    <artifactId>failsafe</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpclient</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpcore</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -128,54 +136,6 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Use the right Azure SDK -->
-        <dependency>
-            <groupId>com.azure</groupId>
-            <artifactId>azure-identity</artifactId>
-            <exclusions>
-                <exclusion>
-                        <groupId>org.ow2.asm</groupId>
-                        <artifactId>asm</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>net.minidev</groupId>
-                    <artifactId>json-smart</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <!-- bullet-proof json-smart, msal4j is vulnerable -->
-        <dependency>
-            <groupId>net.minidev</groupId>
-            <artifactId>json-smart</artifactId>
-            <version>${net.minidev.jsonsmart.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.ow2.asm</groupId>
-                    <artifactId>asm</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>com.azure</groupId>
-            <artifactId>azure-security-keyvault-secrets</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.azure</groupId>
-                    <artifactId>azure-core-http-netty</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.azure</groupId>
-                    <artifactId>azure-core</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
         <!-- Test -->
         <dependency>
          <groupId>org.junit.jupiter</groupId>
@@ -186,6 +146,12 @@
          <groupId>org.mockito</groupId>
          <artifactId>mockito-core</artifactId>
          <scope>test</scope>
+         <exclusions>
+                <exclusion>
+                    <groupId>net.bytebuddy</groupId>
+                    <artifactId>byte-buddy</artifactId>
+                </exclusion>
+         </exclusions>
        </dependency>
 
     </dependencies>

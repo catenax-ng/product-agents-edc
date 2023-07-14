@@ -18,12 +18,6 @@
             <username>${env.GITHUB_ACTOR}</username>
             <password>${env.GITHUB_TOKEN}</password>
         </server>
-        <!-- DSC SNAPSHOTS -->
-        <server>
-            <id>ka-dsc-snapshots</id>
-            <username>${env.GITHUB_ACTOR}</username>
-            <password>${env.GITHUB_TOKEN}</password>
-        </server>
         <!-- Catena-X NG: Github Packages -->
         <server>
             <id>github</id>

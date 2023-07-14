@@ -11,7 +11,8 @@ package org.eclipse.tractusx.agents.edc;
  */
 public enum AgentProtocol {
 
-    SPARQL_HTTP("cx-common:Protocol?w3c:http:SPARQL");
+    SPARQL_HTTP("cx-common:Protocol?w3c:http:SPARQL"),
+    SKILL_HTTP("cx-common:Protocol?w3c:http:SKILL");
 
     private final String protocolId;
 

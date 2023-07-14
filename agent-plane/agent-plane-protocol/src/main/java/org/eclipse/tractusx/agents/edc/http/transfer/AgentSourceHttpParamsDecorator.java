@@ -132,7 +132,9 @@ public class AgentSourceHttpParamsDecorator implements HttpParamsDecorator {
             }
         } else {
             // we need to annotate the base url "pure" because we do not directly hit the endpoint
-            params.header(DataspaceServiceExecutor.targetUrl.getSymbol(),address.getProperty(BASE_URL));
+            params.baseUrl("http://dummy.org");
+            params.header(DataspaceServiceExecutor.targetUrl.getSymbol(), address.getProperty(BASE_URL));
+
             // there is the case where a KA-BIND protocol call is
             // one-to-one routed through the transfer plane ... in which case
             // we may get query parameters in the body

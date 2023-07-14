@@ -24,6 +24,7 @@ public class AgentConfig {
     public static String VERBOSE_PROPERTY = "cx.agent.sparql.verbose";
     public static boolean DEFAULT_VERBOSE_PROPERTY = false;
     public static String DEFAULT_ACCESS_POINT = "api";
+    public static String CONTROL_PLANE_MANAGEMENT_PROVIDER = "cx.agent.controlplane.management.provider";
     public static String CONTROL_PLANE_MANAGEMENT = "cx.agent.controlplane.management";
     public static String CONTROL_PLANE_IDS = "cx.agent.controlplane.protocol";
     public static String BUSINESS_PARTNER_NUMBER = "edc.participant.id";
@@ -113,6 +114,13 @@ public class AgentConfig {
      */
     public String getControlPlaneManagementUrl() {
         return config.getString(CONTROL_PLANE_MANAGEMENT,null);
+    }
+
+    /**
+     * @return uri of the control plane management endpoint (without concrete api)
+     */
+    public String getControlPlaneManagementProviderUrl() {
+        return config.getString(CONTROL_PLANE_MANAGEMENT_PROVIDER,config.getString(CONTROL_PLANE_MANAGEMENT,null));
     }
 
     /**
