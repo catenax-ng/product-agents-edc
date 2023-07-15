@@ -255,7 +255,7 @@ helm install my-release product-knowledge/agent-connector-azure-vault --version 
 | dataplanes.dataplane.securityContext.runAsUser | int | `10001` | The container's process will run with the specified uid |
 | dataplanes.dataplane.service.port | int | `80` |  |
 | dataplanes.dataplane.service.type | string | `"ClusterIP"` | [Service type](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types) to expose the running application on a set of Pods as a network service. |
-| dataplanes.dataplane.sourceTypes | string | `"cx-common:Protocol?w3c:http:SPARQL,HttpData,AmazonS3"` | a comma-separated list of supported asset types |
+| dataplanes.dataplane.sourceTypes | string | `"cx-common:Protocol?w3c:http:SPARQL,cx-common:Protocol?w3c:http:SKILL,HttpData,AmazonS3"` | a comma-separated list of supported asset types |
 | dataplanes.dataplane.tolerations | list | `[]` |  |
 | dataplanes.dataplane.url.public | string | `""` | Explicitly declared url for reaching the public api (e.g. if ingresses not used) |
 | dataplanes.dataplane.volumeMounts | list | `[]` | declare where to mount [volumes](https://kubernetes.io/docs/concepts/storage/volumes/) into the container |

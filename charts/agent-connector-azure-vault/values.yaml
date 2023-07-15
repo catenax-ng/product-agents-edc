@@ -300,7 +300,7 @@ dataplanes:
     # -- the name of the dataplane
     name: "agentplane"
     # -- a comma-separated list of supported asset types
-    sourceTypes: "cx-common:Protocol?w3c:http:SPARQL,HttpData,AmazonS3"
+    sourceTypes: "cx-common:Protocol?w3c:http:SPARQL,cx-common:Protocol?w3c:http:SKILL,HttpData,AmazonS3"
     # -- a comma-separated list of supported transfer types
     destinationTypes: "HttpProxy,AmazonS3"
     image:
