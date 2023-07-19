@@ -88,6 +88,7 @@ my-connector:
     id: BPNL0000000DUMMY
   nameOverride: my-connector
   fullnameOverride: "my-connector"
+  # -- Self-Sovereign Identity Settings
   ssi:
     miw:
       # -- MIW URL
@@ -102,14 +103,11 @@ my-connector:
         id: *keyCloakClient
         # -- The alias under which the client secret is stored in the vault.
         secretAlias: "client-secret":
+  # -- The Vault Settings can be Azure or Hashicorp
   vault: *vaultSettings
+  # -- The Control plane
   controlplane:
-    internationalDataSpaces:
-      id: MYTXDC
-      description: Tractus-X Agent-Enabled Eclipse IDS Data Space Connector
-      title: "MY TX DC"
-      catalogId: MYTXDC-Catalog
-    ## Ingress declaration to expose the network service.
+    ## Ingress declaration to expose the control plane
     ingresses:
       - enabled: true
         # -- The hostname to be used to precisely map incoming traffic onto the underlying network service
@@ -122,9 +120,16 @@ my-connector:
         # -- Enables TLS on the ingress resource
         tls:
           enabled: true
+        # -- If you do not have a default cluster issuer
+        certManager:
+          issuer: my-cluster-issuer
+  # -- The Data planes
   dataplanes:
+    # -- Default data plane is already an agent plane (has the agent section non-empty)
     dataplane:
+      # -- Additional or default resources 
       configs: 
+        # -- Overides the default dataspace.ttl to include all important BPNs and connectors
         dataspace.ttl: |-
           ################################################
           # Agent Bootstrap Graph
@@ -136,12 +141,16 @@ my-connector:
 
           bpnl:BPNL0000000DUMMY cx-common:hasConnector <edcs://myconnector.public.ip>.
           bpnl:BPNL0000000DUMM2 cx-common:hasConnector <edcs://otherconnector.public.ip>.
+      # -- Agent configuration (if non-zero its an agent plane)
       agent:
+        # -- Maximal number of tuples processed in one sub-query
         maxbatchsize: 8
+        # -- Number of seconds between synchronization runs
         synchronization: 60000
+        # -- URLs of the remote connectors to synchronize the catalogue with
         connectors: 
           - https://otherconnector.public.ip
-      ## Ingress declaration to expose the network service.
+      ## Ingress declaration to expose data plane
       ingresses:
         - enabled: true
           hostname: "myagent.public.ip"
@@ -154,6 +163,9 @@ my-connector:
           # -- Enables TLS on the ingress resource
           tls:
             enabled: true
+          # -- If you do not have a default cluster issuer
+          certManager:
+            issuer: my-cluster-issuer
 ```
 
 ## Recommended Documentation

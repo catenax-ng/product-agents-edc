@@ -171,7 +171,9 @@ controlplane:
     # -- The container's process will run with the specified uid
     runAsUser: 10001
   # Extra environment variables that will be pass onto deployment pods
-  env: {}
+  env: {
+    EDC_JSONLD_HTTPS_ENABLED: "true"
+  }
   #  ENV_NAME: value
 
   # "valueFrom" environment variable references that will be added to deployment pods. Name is templated.
