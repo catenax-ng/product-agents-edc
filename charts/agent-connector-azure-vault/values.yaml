@@ -552,6 +552,21 @@ vault:
 
 backendService:
   httpProxyTokenReceiverUrl: ""
+
+networkPolicy:
+  # -- If `true` network policy will be created to restrict access to control- and dataplane
+  enabled: false
+  # -- Configuration of the controlplane component
+  controlplane:
+    # -- Specify from rule network policy for cp (defaults to all namespaces)
+    from:
+    - namespaceSelector: {}
+  # -- Configuration of the dataplane component
+  dataplane:
+    # -- Specify from rule network policy for dp (defaults to all namespaces)
+    from:
+    - namespaceSelector: {}
+
 serviceAccount:
   # Specifies whether a service account should be created
   create: true
@@ -562,6 +577,7 @@ serviceAccount:
   name: ""
   # -- Existing image pull secret bound to the service account to use to [obtain the container image from private registries](https://kubernetes.io/docs/concepts/containers/images/#using-a-private-registry)
   imagePullSecrets: []
+
 # -- Configurations for Helm tests
 tests:
   # -- Configure the hook-delete-policy for Helm tests

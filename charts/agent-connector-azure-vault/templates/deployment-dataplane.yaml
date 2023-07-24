@@ -198,9 +198,9 @@ spec:
             - name: "EDC_DATASOURCE_EDR_USER"
               value: {{ $root.Values.postgresql.auth.username | required ".Values.postgresql.auth.username is required" | quote }}
             - name: "EDC_DATASOURCE_EDR_PASSWORD"
-              value: {{ $root..Values.postgresql.auth.password | required ".Values.postgresql.auth.password is required" | quote }}
+              value: {{ $root.Values.postgresql.auth.password | required ".Values.postgresql.auth.password is required" | quote }}
             - name: "EDC_DATASOURCE_EDR_URL"
-              value: {{ tpl $root..Values.postgresql.jdbcUrl . | quote }}
+              value: {{ tpl $root.Values.postgresql.jdbcUrl $root | quote }}
 
             ###########
             ## VAULT ##

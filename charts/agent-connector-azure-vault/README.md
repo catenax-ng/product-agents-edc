@@ -101,7 +101,7 @@ helm install my-release product-knowledge/agent-connector-azure-vault --version 
 | controlplane.endpoints.protocol | object | `{"path":"/api/v1/dsp","port":8084}` | dsp api, used for inter connector communication and must be internet facing |
 | controlplane.endpoints.protocol.path | string | `"/api/v1/dsp"` | path for incoming api calls |
 | controlplane.endpoints.protocol.port | int | `8084` | port for incoming api calls |
-| controlplane.env | object | `{}` |  |
+| controlplane.env.EDC_JSONLD_HTTPS_ENABLED | string | `"true"` |  |
 | controlplane.envConfigMapNames | list | `[]` |  |
 | controlplane.envSecretNames | list | `[]` |  |
 | controlplane.envValueFrom | object | `{}` |  |
@@ -264,6 +264,11 @@ helm install my-release product-knowledge/agent-connector-azure-vault --version 
 | imagePullSecrets | list | `[]` | Existing image pull secret to use to [obtain the container image from private registries](https://kubernetes.io/docs/concepts/containers/images/#using-a-private-registry) |
 | install.postgresql | bool | `true` |  |
 | nameOverride | string | `""` |  |
+| networkPolicy.controlplane | object | `{"from":[{"namespaceSelector":{}}]}` | Configuration of the controlplane component |
+| networkPolicy.controlplane.from | list | `[{"namespaceSelector":{}}]` | Specify from rule network policy for cp (defaults to all namespaces) |
+| networkPolicy.dataplane | object | `{"from":[{"namespaceSelector":{}}]}` | Configuration of the dataplane component |
+| networkPolicy.dataplane.from | list | `[{"namespaceSelector":{}}]` | Specify from rule network policy for dp (defaults to all namespaces) |
+| networkPolicy.enabled | bool | `false` | If `true` network policy will be created to restrict access to control- and dataplane |
 | participant.id | string | `""` | BPN Number |
 | postgresql | object | `{"auth":{"database":"edc","password":"password","username":"user"},"jdbcUrl":"jdbc:postgresql://{{ .Release.Name }}-postgresql:5432/edc","primary":{"persistence":{"enabled":false}},"readReplicas":{"persistence":{"enabled":false}}}` | Standard settings for persistence, "jdbcUrl", "username" and "password" need to be overridden |
 | serviceAccount.annotations | object | `{}` |  |

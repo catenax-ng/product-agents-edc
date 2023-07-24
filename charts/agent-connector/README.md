@@ -94,7 +94,7 @@ helm install my-release product-knowledge/agent-connector --version 1.9.5-SNAPSH
 | controlplane.endpoints.protocol | object | `{"path":"/api/v1/dsp","port":8084}` | dsp api, used for inter connector communication and must be internet facing |
 | controlplane.endpoints.protocol.path | string | `"/api/v1/dsp"` | path for incoming api calls |
 | controlplane.endpoints.protocol.port | int | `8084` | port for incoming api calls |
-| controlplane.env | object | `{}` |  |
+| controlplane.env.EDC_JSONLD_HTTPS_ENABLED | string | `"true"` |  |
 | controlplane.envConfigMapNames | list | `[]` |  |
 | controlplane.envSecretNames | list | `[]` |  |
 | controlplane.envValueFrom | object | `{}` |  |
