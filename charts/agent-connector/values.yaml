@@ -524,7 +524,7 @@ dataplanes:
 
 # -- Standard settings for persistence, "jdbcUrl", "username" and "password" need to be overridden
 postgresql:
-  jdbcUrl: "jdbc:postgresql://{{ .Release.Name }}-postgresql:5432/edc"
+  jdbcUrl: "jdbc:postgresql://postgresql:5432/edc"
   primary:
     persistence:
       enabled: false
