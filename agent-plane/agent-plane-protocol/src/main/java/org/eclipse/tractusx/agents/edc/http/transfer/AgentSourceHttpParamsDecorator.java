@@ -1,3 +1,19 @@
+// Copyright (c) 2022,2023 Contributors to the Eclipse Foundation
+//
+// See the NOTICE file(s) distributed with this work for additional
+// information regarding copyright ownership.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Apache License, Version 2.0 which is available at
+// https://www.apache.org/licenses/LICENSE-2.0.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+// License for the specific language governing permissions and limitations
+// under the License.
+//
+// SPDX-License-Identifier: Apache-2.0
 package org.eclipse.tractusx.agents.edc.http.transfer;
 
 import org.eclipse.tractusx.agents.edc.AgentConfig;
@@ -12,8 +28,6 @@ import org.eclipse.edc.spi.types.domain.transfer.DataFlowRequest;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -133,7 +147,7 @@ public class AgentSourceHttpParamsDecorator implements HttpParamsDecorator {
         } else {
             // we need to annotate the base url "pure" because we do not directly hit the endpoint
             params.baseUrl("https://w3id.org/catenax");
-            params.header(DataspaceServiceExecutor.targetUrl.getSymbol(), address.getProperty(BASE_URL));
+            params.header(DataspaceServiceExecutor.TARGET_URL_SYMBOL.getSymbol(), address.getProperty(BASE_URL));
 
             // there is the case where a KA-BIND protocol call is
             // one-to-one routed through the transfer plane ... in which case

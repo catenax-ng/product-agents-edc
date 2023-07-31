@@ -1,3 +1,19 @@
+// Copyright (c) 2022,2023 Contributors to the Eclipse Foundation
+//
+// See the NOTICE file(s) distributed with this work for additional
+// information regarding copyright ownership.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Apache License, Version 2.0 which is available at
+// https://www.apache.org/licenses/LICENSE-2.0.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+// License for the specific language governing permissions and limitations
+// under the License.
+//
+// SPDX-License-Identifier: Apache-2.0
 package org.eclipse.tractusx.agents.edc.http;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -15,6 +31,7 @@ import org.apache.http.HttpStatus;
 import org.eclipse.edc.spi.monitor.Monitor;
 import org.eclipse.edc.spi.types.TypeManager;
 import org.eclipse.edc.spi.types.domain.edr.EndpointDataReference;
+import org.eclipse.tractusx.agents.edc.AgentConfig;
 import org.eclipse.tractusx.agents.edc.IAgreementController;
 import org.eclipse.tractusx.agents.edc.sparql.CatenaxWarning;
 
@@ -39,6 +56,7 @@ public class DelegationService implements IDelegationService {
     protected final OkHttpClient client;
     public final static TypeReference<List<CatenaxWarning>> warningTypeReference = new TypeReference<>(){};
     protected final TypeManager typeManager;
+    protected final AgentConfig config;
 
     /**
      * creates a new delegation service
@@ -46,11 +64,12 @@ public class DelegationService implements IDelegationService {
      * @param monitor logging facility
      * @param client outgoing http infrastructure
      */
-    public DelegationService(IAgreementController agreementController, Monitor monitor, OkHttpClient client, TypeManager typeManager) {
+    public DelegationService(IAgreementController agreementController, Monitor monitor, OkHttpClient client, TypeManager typeManager, AgentConfig config) {
         this.agreementController=agreementController;
         this.monitor=monitor;
         this.client=client;
         this.typeManager=typeManager;
+        this.config=config;
     }
 
     /**
@@ -61,6 +80,14 @@ public class DelegationService implements IDelegationService {
      * @return a response
      */
     public Response executeQueryRemote(String remoteUrl, String skill, String graph, HttpHeaders headers, HttpServletRequest request, HttpServletResponse response, UriInfo uri)  {
+        Pattern serviceAllowPattern=config.getServiceAllowPattern();
+        if(!serviceAllowPattern.matcher(remoteUrl).matches()) {
+            return HttpUtils.respond(monitor,headers, HttpStatus.SC_FORBIDDEN,String.format("Service %s does not match the allowed service pattern %s",remoteUrl,serviceAllowPattern.pattern()),null);
+        }
+        Pattern serviceDenyPattern=config.getServiceDenyPattern();
+        if(serviceDenyPattern.matcher(remoteUrl).matches()) {
+            return HttpUtils.respond(monitor,headers, HttpStatus.SC_FORBIDDEN,String.format("Service %s matches the denied service pattern %s",remoteUrl,serviceDenyPattern.pattern()),null);
+        }
         String asset = skill != null ? skill : graph;
         EndpointDataReference endpoint = agreementController.get(asset);
         if(endpoint==null) {

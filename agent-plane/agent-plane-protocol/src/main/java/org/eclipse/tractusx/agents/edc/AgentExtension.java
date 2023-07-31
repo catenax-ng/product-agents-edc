@@ -1,9 +1,19 @@
+// Copyright (c) 2022,2023 Contributors to the Eclipse Foundation
 //
-// EDC Data Plane Agent Extension 
-// See copyright notice in the top folder
-// See authors file in the top folder
-// See license file in the top folder
+// See the NOTICE file(s) distributed with this work for additional
+// information regarding copyright ownership.
 //
+// This program and the accompanying materials are made available under the
+// terms of the Apache License, Version 2.0 which is available at
+// https://www.apache.org/licenses/LICENSE-2.0.
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+// License for the specific language governing permissions and limitations
+// under the License.
+//
+// SPDX-License-Identifier: Apache-2.0
 package org.eclipse.tractusx.agents.edc;
 
 import org.eclipse.edc.connector.dataplane.http.spi.HttpRequestParamsProvider;
@@ -147,7 +157,7 @@ public class AgentExtension implements ServiceExtension {
 
         // stored procedure store and transport endpoint
         ISkillStore skillStore=new EdcSkillStore(catalogService,typeManager,config);
-        DelegationService delegationService=new DelegationService(agreementController,monitor,httpClient,typeManager);
+        DelegationService delegationService=new DelegationService(agreementController,monitor,httpClient,typeManager,config);
         AgentController agentController=new AgentController(monitor,agreementController,config,processor,skillStore,delegationService);
         monitor.debug(String.format("Registering agent controller %s",agentController));
         webService.registerResource(DEFAULT_CONTEXT_ALIAS, agentController);
