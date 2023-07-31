@@ -73,6 +73,7 @@ public class DataManagement {
             "        \"id\":\"%1$s\",\n" +
             "        \"@type\": \"DataAddress\",\n" +
             "        \"type\": \"cx-common:Protocol?w3c:http:SKILL\",\n" +
+            "        \"baseUrl\":\"https://w3id.org/catenax\",\n" +
             "        \"proxyPath\": \"false\",\n" +
             "        \"proxyMethod\": \"true\",\n" +
             "        \"proxyQueryParams\": \"true\",\n" +

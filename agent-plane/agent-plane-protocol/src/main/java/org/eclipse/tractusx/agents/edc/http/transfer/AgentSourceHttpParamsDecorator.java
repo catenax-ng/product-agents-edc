@@ -132,7 +132,7 @@ public class AgentSourceHttpParamsDecorator implements HttpParamsDecorator {
             }
         } else {
             // we need to annotate the base url "pure" because we do not directly hit the endpoint
-            params.baseUrl("http://dummy.org");
+            params.baseUrl("https://w3id.org/catenax");
             params.header(DataspaceServiceExecutor.targetUrl.getSymbol(), address.getProperty(BASE_URL));
 
             // there is the case where a KA-BIND protocol call is
