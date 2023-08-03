@@ -30,7 +30,7 @@
         <com.azure.azure-identity.version>1.9.1</com.azure.azure-identity.version>
         <com.azure.azure-security-keyvault-secrets.version>4.6.2</com.azure.azure-security-keyvault-secrets.version>
         <org.yaml.snakeyaml.version>2.0</org.yaml.snakeyaml.version>
-        <net.minidev.jsonsmart.version>2.4.11</net.minidev.jsonsmart.version>
+        <net.minidev.jsonsmart.version>2.5.0</net.minidev.jsonsmart.version>
 
         <!-- Source characteristics -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
